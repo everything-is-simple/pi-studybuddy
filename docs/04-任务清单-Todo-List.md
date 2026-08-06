@@ -1,0 +1,420 @@
+# 04 任务清单
+
+**版本**：v0.1.0
+**日期**：2026-08-07
+**状态**：✅ 已审查批准（里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过）
+**上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
+**用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
+
+---
+
+## 1. 概述
+
+### 1.1 文档定位
+
+04-Todo 是 pi-studybuddy 从"设计定案"走向"代码实现"的执行操作文档。它不重复设计文档的内容，而是：
+
+- **登记**：每个开发任务有唯一 task-id，记录其分类、优先级、状态、关联文档
+- **跟踪**：每个组件在五阶段组件治理中的当前位置（下载储存→单件→集成→组装→冒烟E2E）
+- **门禁**：定义每个阶段的进入/退出条件和合并到 master 的门槛
+- **取证**：冒烟失败修复记录写本文件作为证据（08-Test §11.3）
+
+### 1.2 与其他文档的关系
+
+```
+设计定案层                    执行操作层                   代码实现层
+┌─────────────┐              ┌───────────┐              ┌──────────┐
+│ 01-TRD 定案  │              │           │              │ src/     │
+│ 02-PRD       │ ──推导任务──→ │ 04-Todo   │ ──指导开发──→ │ tests/   │
+│ 03-Arch      │              │           │              │ scripts/ │
+│ 05-ERD       │              │           │              └──────────┘
+│ 06-API       │              └───────────┘
+│ 07-Workflow  │                   ↑
+│ 08-Test      │              修复证据回写（§8）
+│ 09-UI 定案   │              （08-Test §11.3）
+└─────────────┘
+```
+
+### 1.3 任务铁律
+
+1. **五阶段不可跳越**：任何组件必须走完下载储存→单件→集成→组装→冒烟E2E 五阶段（00 索引 §四）
+2. **任一阶段失败退回上一阶段**：不进 master（08-Test §11.2）
+3. **task-id 全局唯一**：运行数据隔离 `H:\pi-studybuddy-tmp\runs\<task-id>` 依赖此 id（00 索引 §五）
+4. **壳层先于业务**：装配顺序 main+preload+renderer+agent-host+contract → 公用零件 → 业务模块（03-Architecture §9.2）
+5. **修复留证据**：冒烟失败修复记录写 §8，可审计可追溯
+6. **任务状态实时更新**：任务状态变更同步到本文件，不另立跟踪系统
+
+---
+
+## 2. 任务登记规范
+
+### 2.1 task-id 命名规则
+
+```
+T-<里程碑>-<序号>
+
+里程碑：M0（骨架）/ M1（核心闭环）/ M2（完整闭环）/ M3（对话与打磨）
+序号：三位数字，按里程碑内登记顺序递增
+
+示例：T-M0-001、T-M1-042、T-M3-103
+```
+
+### 2.2 任务字段
+
+每个任务登记以下字段：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `task-id` | string | 唯一标识（§2.1 规则） |
+| `标题` | string | 中文简述，一行内说清做什么 |
+| `分类` | enum | 壳层 / 扩展层 / 业务Adapter / 数据层 / 测试 / 文档 |
+| `子系统` | enum | S1-S7 / TTS / 备份恢复 / 对话 / 壳 / 跨切 |
+| `优先级` | enum | P0（阻塞）/ P1（必须）/ P2（应该）/ P3（可选） |
+| `状态` | enum | pending / in_progress / testing / done / blocked |
+| `治理阶段` | enum | 阶段1-5（当前所处五阶段位置） |
+| `关联文档` | string | 依据的设计文档章节（如 03-Arch §6.1） |
+| `产物` | string | 完成后产出的文件/模块 |
+| `证据` | string | 测试通过截图/日志链接、修复记录（§8 引用） |
+| `备注` | string | 阻塞原因、依赖关系等 |
+
+### 2.3 任务状态机
+
+```
+pending → in_progress → testing → done
+              ↑              │
+              │              ↓
+              └──── blocked ──┘
+                  （修复后回 in_progress）
+```
+
+| 状态 | 含义 | 进入条件 |
+|---|---|---|
+| `pending` | 未开始 | 任务登记后默认 |
+| `in_progress` | 开发中 | 开始编码 |
+| `testing` | 测试中 | 代码完成，进入五阶段测试 |
+| `done` | 已完成 | 五阶段全通过 + 合并门槛满足（§5） |
+| `blocked` | 阻塞 | 依赖未就绪 / 测试失败退回修复 |
+
+---
+
+## 3. 任务分类体系
+
+### 3.1 按架构层分类（03-Architecture §1 四层架构）
+
+| 分类 | 范围 | 装配顺序 |
+|---|---|---|
+| **壳层** | main + preload + renderer + agent-host + contract + 安全沙箱 + toolchain + credential-vault + file-watch | 第 1 位（03-Arch §9.2） |
+| **扩展层** | studybuddy-extension（registerTool + pi.on 钩子 + pi-ai provider） | 第 2 位 |
+| **业务 Adapter** | S1-S7 工具 + TTS + 备份恢复 + WPS COM/whisper.cpp/OCR 桥 + workspace-path-guard | 第 3 位 |
+| **数据层** | global.db + semester.db + 三层记忆 + credential-vault 存储 + 备份 zip | 与壳层并行 |
+
+### 3.2 按子系统分类（02-PRD §3 业务闭环）
+
+| 子系统 | 业务 | 关键文档 |
+|---|---|---|
+| **S1** | 学习节奏（学期/课程/考试/课表/任务/每日首页） | 07-Workflow §2.2 |
+| **S2** | 资料笔记（上传/转换/AI笔记/知识模块/导图） | 07-Workflow §2.3 |
+| **S3** | 限时练习（出题/作答/规则批改/结果） | 07-Workflow §2.4 |
+| **S4** | 错题改错（幂等归档/错因/重做/薄弱点） | 07-Workflow §2.5 |
+| **S5** | 期末冲刺（模拟考/速背卡/冲刺计划） | 07-Workflow §2.6 |
+| **S6** | 家长报告（规则生成/冻结/脱敏/投递） | 07-Workflow §3 |
+| **S7** | 课堂采集（许可确认/PCM WAV/whisper.cpp/handoff） | 07-Workflow §2.7 |
+| **TTS** | 跨子系统朗读（SAPI/edge-tts/控制条/已复习标记） | 07-Workflow §4 |
+| **备份恢复** | 手动/定期/归档备份 + 恢复 | 07-Workflow §5 |
+| **对话** | 💬 对话 Tab（pi 原生 AI 对话默认主入口） | 07-Workflow §2.8 |
+| **壳** | Electron 壳 + 五件骨架 | 03-Arch §6 |
+| **跨切** | 安全不变量 / observability / 调度层 | 03-Arch §7-§8 |
+
+### 3.3 按装配阶段分类（03-Architecture §9.1 五阶段）
+
+| 阶段 | 内容 | 产物 |
+|---|---|---|
+| **1. 下载储存** | pi / pi-skills / pi-desktop / inno-agent / OCR venv / whisper.cpp | `H:\pi-references\*` + `node_modules` + venv |
+| **2. 单件测试** | 每个工具契约断言 / 每个引入技能夹具 / 外部桥 Adapter | 独立冒烟 + 合成夹具 |
+| **3. 集成测试** | extension×pi 底座 / 工具×pi.on 钩子 / createAgentSession | 契约验证 |
+| **4. 系统配件组装** | 进入主仓 src/ + ~/.pi/agent/skills/ | Adapter/扩展代码 |
+| **5. 冒烟 + E2E** | S1-S7 全链路 / TTS / 备份恢复 / 脱敏 / 安全不变量 | 全链回归 |
+
+---
+
+## 4. 组件治理状态看板
+
+### 4.1 看板格式
+
+每个组件跟踪其在五阶段中的当前位置：
+
+| 组件 | 阶段1 下载 | 阶段2 单件 | 阶段3 集成 | 阶段4 组装 | 阶段5 冒烟E2E | 状态 |
+|---|---|---|---|---|---|---|
+| `pi`（npm peerDeps） | ✅ | — | — | — | — | 已下载 |
+| `pi-skills`（git clone） | ✅ | — | — | — | — | 已下载 |
+| `pi-desktop` 骨架 | ✅ | — | — | — | — | 已下载 |
+| `inno-agent` 范本 | ✅ | — | — | — | — | 已下载 |
+| OCR venv | ✅ | — | — | — | — | 已下载 |
+| whisper.cpp | ✅ | — | — | — | — | 已下载 |
+| WPS COM 桥 | — | — | — | — | — | 待启动 |
+| ... | | | | | | |
+
+> 阶段标记：✅ 通过 / ⏳ 进行中 / ❌ 失败待修复 / — 未进入 / ⏭️ 跳过（不适用）
+
+### 4.2 组件清单（初始，随开发推进动态更新）
+
+**参考仓库组件**（阶段1 已完成）：
+- `pi`（`@earendil-works/pi-coding-agent`）—— AI 底座
+- `pi-skills`（badlogic）—— transcribe / browser-tools / youtube-transcript
+- `pi-desktop`（DLYZZT）—— 五件骨架范本
+- `inno-agent`（hhyqhh）—— 架构范本
+
+**自建组件**（需走五阶段）：
+- 桌面壳五件：contract / host-manager / credential-vault / toolchain / file-watch
+- pi 扩展层：studybuddy-extension（registerTool + pi.on 钩子）
+- 业务工具：S1-S7 全量 registerTool 工具（约 30 个）
+- TTS skill：SAPI + edge-tts
+- 备份恢复：zip 打包 + 恢复 + 调度
+- 外部桥：WPS COM（pywin32）/ whisper.cpp / OCR venv
+- 安全脚本：check-desktop-security.mjs（六条不变量）
+
+---
+
+## 5. 完成门槛（门禁）
+
+### 5.1 五阶段进入/退出条件（03-Arch §9.1 + 08-Test §11.2）
+
+| 阶段 | 进入条件 | 退出条件（门槛） |
+|---|---|---|
+| **1. 下载储存** | 组件已识别 | 组件在 `H:\pi-references\*` 或 `node_modules` / venv 中可用 |
+| **2. 单件测试** | 阶段1 完成 | 独立冒烟通过 + 合成夹具断言全过（08-Test §3） |
+| **3. 集成测试** | 阶段2 完成 | extension×pi 底座契约验证通过 + 钩子协作断言全过（08-Test §4） |
+| **4. 系统组装** | 阶段3 完成 | 代码进入主仓 src/ + 类型检查通过 + lint 通过 |
+| **5. 冒烟+E2E** | 阶段4 完成 | 系统冒烟通过 + 受影响 E2E 通过 + 安全不变量六条全过（08-Test §5） |
+
+### 5.2 合并到 master 的门槛（08-Test §11.1）
+
+- [ ] 全部单件测试通过（vitest + pytest）
+- [ ] 全部集成测试通过
+- [ ] 系统冒烟全部通过
+- [ ] 安全不变量校验脚本六条断言全过
+- [ ] 受影响子系统的 E2E 通过
+- [ ] `git diff --check` 无空白错误
+- [ ] 不提交：真实密钥/.env.local/资料原文/完整 UUID/node_modules
+
+### 5.3 退回机制（08-Test §11.2）
+
+```
+阶段2 单件失败 → 修复组件 → 重跑单件（不退回阶段1）
+阶段3 集成失败 → 退回单件 → 重跑集成
+阶段5 冒烟/E2E 失败 → 退回集成 → 重跑冒烟
+```
+
+**退回时**：
+- 任务状态改为 `blocked`
+- 修复记录写入 §8
+- 修复后状态改回 `in_progress`，重走当前阶段
+
+---
+
+## 6. 里程碑规划
+
+> 依据 03-Architecture §9.2 装配顺序（壳层→公用零件→业务模块）+ ai-studybuddy 已验证 S1-S7 业务认知。
+
+### 6.1 里程碑总览
+
+```
+M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 对话与打磨
+┌──────────┐        ┌──────────┐        ┌──────────┐        ┌──────────┐
+│ Electron │        │ S1 学期   │        │ S5 冲刺   │        │ 💬 对话   │
+│ 四进程   │ ──→   │ S2 笔记   │ ──→   │ S6 报告   │ ──→   │ 安全不变量│
+│ 五件骨架 │        │ S3 练习   │        │ S7 采集   │        │ E2E 全链  │
+│ 数据层   │        │ S4 错题   │        │ TTS/备份  │        │ 优化打磨  │
+└──────────┘        └──────────┘        └──────────┘        └──────────┘
+```
+
+### 6.2 M0：骨架搭建
+
+**目标**：Electron 桌面壳可启动，数据层 schema 可建库，contract RPC 可通
+
+**范围**：
+- Electron 四进程骨架（main + preload + renderer + agent-host）
+- contract 类型化 IPC + RPC 层
+- 安全沙箱（sandbox:true + 严格 CSP + preload 受控桥接）
+- toolchain 发现（Node/Python/uv/Git/WPS/whisper.cpp）
+- credential-vault（safeStorage/DPAPI）
+- file-watch（fs.watch recursive + 100ms 防抖）
+- 数据层基础（global.db schema + semester.db schema + 三层记忆 schema + PRAGMA）
+- pi 扩展层空壳（createStudyBuddyExtension 可 setup 但无业务工具）
+- 09-UI 三栏布局 + 标签页骨架（无业务内容）
+
+**退出门槛**：
+- [ ] Electron 应用可启动
+- [ ] contract RPC 可 renderer→main→agent-host 往返
+- [ ] global.db + semester.db 可建库
+- [ ] credential-vault 可加密/解密往返
+- [ ] 安全不变量校验脚本六条全过
+- [ ] M0 系统冒烟通过
+
+### 6.3 M1：核心闭环 MVP
+
+**目标**：S1→S2→S3→S4 最小可用学习闭环可走通
+
+**范围**：
+- S1 学期初始化（建学期/课程/课表 OCR/考试确认/每日首页）
+- S2 资料笔记（上传/转换/AI 笔记生成/知识模块/导图）
+- S3 限时练习（出题/作答/规则批改/结果展示）
+- S4 错题改错（幂等归档/错因建议/学生确认/重做/薄弱点）
+- WPS COM 桥（doc/ppt/xls 转换）
+- OCR venv Adapter
+- studybuddy-extension 业务工具注册（S1-S4 工具）
+- 09-UI S1-S4 标签页业务 UI
+
+**退出门槛**：
+- [ ] S1-S4 全链路冒烟通过
+- [ ] E2E-01~03 通过
+- [ ] 作答前 DTO 防泄露断言通过
+- [ ] 幂等归档断言通过
+- [ ] AI 失败降级规则输出断言通过
+
+### 6.4 M2：完整闭环
+
+**目标**：S1-S7 + TTS + 备份恢复全链路可走通
+
+**范围**：
+- S5 期末冲刺（模拟考/速背卡/冲刺计划）
+- S6 家长报告（规则生成/冻结/脱敏/投递）
+- S7 课堂采集（许可确认/PCM WAV/whisper.cpp/handoff）
+- TTS 跨子系统（SAPI + edge-tts + 控制条 + 已复习标记）
+- 备份恢复（手动/定期/归档/恢复 + content_hash + integrity_check）
+- whisper.cpp Adapter
+- studybuddy-extension 业务工具注册（S5-S7 + TTS + 备份恢复工具）
+- 09-UI S5-S7 + TTS + 备份恢复 UI
+
+**退出门槛**：
+- [ ] S1-S7 全链路冒烟通过
+- [ ] E2E-01~09 通过
+- [ ] 家长报告 UUID 泄漏检测通过
+- [ ] TTS 跨子系统朗读冒烟通过
+- [ ] 备份恢复 content_hash + integrity_check 通过
+- [ ] 投递渠道独立失败隔离通过
+
+### 6.5 M3：对话与打磨
+
+**目标**：💬 对话 Tab 默认主入口可用，安全/性能/体验打磨完成
+
+**范围**：
+- 💬 对话 Tab（pi 原生 AI 对话默认主入口）
+- pi 原生能力承载（流式回复/工具调用视图/上下文压缩/@文件引用/多模型切换）
+- 学习场景业务化（学科标签/学习目标/错题关联/L1 画像注入/L3 会话检索）
+- AI 自主调用工具（S1-S7 + TTS + 备份恢复全部工具）
+- 工具调用跳转（对话→结构化 Tab）
+- 安全不变量校验脚本完善
+- E2E 全链回归（E2E-01~13）
+- 性能优化 / 体验打磨
+
+**退出门槛**：
+- [ ] E2E-10~13 对话 Tab 全通过
+- [ ] 应用启动默认打开对话 Tab
+- [ ] AI 自主调用工具 + 跳转结构化 Tab
+- [ ] @文件引用 + TTS 朗读 + L3 会话检索
+- [ ] 全部 E2E-01~13 通过
+- [ ] v0.1 发布候选
+
+---
+
+## 7. 任务登记表
+
+> 任务在实际开发中动态登记。以下为各里程碑的任务大纲（基于 03-Architecture §9.1 五阶段×架构组件推导），细化到 task-id 在开发启动时补全。
+
+### 7.1 M0 骨架搭建任务大纲
+
+| 分类 | 任务大纲 | 关联文档 | 治理阶段 |
+|---|---|---|---|
+| 壳层 | Electron 项目初始化（main + preload + renderer + agent-host） | 03-Arch §6.1 | 阶段4 |
+| 壳层 | contract 类型化 IPC + RPC 层（createRpcServer/createRpcClient） | 03-Arch §6.3 + 06-API §1.2 | 阶段3-4 |
+| 壳层 | 安全沙箱（sandbox:true + CSP + preload 受控桥接） | 03-Arch §6.4 + 08-Test §5.7 | 阶段4-5 |
+| 壳层 | toolchain 发现（Node/Python/uv/Git/WPS/whisper.cpp 探测） | 03-Arch §6.5 | 阶段2-4 |
+| 壳层 | credential-vault（safeStorage/DPAPI 加密存储） | 03-Arch §6.4 + 08-Test §5.6 | 阶段2-5 |
+| 壳层 | file-watch（fs.watch recursive + 防抖） | 03-Arch §6.6 | 阶段2-4 |
+| 数据层 | global.db schema 建库（semesters/parent_report_targets/backup_records/backup_schedules） | 05-ERD §2 | 阶段2-4 |
+| 数据层 | semester.db schema 建库（S1-S7 全量表 + 触发器 + CHECK + 索引） | 05-ERD §3 + §6 | 阶段2-4 |
+| 数据层 | 三层记忆 schema（L1 JSON / L2 BM25+图谱 / L3 FTS5） | 05-ERD §4 + 03-Arch §4 | 阶段2-4 |
+| 扩展层 | studybuddy-extension 空壳（createStudyBuddyExtension 可 setup 无工具） | 03-Arch §2.1 | 阶段3 |
+| 壳层 | 09-UI 三栏布局 + 标签页骨架（AppShell + TabBar 空壳） | 09-UI §2-§4 | 阶段4 |
+| 测试 | M0 系统冒烟（应用启动 + RPC 往返 + 建库 + 安全不变量六条） | 08-Test §5 | 阶段5 |
+
+### 7.2 M1 核心闭环 MVP 任务大纲
+
+| 分类 | 子系统 | 任务大纲 | 关联文档 | 治理阶段 |
+|---|---|---|---|---|
+| 业务Adapter | S1 | 学期/课程/考试/课表/任务 工具注册 + API | 07-WF §2.2 + 06-API §3.3 | 阶段2-4 |
+| 业务Adapter | S1 | OCR venv Adapter（课表图片识别） | 03-Arch §3.3 + 08-Test §3.3 | 阶段2-3 |
+| 业务Adapter | S2 | 资料/笔记/知识模块 工具注册 + API | 07-WF §2.3 + 06-API §3.4 | 阶段2-4 |
+| 业务Adapter | S2 | WPS COM 桥（doc/ppt/xls 转换） | 03-Arch §3.3 + 08-Test §3.3.1 | 阶段2-3 |
+| 业务Adapter | S2 | 资料转换管道（PDF/DOCX/PPTX/图片 OCR） | 07-WF §2.3 | 阶段2-4 |
+| 业务Adapter | S3 | 练习会话/出题/作答/批改 工具注册 + API | 07-WF §2.4 + 06-API §3.5 | 阶段2-4 |
+| 业务Adapter | S4 | 错题/薄弱点 工具注册 + API | 07-WF §2.5 + 06-API §3.6 | 阶段2-4 |
+| 扩展层 | 跨切 | before_agent_start / session_start / tool_call / tool_result 钩子 | 03-Arch §2.3 + 08-Test §4.2 | 阶段3 |
+| 壳层 | S1-S4 | 09-UI S1-S4 标签页业务 UI | 09-UI §4.3-§4.7 | 阶段4 |
+| 测试 | S1-S4 | E2E-01~03（学期初始化/资料笔记/练习→错题→薄弱点） | 08-Test §6.1 | 阶段5 |
+
+### 7.3 M2 完整闭环任务大纲
+
+| 分类 | 子系统 | 任务大纲 | 关联文档 | 治理阶段 |
+|---|---|---|---|---|
+| 业务Adapter | S5 | 模拟考/速背卡/冲刺计划 工具注册 + API | 07-WF §2.6 + 06-API §3.7 | 阶段2-4 |
+| 业务Adapter | S6 | 家长报告/投递/报告目标 工具注册 + API | 07-WF §3 + 06-API §3.8 | 阶段2-4 |
+| 业务Adapter | S6 | assertNoSensitiveLeak UUID 泄漏检测 | 03-Arch §8.2 + 08-Test §5.4 | 阶段2-5 |
+| 业务Adapter | S7 | 课堂采集/whisper.cpp Adapter 工具注册 + API | 07-WF §2.7 + 06-API §3.9 | 阶段2-4 |
+| 业务Adapter | S7 | whisper.cpp Adapter（PCM WAV 转写） | 03-Arch §3.3 + 08-Test §3.3.2 | 阶段2-3 |
+| 业务Adapter | TTS | TTS skill（SAPI + edge-tts + 降级） | 07-WF §4 + 06-API §3.10 | 阶段2-4 |
+| 业务Adapter | 备份 | 备份恢复（zip + content_hash + 恢复 + 调度） | 07-WF §5 + 06-API §3.11 | 阶段2-4 |
+| 壳层 | S5-S7 | 09-UI S5-S7 + TTS + 备份恢复 UI | 09-UI §4.8-§4.10 + §5-§6 | 阶段4 |
+| 测试 | 全 | E2E-04~09（冲刺/报告/采集/TTS/备份恢复） | 08-Test §6.2-§6.4 | 阶段5 |
+
+### 7.4 M3 对话与打磨任务大纲
+
+| 分类 | 子系统 | 任务大纲 | 关联文档 | 治理阶段 |
+|---|---|---|---|---|
+| 扩展层 | 对话 | 💬 对话 Tab（pi 原生 AI 对话默认主入口） | 09-UI §4.2 + 07-WF §2.8 | 阶段3-4 |
+| 扩展层 | 对话 | pi 原生能力承载（流式/工具调用视图/上下文压缩/@引用/多模型） | 09-UI §4.2 + 03-Arch §6.7 | 阶段3-4 |
+| 扩展层 | 对话 | 学习场景业务化（学科标签/学习目标/错题关联/L1注入/L3检索） | 09-UI §4.2 + 03-Arch §6.7 | 阶段3-4 |
+| 扩展层 | 对话 | AI 自主调用工具 + 跳转结构化 Tab | 07-WF §2.8 + 09-UI §4.2 | 阶段3-4 |
+| 扩展层 | 跨切 | model_select / turn_end 钩子（多模型持久化 + L3 增量索引） | 03-Arch §2.3 + 08-Test §4.2 | 阶段3 |
+| 壳层 | 对话 | 09-UI 对话 Tab 业务 UI + 会话管理 UI | 09-UI §4.2 + §7 | 阶段4 |
+| 测试 | 对话 | E2E-10~13（对话默认主入口/工具调用/@引用/TTS+L3检索） | 08-Test §6.5 | 阶段5 |
+| 测试 | 全 | E2E-01~13 全链回归 + 安全不变量最终校验 | 08-Test §6 + §5.7 | 阶段5 |
+
+---
+
+## 8. 修复记录区（08-Test §11.3 证据）
+
+> 冒烟失败修复记录写此区域作为可审计证据。格式：
+
+```
+### FR-<序号> <task-id> <日期>
+- 失败阶段：阶段X（单件/集成/冒烟/E2E）
+- 失败用例：<E2E-XX / 冒烟用例名>
+- 失败原因：<中文简述，脱敏不含路径/SQL/UUID>
+- 修复措施：<改了什么文件/逻辑>
+- 重跑结果：✅ 通过 / ❌ 再次失败（继续记录 FR-<序号+1>）
+- 退回阶段：阶段X-1（如有退回）
+```
+
+<!-- 修复记录在开发阶段动态追加 -->
+
+---
+
+## 9. 任务统计（随开发动态更新）
+
+| 里程碑 | 总任务数 | pending | in_progress | testing | done | blocked |
+|---|---|---|---|---|---|---|
+| M0 | 12 | 12 | 0 | 0 | 0 | 0 |
+| M1 | 10 | 10 | 0 | 0 | 0 | 0 |
+| M2 | 9 | 9 | 0 | 0 | 0 | 0 |
+| M3 | 8 | 8 | 0 | 0 | 0 | 0 |
+| **合计** | **39** | **39** | **0** | **0** | **0** | **0** |
+
+---
+
+## 10. 版本历史
+
+| 版本 | 日期 | 变更 |
+|---|---|---|
+| v0.1.0 | 2026-08-07 | 初始草案：文档定位（设计→实现桥梁）+ 任务登记规范（task-id 命名/字段/状态机）+ 任务分类体系（架构层/子系统/装配阶段三维度）+ 组件治理状态看板（五阶段跟踪）+ 完成门槛（五阶段进入退出条件 + 合并master门槛 + 退回机制）+ 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 任务登记表大纲（39 任务大纲基于 03-Arch §9.1 推导）+ 修复记录区（08-Test §11.3 证据）+ 任务统计。输入：01-TRD + 02-PRD + 03-Arch §9 + 05-ERD + 06-API + 07-Workflow + 08-Test §11 + 09-UI |

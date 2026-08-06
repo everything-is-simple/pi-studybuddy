@@ -1,9 +1,9 @@
 # 01-TRD 技术需求
 
-**版本**：v0.1.0
-**日期**：2026-08-06
-**状态**：📝 草案，待审查
-**上游**：docs/00 索引；参考：`H:\pi-references\pi`、`pi-skills`、`inno-agent`、`pi-desktop`
+**版本**：v0.2.1
+**日期**：2026-08-07
+**状态**：✅ TRD 决策已定案（§7 五点待决项经用户明确批准），待 02-PRD 推进（§2.4 会话管理行补"对话默认主入口"语义）
+**上游**：docs/00 索引；参考：`H:\pi-references\pi`、`pi-skills`、`inno-agent`、`pi-desktop`；核对依据：[docs/prep-参考点核对表.md](./prep-参考点核对表.md)
 
 ---
 
@@ -61,7 +61,7 @@
 | IPC | `contract/` 类型化 IPC 契约 + RPC 层（TypeScript 约束） | ✅ 采用 |
 | 安全 | `sandbox: true`、严格 CSP、preload 只暴露受控桥接 | ✅ 采用 |
 | 内置浏览器 | Main-owned `WebContentsView`，远程网页不进 renderer | 可选（学生端以本机内容为主，浏览能力按需） |
-| 会话管理 | 创建/切换/重命名/搜索/流式回复/工具调用视图 | ✅ 采用 |
+| 会话管理 | 创建/切换/重命名/搜索/流式回复/工具调用视图 | ✅ 采用（**对话默认主入口**：应用启动即打开"💬 对话"标签页，承载 pi 原生 AI 对话，不废弃；详见 02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2） |
 | 技能管理 | 搜索/安装/配置 Skills、插件管理 | ✅ 采用 |
 | 文件体验 | 项目目录/Git 分支/文件浏览/预览（Markdown/KaTeX/Mermaid/docx） | ✅ 采用 |
 | 工具发现 | 发现验证 Node/Python/uv/Git/Bash，统一绝对路径执行环境 | ✅ 采用（OCR venv、whisper.cpp 依赖此） |
@@ -78,7 +78,7 @@
 | 办公衍生 | odt、ods、odp、rtf、epub | jszip 提取 / RTF 自写剥离 |
 | 音频 | WAV（受控）→ whisper.cpp | S7-MVP 底座迁移；扩展 mp3/m4a 经 ffmpeg 转 WAV（备选） |
 | TTS | 文字朗读 | Windows SAPI（系统自带）或 edge-tts（可选），封装为 skill |
-| 拒绝 | 压缩包、邮件、宏文档（xlsm/docm/pptm） | 明确提示，不解析 |
+| 拒绝（资料导入） | 压缩包（zip/7z/rar 当学习内容解析）、邮件、宏文档（xlsm/docm/pptm） | 明确提示，不解析。注：备份恢复用 zip 作容器不在此列（见 02-PRD §3.10） |
 
 > 关键决策记录：**不引入 SheetJS**（npm `xlsx@0.18.5` 有 CVE-2023-30533/CVE-2023-22365 且 registry 停更）；doc/ppt/xls 用 WPS COM 转换而非自行解析二进制。
 
@@ -104,16 +104,32 @@
 - ai-studybuddy 已验证组件（转换器、OCR、whisper.cpp 集成、报告生成）：以"迁移组件"身份仍需走单件测试（在新仓库环境验证 Node 24 + WPS COM + venv）。
 - 新组件（WPS COM 桥、TTS、pi-desktop 桌面壳）：严格走五阶段。
 
-## 7. 待办决策（TRD 审查点）
+## 7. 已定案决策（TRD 审查点 → 已定案）
 
-1. WPS COM 桥：直接 node 调用（`node-windows`/COM interop）还是 Python `pywin32` 子进程？→ 倾向 Python（OCR venv 已有 Python 运行时，pywin32 成熟）。
-2. 桌面壳：直接 fork pi-desktop（Apache-2.0 合法）还是取其架构自建？→ 倾向取架构自建业务化壳，避免携带无关功能。
-3. 会话与业务数据边界：pi 会话目录（`~/.pi`）与业务数据根（`%LOCALAPPDATA%\PiStudyBuddy`）物理隔离。
-4. TTS 引擎选型：SAPI（零依赖）vs edge-tts（音质好、需网络）。
-5. 文档系统语言：中文优先（与 ai-studybuddy 一致）。
+> 2026-08-07 用户明确批准。依据：[docs/prep-参考点核对表.md](./prep-参考点核对表.md) 四参考仓库核对结论。
+
+| # | 决策项 | 定案 | 理由与依据 |
+|---|---|---|---|
+| 1 | WPS COM 桥 | **Python pywin32 子进程** | 复用 OCR venv 的 Python 运行时，零新依赖；pywin32 是 Windows COM 自动化成熟方案；与 whisper.cpp/OCR 统一 Python 技术栈；子进程隔离 WPS 崩溃不影响主进程。node COM interop（winax 等）维护差、Node 版本 ABI 易失效。核对表确认四参考仓库均无 WPS COM，需独立设计 |
+| 2 | 桌面壳 | **取 pi-desktop 架构自建业务化壳** | 精确控制业务边界，五件架构骨架（contract 类型化 IPC + host-manager utilityProcess + credential-vault DPAPI + toolchain 发现-探测-安装-绝对路径 + file-watch）直接搬运改名；业务层（学科/学情/错题/学习计划）独立自建。Plugins 省略（不让学生接触 pi 插件机制），Skills 体系替换为"学习技能包"。Apache-2.0 允许 fork 但会携带通用 coding agent 会话/Skills.sh/微信渠道等无关功能与技术债 |
+| 3 | 数据隔离 | **pi 会话目录 `~/.pi` 与业务数据根物理隔离** | pi 会话目录 `~/.pi` 由 pi 自管（auth.json/models.json/settings.json 在 `~/.pi/agent/`，pi-desktop session-reader 读此处），pi-studybuddy 不侵入。业务数据根 `%LOCALAPPDATA%\PiStudyBuddy` 存学期注册表/semester.db/家长报告/学情。密钥走 pi-desktop credential-vault（safeStorage/DPAPI），键名从 `channel:xxx` 改为 `modelProvider:xxx`/`parentContact:xxx` |
+| 4 | TTS 引擎 | **SAPI 默认 + edge-tts 可选 skill** | Windows SAPI 系统自带零依赖、离线可用，符合单机桌面与零新依赖优先原则；edge-tts 音质好但需网络，封装为可选 skill 按需切换（progressive disclosure：description 常驻，正文按需加载）。核对表确认四参考仓库均无 TTS，需自建 |
+| 5 | 文档语言 | **中文优先** | 与 ai-studybuddy 一致；学生用户母语中文；文档/错误信息/UI 全中文；代码标识符（变量/函数/类名）用英文，注释用中文 |
+
+**定案影响**：以上五项不再作为"待决"项重新讨论，后续 02-PRD/03-Architecture/09-UI 设计必须以此为前提；如需变更须走显式变更评审流程。
 
 ## 8. 下一步
 
-- 02-PRD：产品需求（业务闭环定义）
-- 03-Architecture：pi 扩展层 / 业务 Adapter / 数据层 / 技能体系设计
-- 09-UI：使用者介面设计（基于 pi-desktop 架构决策）
+- 02-PRD：产品需求（业务闭环定义、使用者、家长报告边界、kaobuddy 基本面吸收结论）
+- 03-Architecture：pi 扩展层 / 业务 Adapter / 数据层 / 技能体系设计（输入：[docs/prep-参考点核对表.md](./prep-参考点核对表.md) 跨仓库核对结论）
+- 09-UI：使用者介面设计（基于 pi-desktop 架构自建业务化壳决策）
+
+---
+
+## 9. 版本历史
+
+| 版本 | 日期 | 变更 |
+|---|---|---|
+| v0.2.1 | 2026-08-07 | §2.4 会话管理行补"对话默认主入口"语义——应用启动即打开"💬 对话"标签页承载 pi 原生 AI 对话（02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2 贯通） |
+| v0.2.0 | 2026-08-07 | §7 五点待决项经用户明确批准定案（Python pywin32 / 自建壳 / 物理隔离 / SAPI 默认 / 中文优先）；新增 §9 版本历史；关联 docs/prep-参考点核对表.md 作为核对依据 |
+| v0.1.0 | 2026-08-06 | 初始草案：技术底座、格式矩阵、系统形态、安全边界、待办决策 |
