@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.0
+**版本**：v0.1.1
 **日期**：2026-08-07
-**状态**：✅ 已审查批准（里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -43,6 +43,30 @@
 4. **壳层先于业务**：装配顺序 main+preload+renderer+agent-host+contract → 公用零件 → 业务模块（03-Architecture §9.2）
 5. **修复留证据**：冒烟失败修复记录写 §8，可审计可追溯
 6. **任务状态实时更新**：任务状态变更同步到本文件，不另立跟踪系统
+
+### 1.4 治理体系就绪状态（M0 启动前置）
+
+> 截至 2026-08-07，pi-studybuddy 治理体系已全部就绪，可启动 M0 骨架开发。
+
+| 类别 | 资产 | 状态 |
+|---|---|---|
+| 仓库宪章 | [AGENTS.md](../AGENTS.md) v0.1.0 | ✅ 已审查批准 |
+| 项目总览 | [README.md](../README.md) v0.1.0 | ✅ 已审查批准 |
+| 开发规范 | [docs/10-开发规范](../docs/10-开发规范-Dev-Rules.md) v0.1.0 | ✅ 已审查批准 |
+| 组件装配 | [docs/11-组件装配](../docs/11-组件装配-Component-Assembly.md) v0.1.0 | ✅ 已审查批准 |
+| 目录治理 | [docs/12-目录治理](../docs/12-目录治理-Directory-Governance.md) v0.1.0 | ✅ 已审查批准 |
+| 治理 Skills | [.pi/skills/studybuddy-task-complete](../.pi/skills/studybuddy-task-complete/SKILL.md) + [studybuddy-component-assembly](../.pi/skills/studybuddy-component-assembly/SKILL.md) | ✅ 已创建 |
+| 工作流模板 | [.pi/prompts/wr.md](../.pi/prompts/wr.md) + [plan.md](../.pi/prompts/plan.md) | ✅ 已创建 |
+| 治理脚本 | [scripts/verify.mjs](../scripts/verify.mjs) + [check-docs-governance.mjs](../scripts/check-docs-governance.mjs) + [check-contract-coverage.mjs](../scripts/check-contract-coverage.mjs) | ✅ 已创建并试运行通过（design 阶段） |
+| 任务计划目录 | [.plan/](../.plan/) | ✅ 已就绪（无执行中任务） |
+| 实施记录目录 | [.record/](../.record/) | ✅ 已就绪（空，待 M0 首任务收尾写入） |
+
+**启动 M0 的前置条件已全部满足**：
+- 设计阶段 10 文档全部 ✅ 已审查批准（详见 [00-索引 §七](../docs/00-文档索引-Index.md)）
+- 治理体系 5 类资产全部就绪
+- 用户已批准治理体系（分五批推进，全部审查通过）
+
+**下一步**：等待用户明确选择 M0 首个任务（建议 `T-M0-001 Electron 四进程骨架`）并批准开工。
 
 ---
 
@@ -417,4 +441,5 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.1 | 2026-08-07 | 追加 §1.4 治理体系就绪状态（M0 启动前置）：10 类治理资产清单 + 启动 M0 前置条件确认 + 下一步指引。治理体系五批资产全部就绪，可启动 M0 骨架开发 |
 | v0.1.0 | 2026-08-07 | 初始草案：文档定位（设计→实现桥梁）+ 任务登记规范（task-id 命名/字段/状态机）+ 任务分类体系（架构层/子系统/装配阶段三维度）+ 组件治理状态看板（五阶段跟踪）+ 完成门槛（五阶段进入退出条件 + 合并master门槛 + 退回机制）+ 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 任务登记表大纲（39 任务大纲基于 03-Arch §9.1 推导）+ 修复记录区（08-Test §11.3 证据）+ 任务统计。输入：01-TRD + 02-PRD + 03-Arch §9 + 05-ERD + 06-API + 07-Workflow + 08-Test §11 + 09-UI |
