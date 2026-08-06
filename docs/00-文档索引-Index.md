@@ -22,6 +22,7 @@
 | earendil-works/pi | `H:\pi-references\pi` | AI 底座，扩展/skill/工具 API 来源 |
 | badlogic/pi-skills | `H:\pi-references\pi-skills` | 可复用技能（brave-search、browser-tools、transcribe 等） |
 | hhyqhh/inno-agent | `H:\pi-references\inno-agent` | 架构范本（MIT）：registerTool 注册、分层记忆、技能系统 |
+| DLYZZT/pi-desktop | `H:\pi-references\pi-desktop` | 使用者介面范本（Apache-2.0）：Electron 三进程 + 类型化 IPC + 内置浏览器 + 技能/插件管理 |
 
 参考仓库只读，不进入 pi-studybuddy 的 workspace；借鉴结论必须先回填到本索引对应的编号文档。
 
@@ -38,6 +39,7 @@
 | 06 | API契约-API-Contracts.md | 📝 待创建 | `{success, data, error}` 信封、路由表 |
 | 07 | 工作流-Workflow.md | 📝 待创建 | 学生主路径 / 家长报告 / 备份恢复 / 组件治理流程 |
 | 08 | 测试验收-Test-Plan.md | 📝 待创建 | 单件测试 / 集成测试 / 系统冒烟 / 系统 E2E |
+| 09 | 使用者介面-UI-Design.md | 📝 待创建 | 桌面壳/Web 界面/会话列表/技能管理（参考 pi-desktop） |
 | subsystems/ | 业务子系统文档（S1-S7 收编） | 📝 待创建 | 学习节奏/资料笔记/限时练习/错题/冲刺/家长报告/课堂采集 |
 
 ## 四、组件治理流程（强制）
@@ -71,7 +73,7 @@
 ## 七、当前状态
 
 - [x] 初始化仓库（git init + 关联远端 `https://github.com/everything-is-simple/pi-studybuddy.git`）
-- [x] 下载三参考仓库到 `H:\pi-references`
+- [x] 下载四参考仓库到 `H:\pi-references`（pi / pi-skills / inno-agent / pi-desktop）
 - [x] 本文档（00 索引）
 - [ ] 01-TRD：技术需求（下一步）
 
@@ -79,4 +81,5 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.1 | 2026-08-06 | 加入 pi-desktop 参考仓库（使用者介面范本，Apache-2.0）；文档结构增加 09-使用者介面 |
 | v0.1.0 | 2026-08-06 | 初始版本：仓库初始化、参考仓库下载梳理、文档结构定义 |
