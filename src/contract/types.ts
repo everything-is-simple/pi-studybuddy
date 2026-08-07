@@ -391,6 +391,8 @@ export interface PracticeResult {
     isCorrect: boolean;
     correctAnswer: unknown;
     explanation?: string;
+    /** 该题的 practice_answer 行 ID（mistakes.archive 需要此 ID 归档错题） */
+    practiceAnswerId?: string;
   }>;
 }
 

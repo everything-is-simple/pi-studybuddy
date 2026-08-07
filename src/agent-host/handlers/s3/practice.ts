@@ -216,13 +216,14 @@ export function createPracticeHandlers(ctx: S3Context) {
         const grade = gradeAnswer(qType, studentAnswer, correctAnswer, acceptableAnswers);
 
         // 写 practice_answers（触发器 T5 校验 question 属于 session）
+        const answerId = randomUUID();
         db.prepare(
           `INSERT INTO practice_answers
             (id, practice_session_id, question_id, course_instance_id, student_answer,
              is_correct, graded_at, time_spent_ms, created_at)
            VALUES (@id, @psid, @qid, @cid, @ans, @isCorrect, @gradedAt, @timeSpent, @createdAt)`,
         ).run({
-          id: randomUUID(),
+          id: answerId,
           psid: sessionId,
           qid: qId,
           cid: session.course_instance_id as string,
@@ -243,6 +244,7 @@ export function createPracticeHandlers(ctx: S3Context) {
           isCorrect: grade.isCorrect,
           correctAnswer: grade.correctAnswer,
           explanation: (qRow.explanation as string) ?? undefined,
+          practiceAnswerId: answerId,
         });
       }
 
@@ -307,6 +309,7 @@ export function createPracticeHandlers(ctx: S3Context) {
           isCorrect: answerRow ? (answerRow.is_correct as number) === 1 : false,
           correctAnswer: qWithAnswer.correctAnswer,
           explanation: qWithAnswer.explanation,
+          practiceAnswerId: answerRow?.id as string | undefined,
         };
       });
 

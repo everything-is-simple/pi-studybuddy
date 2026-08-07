@@ -19,6 +19,7 @@ export default defineConfig({
     ],
     environment: "node",
     globals: false,
+    exclude: ["tests/e2e/**", "node_modules/**"],
     deps: {
       optimizer: {
         ssr: {

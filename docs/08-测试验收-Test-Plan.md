@@ -1,7 +1,7 @@
 # 08 测试验收计划
 
-**版本**：v0.1.1
-**日期**：2026-08-07
+**版本**：v0.1.2
+**日期**：2026-08-08
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.2 §7](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §3/§8/§9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.0 §6](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.0](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.0 §8/§9](./07-工作流-Workflow.md)
 **下游**：04-Todo、09-UI
@@ -23,7 +23,7 @@ pi-studybuddy 的测试要回答三个问题：
 
 ```
         ┌───────────┐
-        │ 系统 E2E  │  Playwright，全链回归，少量高价值（~24）
+        │ 系统 E2E  │  vitest + Electron 启动，全链回归，少量高价值（~24）
         ├───────────┤
         │ 系统冒烟  │  vitest + 真实组件，每子系统 1 条主路径
         ├───────────┤
@@ -52,7 +52,7 @@ pi-studybuddy 的测试要回答三个问题：
 | **单件测试** | 阶段 2 | registerTool 契约 / 数据层触发器约束 / 外部桥 / 技能夹具 / TTS skill | vitest（TS）+ pytest（Python 桥） | Node + venv | ≥ 300 |
 | **集成测试** | 阶段 3 | studybuddy-extension × pi 底座 / 工具 × pi.on 钩子 / createAgentSession 真实 provider | vitest | Node + pi 真实包 | ≥ 60 |
 | **系统冒烟** | 阶段 5a | S1-S7 主路径 / TTS / 备份恢复 / 家长报告脱敏 / 路径守卫 / credential-vault / 安全不变量六条 | vitest + check-desktop-security.mjs | 真实 Electron + 真实组件（外部 mock） | ≥ 30 |
-| **系统 E2E** | 阶段 5b | 学生主路径 / 家长报告 / TTS / 备份恢复 全链回归 | Playwright | 真实 Electron 启动 | ≥ 24 |
+| **系统 E2E** | 阶段 5b | 学生主路径 / 家长报告 / TTS / 备份恢复 全链回归 | vitest + Electron 启动 | 真实 Electron 启动 | ≥ 24 |
 
 > 数量目标是"等价覆盖 ai-studybuddy 已验证测试面"，非硬性 KPI；以断言密度与铁律覆盖率为准。
 
@@ -394,9 +394,11 @@ assert(htmlPreviewCsp.includes("form-action 'none'"), "HTML 预览独立 CSP");
 
 ---
 
-## 6. 系统 E2E 测试（阶段 5b，Playwright）
+## 6. 系统 E2E 测试（阶段 5b，vitest + Electron 启动）
 
 > 真实 Electron 启动，全链回归。外部服务 mock，但数据层与组件真实。
+>
+> **框架选择**（v0.1.2 修订）：pi-studybuddy 是 Electron 单体（无独立后端），ai-studybuddy 的 Playwright webServer 模式不适用；参考 pi-desktop `scripts/test-browser-agent-e2e.mjs` 范式，采用 vitest + `_electron.launch()` 直接启动 Electron 窗口，通过 `webContents.executeJavaScript` 驱动 UI 交互 + RPC 通道验证数据层。不引入 Playwright 依赖（AGENTS.md §6.4 禁止过度工程化）。
 
 ### 6.1 学生主路径 E2E
 
@@ -634,11 +636,20 @@ src/
         ├ triggers.test.ts                   ← 触发器单件
         └ state-machines.test.ts            ← 状态机单件
 
-e2e/                                          ← Playwright E2E
-  ├ student-main-path.e2e.ts
-  ├ parent-report.e2e.ts
-  ├ tts.e2e.ts
-  └ backup-restore.e2e.ts
+e2e/                                          ← vitest + Electron E2E
+  ├ helpers/
+  │   ├ electron-launcher.ts
+  │   ├ rpc-driver.ts
+  │   └ fixtures.ts
+  ├ e2e-01-semester-init.test.ts
+  ├ e2e-02-materials-notes.test.ts
+  ├ e2e-03-practice-mistake-weakpoint.test.ts
+  ├ e2e-04-cram.test.ts
+  ├ e2e-05-capture.test.ts
+  ├ e2e-06-parent-report.test.ts
+  ├ e2e-07-tts.test.ts
+  ├ e2e-08-backup-restore.test.ts
+  └ e2e-09-scheduled-backup.test.ts
 
 scripts/
   └ wps-bridge/                              ← Python 桥 pytest
@@ -651,7 +662,7 @@ scripts/
 ```
 pnpm test           # 全部 vitest 单件+集成
 pnpm test:smoke      # 系统冒烟（真实 Electron）
-pnpm test:e2e        # Playwright E2E
+pnpm test:e2e        # vitest + Electron E2E
 pnpm precheck        # check-desktop-security.mjs + 类型检查 + lint
 pytest scripts/wps-bridge/   # Python 桥单件
 ```
@@ -692,5 +703,6 @@ pytest scripts/wps-bridge/   # Python 桥单件
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.2 | 2026-08-08 | §6 E2E 框架由 Playwright 改为 vitest + Electron 启动。原因：pi-studybuddy 是 Electron 单体（无独立后端），ai-studybuddy 的 Playwright webServer 模式不适用；参考 pi-desktop `scripts/test-browser-agent-e2e.mjs` 范式，采用 vitest + `_electron.launch()` 直接启动，通过 `webContents.executeJavaScript` 驱动 UI 交互。依据：AGENTS.md §6.4 禁止过度工程化 + 用户批准 T-M1-010 方案 A。影响：§1.2 测试金字塔 + §2 分层总览 + §6 标题与说明 + §10.2 目录结构 + §10.3 运行命令，无 E2E 用例设计变更 |
 | v0.1.1 | 2026-08-07 | 按用户反馈增强：§6.5 新增 E2E-10~13 通用 AI 对话 E2E（默认主入口 + AI 自主调用工具 + @文件引用 + TTS 朗读 + L3 会话检索）；§7.1 闭环完整性表补"通用 AI 对话默认主入口"行；响应用户反馈"pi 天生自带对话，不能废弃 ai 输入" |
 | v0.1.0 | 2026-08-07 | 初始草案：测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）对应五阶段；单件测试（registerTool 契约断言 + 数据层触发器/约束/状态机 + 外部桥 WPS COM/whisper.cpp/OCR + 技能夹具 + TTS skill）；集成测试（extension×pi 底座 + pi.on 钩子 + createAgentSession）；系统冒烟（S1-S7 主路径 + TTS + 备份恢复 + 家长报告脱敏 + 路径守卫 + credential-vault + 安全不变量六条）；系统 E2E（Playwright 学生主路径/家长报告/TTS/备份恢复）；关键断言矩阵对应 02-PRD §7 六类成功标准；11 状态机测试矩阵；夹具与运行数据隔离（H:\pi-studybuddy-tmp\runs）；命名与目录组织；合并门禁。输入：02-PRD §7 + 03-Architecture §3/§8/§9 + 05-ERD §6 + 06-API + 07-Workflow §8/§9 |
