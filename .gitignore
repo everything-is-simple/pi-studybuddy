@@ -23,6 +23,12 @@ release/
 coverage/
 *.tsbuildinfo
 
+# Python 缓存（scripts/ocr-bridge 等桥脚本）
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
 # 日志
 *.log
 logs/
