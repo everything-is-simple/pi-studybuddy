@@ -13,12 +13,20 @@
  * │ 状态栏（模型 / 备份 / 调度 / TTS）                    │
  * └─────────────────────────────────────────────────────┘
  *
- * M0 骨架阶段：纯布局占位，不接业务 RPC。
- * 借鉴 pi-desktop AppShell.tsx（仅参考布局结构，不复制实现）。
+ * T-M1-009：根据 activeTabId 渲染对应 S1-S4 业务 Tab 组件。
+ *   chat/cram/report/capture 留待后续里程碑。
  */
 import React, { useState } from "react";
 import { TABS, DEFAULT_TAB_ID } from "../tabs";
 import { TabBar } from "./TabBar";
+import { HomeTab } from "./tabs/HomeTab";
+import { MaterialsTab } from "./tabs/MaterialsTab";
+import { NotesTab } from "./tabs/NotesTab";
+import { PracticeTab } from "./tabs/PracticeTab";
+import { MistakesTab } from "./tabs/MistakesTab";
+import { TabContainer } from "./common/TabContainer";
+import { EmptyState } from "./common/EmptyState";
+import type { TypedRpcClient } from "../rpc-client";
 
 interface Props {
   /** RPC 通道状态文本（由 App.tsx 传入，骨架阶段用于显示连通性） */
@@ -27,9 +35,58 @@ interface Props {
   rpcResult?: string | null;
   /** 手动触发 RPC ping 验证 */
   onVerifyRpc?: () => void;
+  /** 类型化 RPC 客户端（注入各 Tab 组件） */
+  rpc?: TypedRpcClient;
+  /** 当前学期 ID */
+  semesterId?: string;
+  /** 当前课程 ID */
+  courseId?: string;
 }
 
-export function AppShell({ rpcStatus, rpcResult, onVerifyRpc }: Props): React.JSX.Element {
+/** 根据 activeTabId 渲染对应 Tab 组件 */
+function renderTab(
+  activeTabId: string,
+  rpc: TypedRpcClient | undefined,
+  semesterId: string | undefined,
+  courseId: string | undefined,
+): React.JSX.Element {
+  switch (activeTabId) {
+    case "home":
+      return <HomeTab rpc={rpc} semesterId={semesterId} />;
+    case "materials":
+      return <MaterialsTab rpc={rpc} courseId={courseId} />;
+    case "notes":
+      return <NotesTab rpc={rpc} courseId={courseId} />;
+    case "practice":
+      return <PracticeTab rpc={rpc} courseId={courseId} />;
+    case "mistakes":
+      return <MistakesTab rpc={rpc} courseId={courseId} />;
+    case "chat":
+    case "cram":
+    case "report":
+    case "capture":
+      return (
+        <TabContainer>
+          <EmptyState message="该标签页待后续里程碑填充" />
+        </TabContainer>
+      );
+    default:
+      return (
+        <TabContainer>
+          <EmptyState message="未知标签页" />
+        </TabContainer>
+      );
+  }
+}
+
+export function AppShell({
+  rpcStatus,
+  rpcResult,
+  onVerifyRpc,
+  rpc,
+  semesterId,
+  courseId,
+}: Props): React.JSX.Element {
   const [activeTabId, setActiveTabId] = useState(DEFAULT_TAB_ID);
 
   return (
@@ -116,45 +173,32 @@ export function AppShell({ rpcStatus, rpcResult, onVerifyRpc }: Props): React.JS
             <span>朗读控制条占位</span>
           </div>
 
-          {/* Tab 内容占位 */}
-          <div
-            style={{
-              flex: 1,
-              overflow: "auto",
-              padding: 16,
-              fontSize: 13,
-              color: "var(--text-muted, #888)",
-            }}
-          >
-            <p>当前标签：{TABS.find((t) => t.id === activeTabId)?.label}</p>
-            <p style={{ marginTop: 8 }}>（M0 骨架阶段，业务内容待后续里程碑填充）</p>
+          {/* Tab 内容：根据 activeTabId 渲染对应业务组件（T-M1-009） */}
+          {renderTab(activeTabId, rpc, semesterId, courseId)}
 
-            {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
-            {rpcStatus && (
-              <div style={{ marginTop: 24, fontSize: 12 }}>
-                <p>RPC 状态：{rpcStatus}</p>
-                {onVerifyRpc && (
-                  <button
-                    type="button"
-                    onClick={onVerifyRpc}
-                    style={{
-                      padding: "4px 12px",
-                      fontSize: 12,
-                      cursor: "pointer",
-                      border: "1px solid var(--border, #e0e0e0)",
-                      background: "var(--bg-panel, #f5f5f5)",
-                      borderRadius: 4,
-                    }}
-                  >
-                    验证 RPC 通道
-                  </button>
-                )}
-                {rpcResult && (
-                  <p style={{ marginTop: 4 }}>ping 结果：{rpcResult}</p>
-                )}
-              </div>
-            )}
-          </div>
+          {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
+          {rpcStatus && activeTabId === DEFAULT_TAB_ID && (
+            <div style={{ padding: 16, fontSize: 12 }}>
+              <p>RPC 状态：{rpcStatus}</p>
+              {onVerifyRpc && (
+                <button
+                  type="button"
+                  onClick={onVerifyRpc}
+                  style={{
+                    padding: "4px 12px",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    border: "1px solid var(--border, #e0e0e0)",
+                    background: "var(--bg-panel, #f5f5f5)",
+                    borderRadius: 4,
+                  }}
+                >
+                  验证 RPC 通道
+                </button>
+              )}
+              {rpcResult && <p style={{ marginTop: 4 }}>ping 结果：{rpcResult}</p>}
+            </div>
+          )}
         </main>
 
         {/* 右侧面板 — 上下文区占位 */}
