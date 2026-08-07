@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.30
+**版本**：v0.1.31
 **日期**：2026-08-07
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -105,6 +105,7 @@
 - [x] 04-Todo v0.1.16：登记 T-M1-001 开工 + 前置 DTO 对齐 schema（contract/types.ts DTO 与 05-ERD schema 10 处不一致，按权威链 05-ERD > types.ts 修正 7 个 S1 DTO；新增 §7.2.1 M1 任务登记表 T-M1-001 in_progress；171 测试全绿）
 - [x] 04-Todo v0.1.17：登记 T-M1-001 完成（S1 学习节奏 25 RPC handler + 6 studybuddy_* 工具注册 + S1Context 句柄管理 + lookup 跨库查找 + SqlParams 类型对齐 node:sqlite；studybuddy-extension 接入 S1 工具注册；237 测试全绿，verify 7+2 全通过；§9 统计 M1 1 done + 9 pending）
 - [x] 04-Todo v0.1.21：登记 T-M1-003 完成（S3 限时练习 5 RPC handler + 3 studybuddy_* 工具注册 + S3Context 复用 S1/S2 模式 + QuestionGenerator 可注入 mock + grader 规则批改三策略 + DTO 对齐 ERD §3.3 三表；studybuddy-extension 接入 S3 工具注册共 15 工具；336 测试全绿，verify 7+2 全通过；§9 统计 M1 3 done + 6 pending）
+- [x] 04-Todo v0.1.23：登记 T-M1-004 完成（S4 错题/薄弱点 10 RPC handler + 4 studybuddy_* 工具注册 + 幂等归档 + 六分类确认 + AI 降级 + 状态机 + 薄弱点归纳；schema 修复 mistake_evidence.source_practice_answer_id 改为可空；studybuddy-extension 接入 S4 共 19 工具；383 测试全绿，verify 7+2 全通过；§9 统计 M1 4 done）
 - [x] 04-Todo v0.1.19：登记 T-M1-002 完成（S2 资料/笔记/知识模块 17 RPC handler + 6 studybuddy_* 工具注册 + S2Context 复用 S1 模式 + lookup 跨库查找 + DTO 对齐 ERD §3.2 七表 5 DTO + JobStatus/JobType；studybuddy-extension 接入 S2 工具注册；295 测试全绿，verify 7+2 全通过；§9 统计 M1 2 done + 8 pending）
 - [x] 01-TRD v0.2.2：§7 加决策 6「v0.1 交付形态：源码形态（pnpm dev），不打包 .exe」（依据 AGENTS.md §1.2 + §6.4；M0 完成后 04-Todo §6.0 补版本演进说明）
 - [x] 10-开发规范 v0.1.0 ✅ 已审查批准：16 步开发流程（准备/执行/收尾三阶段）+ TDD 纪律 + 单一执行任务门禁 + 文档治理检查 + diff 检查 + 用户授权门
@@ -119,6 +120,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.31 | 2026-08-07 | T-M1-004 S4 错题/薄弱点工具注册 + API 完成（M1 第 4 任务）：10 RPC handler（mistakes.list/get/archive/confirmErrorCause/suggestErrorCause/redo + weakPoints.list/get/resolve/regress）+ 4 studybuddy_* 工具 + S4Context 复用 S1/S2/S3 模式 + ErrorCauseAdvisor 可注入 mock + aggregator 私有 evidence_count≥2 归纳 + DTO 对齐 ERD §3.4 三表；schema 修复 mistake_evidence.source_practice_answer_id 改为可空（redo 证据不依赖新 practice_answer，规避 UNIQUE(practice_session_id, question_id) + T5 触发器冲突）；studybuddy-extension 接入 S4 工具注册共 19 工具；383 测试全绿（25 test files，S4 集成 28 + 单件 + 扩展），verify 7+2 全通过；04-Todo → v0.1.23（§7.2.1 T-M1-004 done + §9 统计 M1 4 done）；§三表格 04-Todo 版本号同步；§七登记 T-M1-004 done |
 | v0.1.30 | 2026-08-07 | T-M1-003 S3 限时练习工具注册 + API 完成（M1 第 3 任务）：5 RPC handler（practice.createSession 校验 questionCount 5-20 + 可注入 QuestionGenerator mock 生成题 / getQuestions 作答前 DTO 防泄露 / submit 规则批改三策略（单选精确/多选 deepEquals/填空 normalize+多等价答案）/ getResult 含逐题正确答案解析 / listSessions）+ 3 studybuddy_* 工具 + S3Context 复用 S1/S2 模式 + QuestionGenerator 可注入 + grader.ts 纯确定性规则不调 LLM + DTO 对齐 ERD §3.3 三表（PracticeSession/PracticeResult 补字段 + status 改 in_progress/submitted/graded）；AI 失败不创建空 session→INTERNAL_ERROR；studybuddy-extension 接入 S3 工具注册共 15 工具；单件 15 + 集成 26 + 扩展 14 测试，336 测试全绿，verify 7+2 全通过；04-Todo → v0.1.21（§7.2.1 T-M1-003 done + §9 统计 M1 3 done）；§三表格 04-Todo 版本号同步；§七登记 T-M1-003 done |
 | v0.1.29 | 2026-08-07 | T-M1-002 S2 资料/笔记/知识模块工具注册 + API 完成（M1 第 2 任务）：17 RPC handler（materials 9 含状态机+Job 登记 / notes 3 / modules 3 含学习状态机 / jobs 2）+ 6 studybuddy_* 工具（TypeBox schema + execute 薄封装 handler）+ S2Context 复用 S1 模式 + lookup 跨库查找 + DTO 对齐 ERD §3.2 七表（5 DTO + JobStatus/JobType）；studybuddy-extension 接入 S2 工具注册（12 工具并列）；单件 24 + 集成 34 + 扩展 14 测试，295 测试全绿，verify 7+2 全通过；04-Todo → v0.1.19（§7.2.1 T-M1-002 done + §9 统计 M1 2 done）；§三表格 04-Todo 版本号同步；§七登记 T-M1-002 done |
 | v0.1.28 | 2026-08-07 | T-M1-001 S1 学习节奏工具注册 + API 完成（M1 首任务）：25 RPC handler（semesters 6 含跨库写+状态机 / courses 5 / exams 4 含四态确认 / schedule 4 / tasks 4 含 dailyBrief 规则聚合 / events 2）+ 6 studybuddy_* 工具（TypeBox schema + execute 薄封装 handler）+ S1Context 句柄管理 + lookup 跨库查找 + SqlParams 类型对齐 node:sqlite SQLInputValue；studybuddy-extension 接入 S1 工具注册；单件 30 + 集成 33 + 扩展契约 5 测试，237 测试全绿，verify 7+2 全通过；04-Todo → v0.1.17（§7.2.1 T-M1-001 done + §9 统计 M1 1 done）；§三表格 04-Todo 版本号同步；§七登记 T-M1-001 done（含 v0.1.16 开工补登记） |

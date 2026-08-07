@@ -333,7 +333,7 @@ CREATE INDEX idx_mistake_status ON mistakes(status);
 CREATE TABLE mistake_evidence (
   id TEXT PRIMARY KEY,
   mistake_id TEXT NOT NULL REFERENCES mistakes(id),
-  source_practice_answer_id TEXT NOT NULL REFERENCES practice_answers(id),
+  source_practice_answer_id TEXT REFERENCES practice_answers(id),
   evidence_type TEXT NOT NULL DEFAULT 'initial_wrong'
     CHECK (evidence_type IN ('initial_wrong', 'redo_wrong')),
   recorded_at TEXT NOT NULL,

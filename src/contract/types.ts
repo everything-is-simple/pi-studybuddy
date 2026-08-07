@@ -391,38 +391,110 @@ export interface PracticeResult {
 
 /* ---- §3.6 S4 错题改错 ---- */
 
+/**
+ * 错因六分类（05-ERD §3.4.1 CHECK 约束）
+ * concept_unclear 概念不清 / misread 看错题 / formula_error 公式错 / step_missing 步骤缺 / time_pressure 时间紧 / other 其他
+ */
 export type ErrorCategory =
-  | "knowledge_gap"
-  | "careless"
-  | "method"
-  | "timing"
-  | "unknown";
+  | "concept_unclear"
+  | "misread"
+  | "formula_error"
+  | "step_missing"
+  | "time_pressure"
+  | "other";
 
+/**
+ * 错题（05-ERD §3.4.1 mistakes 表）
+ *
+ * status 状态机（07-WF §8.6）：needs_review ↔ mastered
+ *   - needs_review：待复习
+ *   - mastered：已掌握（重做正确）；非终态，再次答错回退 needs_review
+ *
+ * practiceAnswerId：DTO 便利字段（ERD 无此列；首条证据来源 practice_answer_id，
+ *   可从 mistake_evidence 派生），可选
+ */
 export interface Mistake {
   id: string;
-  practiceAnswerId: string;
   questionId: string;
-  courseId?: string;
-  status: "needs_review" | "mastered" | "archived";
+  courseId: string;
+  knowledgeModuleId?: string;
+  /** DTO 便利字段：首条证据来源 practice_answer_id（ERD 无此列，从 mistake_evidence 派生） */
+  practiceAnswerId?: string;
+  status: "needs_review" | "mastered";
   errorCategory?: ErrorCategory;
-  causeNote?: string;
+  /** 错因正文（学生确认，不进 S6 家长报告） */
+  errorCause?: string;
+  /** 'student' / undefined（未确认） */
+  errorCauseConfirmedBy?: string;
+  /** AI 建议（带"不确定"标记，仅作参考） */
+  errorCauseAiSuggestion?: string;
   redoCount: number;
+  /** 最近一次重做是否正确（0/1/undefined） */
+  lastRedoCorrect?: number;
+  /** 掌握时间（可回退到 needs_review，回退时清空） */
+  masteredAt?: string;
   createdAt: string;
-}
-
-export interface RedoResult {
-  mistakeId: string;
-  correct: boolean;
   updatedAt: string;
 }
 
+/**
+ * 错题证据（05-ERD §3.4.2 mistake_evidence 表）
+ *
+ * evidence_type：
+ *   - initial_wrong：首次错误归档
+ *   - redo_wrong：重做再次错误
+ */
+export interface MistakeEvidence {
+  id: string;
+  mistakeId: string;
+  sourcePracticeAnswerId: string;
+  evidenceType: "initial_wrong" | "redo_wrong";
+  recordedAt: string;
+  createdAt: string;
+}
+
+/** mistakes.get 返回（含错因、重做历史证据） */
+export interface MistakeWithEvidence extends Mistake {
+  evidence: MistakeEvidence[];
+}
+
+/**
+ * 重做结果（mistakes.redo 返回）
+ *
+ * - correct=true：重做正确 → evidence_count≥2 可能形成 weak_point
+ * - correct=false：重做错误 → status 保持 needs_review
+ */
+export interface RedoResult {
+  mistakeId: string;
+  correct: boolean;
+  /** 当前 mistake 累计证据数（含本次重做） */
+  evidenceCount: number;
+  /** 本次重做是否触发了薄弱点归纳（仅 correct=true 时可能为 true） */
+  weakPointFormed: boolean;
+  updatedAt: string;
+}
+
+/**
+ * 薄弱点（05-ERD §3.4.3 weak_points 表）
+ *
+ * status 状态机（07-WF §8.7）：active → resolved → regressed
+ *   - active：活跃薄弱点
+ *   - resolved：已解决（可回退 regressed）
+ *   - regressed：已回退（"已掌握"非终态）
+ *
+ * 形成条件：evidence_count≥2 + UNIQUE(course_instance_id, knowledge_module_id)
+ */
 export interface WeakPoint {
   id: string;
-  courseId?: string;
+  courseId: string;
   moduleId: string;
   status: "active" | "resolved" | "regressed";
   evidenceCount: number;
+  firstEvidencedAt: string;
+  lastEvidencedAt: string;
+  resolvedAt?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 /* ---- §3.7 S5 期末冲刺 ---- */

@@ -7,14 +7,14 @@ import {
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 /**
- * T-M1-001 studybuddy-extension 单件测试（03-Arch §2.1 + §3.1 S1 工具装配）
+ * T-M1-001~004 studybuddy-extension 单件测试（03-Arch §2.1 + §3.1 S1-S4 工具装配）
  *
- * 断言（T-M1-001 升级后）：
+ * 断言（T-M1-004 升级后）：
  *   - createStudyBuddyExtension() 返回可调用 factory（typeof === "function"）
  *   - factory 返回 Promise（async 签名，符合 ExtensionFactory 契约）
  *   - 调用 factory(stubPi) 不抛错（setup 实现）
- *   - stubPi.registerTool 被调用 12 次（S1 6 + S2 6 个 studybuddy_* 工具）
- *   - stubPi.on 未被调用（M1-001 暂不订阅钩子）
+ *   - stubPi.registerTool 被调用 19 次（S1 6 + S2 6 + S3 3 + S4 4 个 studybuddy_* 工具）
+ *   - stubPi.on 未被调用（M1-004 暂不订阅钩子）
  *   - STUDYBUDDY_EXTENSION_NAME === "pi-studybuddy"
  *
  * 数据隔离（AGENTS.md §5.3）：通过 PI_STUDYBUDDY_DATA_ROOT 注入隔离目录。
@@ -45,7 +45,7 @@ function createStubPi(): {
   return { calls, registeredToolNames, pi };
 }
 
-describe("T-M1-001/T-M1-002/T-M1-003 studybuddy-extension 单件测试（S1+S2+S3 工具装配）", () => {
+describe("T-M1-001~004 studybuddy-extension 单件测试（S1+S2+S3+S4 工具装配）", () => {
   let originalDataRoot: string | undefined;
 
   beforeAll(() => {
@@ -90,24 +90,24 @@ describe("T-M1-001/T-M1-002/T-M1-003 studybuddy-extension 单件测试（S1+S2+S
     await expect(factory(pi)).resolves.toBeUndefined();
   });
 
-  it("registerTool 被调用 15 次（S1 6 + S2 6 + S3 3 个 studybuddy_* 工具）", async () => {
+  it("registerTool 被调用 19 次（S1 6 + S2 6 + S3 3 + S4 4 个 studybuddy_* 工具）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(15);
+    expect(calls.registerTool).toBe(19);
   });
 
   it("注册的工具名全部匹配 ^studybuddy_[a-z_]+$", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
-    expect(registeredToolNames.length).toBe(15);
+    expect(registeredToolNames.length).toBe(19);
     for (const name of registeredToolNames) {
       expect(name).toMatch(/^studybuddy_[a-z_]+$/);
     }
   });
 
-  it("注册的工具名含 S1 6 个 + S2 6 个 + S3 3 个工具", async () => {
+  it("注册的工具名含 S1 6 + S2 6 + S3 3 + S4 4 个工具", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
@@ -131,6 +131,11 @@ describe("T-M1-001/T-M1-002/T-M1-003 studybuddy-extension 单件测试（S1+S2+S
         "studybuddy_generate_questions",
         "studybuddy_submit_practice",
         "studybuddy_get_practice_result",
+        // S4
+        "studybuddy_archive_mistake",
+        "studybuddy_confirm_error_cause",
+        "studybuddy_redo_mistake",
+        "studybuddy_aggregate_weak_point",
       ]),
     );
   });

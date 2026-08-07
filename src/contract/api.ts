@@ -15,6 +15,7 @@ import type {
   CramCard,
   CramPlanDay,
   DailyBrief,
+  ErrorCategory,
   FileEntry,
   FileMeta,
   Job,
@@ -22,6 +23,7 @@ import type {
   Material,
   MindMap,
   Mistake,
+  MistakeWithEvidence,
   MockExamAttempt,
   MockExamModuleAnalysis,
   MockExamPaper,
@@ -209,9 +211,9 @@ export interface Api {
 
   /* ---- §3.6 S4 错题改错：错题 ---- */
   "mistakes.list": { params: { courseId?: string; status?: string }; result: Mistake[] };
-  "mistakes.get": { params: { id: string }; result: Mistake };
+  "mistakes.get": { params: { id: string }; result: MistakeWithEvidence };
   "mistakes.confirmErrorCause": {
-    params: { id: string; category: string; causeNote?: string };
+    params: { id: string; category: ErrorCategory; causeNote?: string };
     result: Mistake;
   };
   "mistakes.suggestErrorCause": {
