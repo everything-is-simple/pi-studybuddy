@@ -13,7 +13,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
  *   - createStudyBuddyExtension() 返回可调用 factory（typeof === "function"）
  *   - factory 返回 Promise（async 签名，符合 ExtensionFactory 契约）
  *   - 调用 factory(stubPi) 不抛错（setup 实现）
- *   - stubPi.registerTool 被调用 6 次（S1 全部 6 个 studybuddy_* 工具）
+ *   - stubPi.registerTool 被调用 12 次（S1 6 + S2 6 个 studybuddy_* 工具）
  *   - stubPi.on 未被调用（M1-001 暂不订阅钩子）
  *   - STUDYBUDDY_EXTENSION_NAME === "pi-studybuddy"
  *
@@ -45,7 +45,7 @@ function createStubPi(): {
   return { calls, registeredToolNames, pi };
 }
 
-describe("T-M1-001 studybuddy-extension 单件测试（S1 工具装配）", () => {
+describe("T-M1-001/T-M1-002 studybuddy-extension 单件测试（S1+S2 工具装配）", () => {
   let originalDataRoot: string | undefined;
 
   beforeAll(() => {
@@ -90,35 +90,43 @@ describe("T-M1-001 studybuddy-extension 单件测试（S1 工具装配）", () =
     await expect(factory(pi)).resolves.toBeUndefined();
   });
 
-  it("registerTool 被调用 6 次（S1 全部 6 个 studybuddy_* 工具）", async () => {
+  it("registerTool 被调用 12 次（S1 6 + S2 6 个 studybuddy_* 工具）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(6);
+    expect(calls.registerTool).toBe(12);
   });
 
   it("注册的工具名全部匹配 ^studybuddy_[a-z_]+$", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
-    expect(registeredToolNames.length).toBe(6);
+    expect(registeredToolNames.length).toBe(12);
     for (const name of registeredToolNames) {
       expect(name).toMatch(/^studybuddy_[a-z_]+$/);
     }
   });
 
-  it("注册的工具名含 S1 6 个工具（init_semester/add_exam/confirm_exam/daily_brief/complete_task/transition_semester）", async () => {
+  it("注册的工具名含 S1 6 个 + S2 6 个工具", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
     expect(registeredToolNames).toEqual(
       expect.arrayContaining([
+        // S1
         "studybuddy_init_semester",
         "studybuddy_add_exam",
         "studybuddy_confirm_exam",
         "studybuddy_daily_brief",
         "studybuddy_complete_task",
         "studybuddy_transition_semester",
+        // S2
+        "studybuddy_upload_material",
+        "studybuddy_convert_material",
+        "studybuddy_generate_note",
+        "studybuddy_replace_material_text",
+        "studybuddy_update_note",
+        "studybuddy_update_learn_status",
       ]),
     );
   });

@@ -23,7 +23,9 @@
 import path from "node:path";
 import type { ExtensionAPI, ExtensionFactory } from "@earendil-works/pi-coding-agent";
 import { S1Context } from "../agent-host/handlers/s1/context";
+import { S2Context } from "../agent-host/handlers/s2/context";
 import { createS1Tools } from "./tools/s1/tools";
+import { createS2Tools } from "./tools/s2/tools";
 
 /** 扩展标识（03-Arch §2.1 name 字段，pi 启动 Extensions 列表显示名） */
 export const STUDYBUDDY_EXTENSION_NAME = "pi-studybuddy";
@@ -47,19 +49,27 @@ function resolveDataRoot(): string {
  *
  * setup(pi) 在 pi 启动时被调用：
  *   1. 解析业务数据根目录
- *   2. 创建 S1Context（管理 global.db / semester.db 句柄）
- *   3. 注册 S1 全部 6 个 studybuddy_* 工具
+ *   2. 创建 S1Context + S2Context（管理 global.db / semester.db 句柄）
+ *   3. 注册 S1 学习节奏 6 个 studybuddy_* 工具
+ *   4. 注册 S2 资料笔记 6 个 studybuddy_* 工具
  *
- * 后续 M1+ 任务在 setup 内逐步接入 S2-S7 + TTS + 备份恢复工具。
+ * 后续 M1+ 任务在 setup 内逐步接入 S3-S7 + TTS + 备份恢复工具。
  */
 export function createStudyBuddyExtension(): ExtensionFactory {
   return async (pi: ExtensionAPI): Promise<void> => {
     const dataRoot = resolveDataRoot();
-    const ctx = new S1Context(dataRoot);
+    const s1Ctx = new S1Context(dataRoot);
+    const s2Ctx = new S2Context(dataRoot);
 
     // 注册 S1 学习节奏 6 个工具（03-Arch §3.1）
-    const s1Tools = createS1Tools(ctx);
+    const s1Tools = createS1Tools(s1Ctx);
     for (const tool of s1Tools) {
+      pi.registerTool(tool);
+    }
+
+    // 注册 S2 资料笔记 6 个工具（03-Arch §3.1）
+    const s2Tools = createS2Tools(s2Ctx);
+    for (const tool of s2Tools) {
       pi.registerTool(tool);
     }
   };

@@ -4,12 +4,12 @@ import { createStudyBuddyExtension } from "../../src/agent/studybuddy-extension"
 import type { ExtensionAPI, ExtensionFactory } from "@earendil-works/pi-coding-agent";
 
 /**
- * T-M1-001 studybuddy-extension × pi 底座契约对接（阶段3：S1 工具装配验证）
+ * T-M1-001/T-M1-002 studybuddy-extension × pi 底座契约对接（阶段3：S1+S2 工具装配验证）
  *
- * 断言（类型契约对接 + S1 工具装配行为）：
+ * 断言（类型契约对接 + S1+S2 工具装配行为）：
  *   - createStudyBuddyExtension() 返回值符合 ExtensionFactory 类型契约
- *   - factory(stubPi) 调用后 registerTool 被调用 6 次（S1 工具）
- *   - 多次调用 factory 安全（每次注册 6 个工具，无异常）
+ *   - factory(stubPi) 调用后 registerTool 被调用 12 次（S1 6 个 + S2 6 个）
+ *   - 多次调用 factory 安全（每次注册 12 个工具，无异常）
  *   - factory 返回 Promise<undefined>
  *
  * 数据隔离（AGENTS.md §5.3）：通过 PI_STUDYBUDDY_DATA_ROOT 注入隔离目录。
@@ -41,7 +41,7 @@ function createStubPi(): {
   return { calls, toolNames, pi };
 }
 
-describe("T-M1-001 studybuddy-extension × pi 底座契约对接（S1 工具装配）", () => {
+describe("T-M1-001/T-M1-002 studybuddy-extension × pi 底座契约对接（S1+S2 工具装配）", () => {
   let originalDataRoot: string | undefined;
 
   beforeAll(() => {
@@ -72,11 +72,11 @@ describe("T-M1-001 studybuddy-extension × pi 底座契约对接（S1 工具装�
     expect(typeof factory).toBe("function");
   });
 
-  it("factory(stubPi) 调用后 registerTool 被调用 6 次（S1 工具装配）", async () => {
+  it("factory(stubPi) 调用后 registerTool 被调用 12 次（S1 6 + S2 6 工具装配）", async () => {
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(6);
+    expect(calls.registerTool).toBe(12);
     expect(calls.on).toBe(0);
     expect(calls.registerProvider).toBe(0);
   });
@@ -85,19 +85,19 @@ describe("T-M1-001 studybuddy-extension × pi 底座契约对接（S1 工具装�
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { toolNames, pi } = createStubPi();
     await factory(pi);
-    expect(toolNames.length).toBe(6);
+    expect(toolNames.length).toBe(12);
     for (const name of toolNames) {
       expect(name).toMatch(/^studybuddy_/);
     }
   });
 
-  it("多次调用 factory 安全（每次注册 6 个工具，无异常）", async () => {
+  it("多次调用 factory 安全（每次注册 12 个工具，无异常）", async () => {
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
     await factory(pi);
     await factory(pi);
-    expect(calls.registerTool).toBe(18);
+    expect(calls.registerTool).toBe(36);
   });
 
   it("factory 返回 Promise<undefined>（符合 ExtensionFactory 返回 void | Promise<void>）", async () => {

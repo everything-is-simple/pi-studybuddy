@@ -224,29 +224,69 @@ export interface FileMeta {
   mime: string;
 }
 
+/** Material.status（05-ERD §3.2.1 CHECK + §8.3 状态机） */
+export type MaterialStatus =
+  | "pending"
+  | "converting"
+  | "converted"
+  | "note_generating"
+  | "completed"
+  | "conversion_failed"
+  | "pending_quality_check";
+
+/** Material.file_type（05-ERD §3.2.1 CHECK） */
+export type MaterialFileType =
+  | "pdf"
+  | "docx"
+  | "pptx"
+  | "xlsx"
+  | "txt"
+  | "md"
+  | "image"
+  | "text"
+  | "doc"
+  | "ppt"
+  | "xls";
+
 export interface Material {
   id: string;
   courseId: string;
-  fileType: "text" | "pdf" | "docx" | "pptx" | "image" | "audio";
-  status: "pending" | "converted" | "failed";
+  fileName: string;
+  fileType: MaterialFileType;
+  fileSizeBytes: number;
+  mimeType: string;
   storageKey: string;
-  title: string;
+  sourceType: "upload" | "class_audio_transcription";
+  status: MaterialStatus;
+  permissionConfirmed: number;
+  uploadedAt: string;
+  convertedAt?: string;
+  noteGeneratedAt?: string;
   createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 export interface StructuredNote {
+  id: string;
   materialId: string;
+  courseId: string;
   noteMarkdown: string;
   highlights: Array<{ text: string; color?: string }>;
+  promptVersion: string;
+  model: string;
+  tokenCount?: number;
+  aiGenerated: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MindMap {
-  root: MindMapNode;
-}
-
-export interface MindMapNode {
-  label: string;
-  children?: MindMapNode[];
+  id: string;
+  materialId: string;
+  courseId: string;
+  markmapJson: string;
+  createdAt: string;
 }
 
 export type LearnStatus = "not_started" | "learning" | "mastered" | "needs_review";
@@ -254,22 +294,46 @@ export type LearnStatus = "not_started" | "learning" | "mastered" | "needs_revie
 export interface KnowledgeModule {
   id: string;
   courseId: string;
-  title: string;
+  materialId: string;
+  moduleName: string;
+  summary?: string;
+  importance?: number;
+  difficulty?: number;
   learnStatus: LearnStatus;
-  sourceEvidence: string[];
+  sourceEvidenceJson: string;
+  aiGenerated: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
-export type JobStatus = "queued" | "running" | "done" | "failed";
-export type JobType = "convert" | "generate_note" | "transcribe";
+/** Job.status（05-ERD §3.2.7 CHECK + §8.4 状态机） */
+export type JobStatus = "pending" | "running" | "completed" | "failed";
+
+/** Job.job_type（05-ERD §3.2.7 CHECK） */
+export type JobType =
+  | "convert_pdf"
+  | "convert_docx"
+  | "convert_pptx"
+  | "convert_xlsx"
+  | "ocr_image"
+  | "wps_convert"
+  | "generate_note";
 
 export interface Job {
   id: string;
-  type: JobType;
+  materialId: string;
+  jobType: JobType;
   status: JobStatus;
-  progress: number;
-  attempts: number;
-  error?: string;
+  retryCount: number;
+  maxRetries: number;
+  errorCode?: string;
+  errorMessage?: string;
+  startedAt?: string;
+  completedAt?: string;
+  timeoutMs?: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 /* ---- §3.5 S3 限时练习 ---- */

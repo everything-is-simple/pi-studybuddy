@@ -74,7 +74,8 @@ for (const file of fs.readdirSync(docsDir)) {
 
 // ---- 3. 每份设计文档头部字段检查 ----
 function parseHeader(content) {
-  const headerMatch = content.match(/^\*\*版本\*\*：(.+?)\n\*\*日期\*\*：(.+?)\n\*\*状态\*\*：(.+?)\n/m);
+  // \r?\n 兼容 Windows CRLF 与 Unix LF 行尾（Windows 开发环境防误报）
+  const headerMatch = content.match(/^\*\*版本\*\*：(.+?)\r?\n\*\*日期\*\*：(.+?)\r?\n\*\*状态\*\*：(.+?)\r?\n/m);
   if (!headerMatch) return null;
   return {
     version: headerMatch[1].trim(),

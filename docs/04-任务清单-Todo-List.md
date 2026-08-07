@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.17
+**版本**：v0.1.19
 **日期**：2026-08-07
-**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -427,6 +427,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | task-id | 标题 | 分类 | 优先级 | 状态 | 治理阶段 | 关联文档 | 证据 |
 |---|---|---|---|---|---|---|---|
 | T-M1-001 | S1 学期/课程/考试/课表/任务 工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.2 + 06-API §3.3 + 03-Arch §3.1 + 05-ERD §3.1 + 08-Test §3.1/§3.2 | [.record/T-M1-001 实施记录](../.record/T-M1-001-实施记录.md) |
+| T-M1-002 | S2 资料/笔记/知识模块 工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.3 + 06-API §3.4 + 03-Arch §3.1 + 05-ERD §3.2 + 08-Test §3.1/§3.2 | [.record/T-M1-002 实施记录](../.record/T-M1-002-实施记录.md) |
 
 ### 7.3 M2 完整闭环任务大纲
 
@@ -480,10 +481,10 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | 里程碑 | 总任务数 | pending | in_progress | testing | done | blocked |
 |---|---|---|---|---|---|---|
 | M0 | 9 | 0 | 0 | 0 | 9 | 0 |
-| M1 | 10 | 9 | 0 | 0 | 1 | 0 |
+| M1 | 10 | 8 | 0 | 0 | 2 | 0 |
 | M2 | 9 | 9 | 0 | 0 | 0 | 0 |
 | M3 | 8 | 8 | 0 | 0 | 0 | 0 |
-| **合计** | **36** | **26** | **0** | **0** | **10** | **0** |
+| **合计** | **36** | **25** | **0** | **0** | **11** | **0** |
 
 > 注：M0 总任务数按实际 task-id 计为 9（§7.1 大纲 12 项中，安全沙箱合并入 T-M0-001，数据层 global/semester/三层记忆 3 项合并为 T-M0-006）。v0.1.15 修正口径。
 
@@ -493,6 +494,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.19 | 2026-08-07 | 登记 T-M1-002 完成：§7.2.1 登记表 T-M1-002 done（S2 资料/笔记/知识模块 17 RPC handler + 6 studybuddy_* 工具注册：materials 9 方法含状态机+Job 登记、notes 3 方法、modules 3 方法含学习状态机、jobs 2 方法；S2Context 复用 S1 模式 + lookup 跨库查找；DTO 对齐 ERD §3.2 七表 5 DTO + JobStatus/JobType；6 工具 TypeBox schema + execute 薄封装；studybuddy-extension 接入 S2 工具注册），§9 统计 M1 2 done + 8 pending。295 测试全绿，verify 7+2 全通过。依据：AGENTS.md §7 受控收尾流程 + §5.1 TDD 纪律 |
+| v0.1.18 | 2026-08-07 | 登记 T-M1-002 开工：§7.2.1 登记表新增 T-M1-002 in_progress（S2 资料/笔记/知识模块 17 RPC handler + studybuddy_* 工具注册：materials 9 方法含状态机+Job 登记、notes 3 方法、modules 3 方法含学习状态机、jobs 2 方法；S2Context 复用 S1 模式 + lookup 跨库；DTO 对齐 ERD §3.2 七表），更新 §9 统计（M1 8 pending + 1 in_progress + 1 done）。依据：AGENTS.md §4.4 单一执行任务门禁 + §5.1 TDD 纪律 |
 | v0.1.17 | 2026-08-07 | 登记 T-M1-001 完成：§7.2.1 登记表 T-M1-001 done（S1 学习节奏 25 RPC handler + 6 studybuddy_* 工具注册：semesters 6 方法含跨库写+状态机、courses 5 方法、exams 4 方法含四态确认、schedule 4 方法、tasks 4 方法含 dailyBrief 规则聚合、events 2 方法；S1Context 管理全局/学期库句柄；lookup 跨库查找；6 工具 TypeBox schema + execute 薄封装；studybuddy-extension 接入 S1 工具注册；SqlParams 类型对齐 node:sqlite SQLInputValue），§9 统计 M1 1 done + 9 pending。237 测试全绿，verify 7+2 全通过。依据：AGENTS.md §7 受控收尾流程 + §5.1 TDD 纪律 |
 | v0.1.16 | 2026-08-07 | 登记 T-M1-001 开工 + 前置 DTO 对齐 schema：新增 §7.2.1 M1 任务登记表（T-M1-001 in_progress），§9 统计 M1 9 pending + 1 in_progress。前置：核实发现 contract/types.ts DTO（T-M0-002）与 05-ERD schema（T-M0-006）10 处字段/值域不一致，按权威链 05-ERD（优先级4）> types.ts（优先级7）修正 7 个 S1 DTO + api.ts source 值域对齐 05-ERD，type-check + 171 测试全绿。依据：AGENTS.md §4.4 单一执行任务门禁 + §5.1 TDD 纪律 + §11.2 修订纪律 |
 | v0.1.15 | 2026-08-07 | 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正（v0.1.11→v0.1.15）+ §9 统计口径修正（M0 总任务数 12→9，按实际 task-id，3 项大纲合并）：§7.1.1 登记表 T-M0-009 done（M0 系统冒烟完整：smoke.mjs 扩展覆盖 §6.2 退出门槛六项 build+RPC+建库+vault+六不变量+汇总；补全 INV-06 HTML_PREVIEW_CSP form-action 'none' + protocol.ts 接入；check-desktop-security.mjs 六条转硬断言移除占位宽松；verify.mjs desktop-security 改硬阻塞；invariants.test.ts 加 INV-04/05/06 三断言），§6.0 补 M0 完成说明 + 版本演进（01-TRD §7 决策 6 约定），§9 统计 M0 9 done（M0 收官）。依据：AGENTS.md §7 受控收尾流程 + §11.2 修订纪律（口径修正显式记录） |
