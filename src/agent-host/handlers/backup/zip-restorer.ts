@@ -159,14 +159,19 @@ export function restoreCourse(ctx: BackupContext, options: RestoreOptions): Rest
 
           for (const line of lines) {
             const row = JSON.parse(line) as Record<string, unknown>;
-            // 如果是 course_instances 表且 restoredCourseId 不同，替换 id
-            if (table === "course_instances" && restoredCourseId !== manifest.course_instance_id) {
+            // course_instances 表：始终写入目标学期 + 目标课程 id（统一映射）
+            if (table === "course_instances") {
               row.id = restoredCourseId;
               row.semester_id = targetSemesterId;
             }
-            // 如果是 course_instances 表且是 overwrite，保持原 id
-            if (table === "course_instances" && conflictResolved === "overwrite") {
-              row.semester_id = targetSemesterId;
+            // 子表：当生成新课程 id 时，把原 course_instance_id 重映射到新 id，
+            // 防止子表记录成为孤儿（05-ERD §8.2 恢复流程，E2E-08 捕获）
+            if (
+              table !== "course_instances" &&
+              row.course_instance_id === manifest.course_instance_id &&
+              restoredCourseId !== manifest.course_instance_id
+            ) {
+              row.course_instance_id = restoredCourseId;
             }
             insertRow(semDb, table, row);
           }

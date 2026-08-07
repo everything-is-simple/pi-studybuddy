@@ -100,8 +100,9 @@ export function createMockTtsAdapter(): TtsAdapter {
         text,
         rate: opts?.rate ?? 1.0,
       });
-      // mock 默认 SAPI，不降级（fallbackUsed=undefined）
-      return { playbackId, engine: "sapi" };
+      // mock 按 opts.engine 返回（默认 sapi，switchEngine 后 edge-tts 正常返回）
+      const engine = opts?.engine ?? "sapi";
+      return { playbackId, engine };
     },
 
     async control(playbackId: string, action: TtsControlAction, _rate?: number): Promise<void> {

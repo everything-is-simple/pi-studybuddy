@@ -2,7 +2,7 @@
  * T-M1-010 E2E Node.js 子进程启动器
  *
  * 使用 child_process.fork() 启动系统 Node.js 22+ 子进程（node:sqlite 可用）。
- * 运行数据隔离（AGENTS.md §5.3）：PI_STUDYBUDDY_DATA_ROOT 指向 H:\pi-studybuddy-tmp\runs\T-M1-010\。
+ * 运行数据隔离（AGENTS.md §5.3）：PI_STUDYBUDDY_DATA_ROOT 指向 H:\pi-studybuddy-tmp\runs\T-M2-009\。
  *
  * 通信协议：Node.js IPC 通道（child.send / child.on('message')）
  *   - 测试驱动器 → 子进程：{"type":"rpc","id":"...","method":"...","args":[...]}
@@ -17,7 +17,7 @@ import { fork, type ChildProcess } from "node:child_process";
 import { once, EventEmitter } from "node:events";
 
 /** E2E 运行数据隔离根（AGENTS.md §5.3） */
-export const E2E_RUN_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M1-010\\e2e";
+export const E2E_RUN_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M2-009\\e2e";
 
 /** 测试主入口绝对路径 */
 const TEST_MAIN = path.resolve(__dirname, "..", "test-main.js");

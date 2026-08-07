@@ -88,3 +88,35 @@ export function isRpcError(e: unknown): e is { code: string; message: string } {
     "message" in e
   );
 }
+
+/**
+ * 生成合法 PCM WAV 夹具（E2E-05 课堂采集，08-Test §3.3.2）。
+ *
+ * 满足 S7 wav-validator 全部字节级校验项：
+ *   - RIFF magic（bytes 0-3）
+ *   - WAVE magic（bytes 8-11）
+ *   - fmt chunk PCM format=1（bytes 20-21 LE）
+ *   - 单声道=1（bytes 22-23 LE）
+ *   - 16kHz 采样率=16000（bytes 24-27 LE）
+ *   - 16-bit 位深=16（bytes 34-35 LE）
+ *   - 文件大小 ≥ 44 字节
+ */
+export function createPcmWavBuffer(sampleCount = 1600): Buffer {
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0, "ascii");
+  header.writeUInt32LE(36 + sampleCount * 2, 4); // file size - 8
+  header.write("WAVE", 8, "ascii");
+  header.write("fmt ", 12, "ascii");
+  header.writeUInt32LE(16, 16); // fmt chunk size
+  header.writeUInt16LE(1, 20); // PCM
+  header.writeUInt16LE(1, 22); // mono
+  header.writeUInt32LE(16000, 24); // 16kHz
+  header.writeUInt32LE(16000 * 2, 28); // byte rate (16kHz * 1ch * 2bytes)
+  header.writeUInt16LE(2, 32); // block align
+  header.writeUInt16LE(16, 34); // 16-bit
+  header.write("data", 36, "ascii");
+  header.writeUInt32LE(sampleCount * 2, 40); // data size
+
+  const data = Buffer.alloc(sampleCount * 2, 0);
+  return Buffer.concat([header, data]);
+}
