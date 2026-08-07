@@ -82,11 +82,11 @@
 
 | 文档 | 版本 | 权威范围 |
 |---|---|---|
-| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.18 | 文档导航 + 门禁 + 版本历史 |
+| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.20 | 文档导航 + 门禁 + 版本历史 |
 | [01-TRD](./docs/01-TRD-技术需求-Technical-Requirements.md) | v0.2.2 | 技术底座决策 + 六点定案（含 v0.1 交付形态） |
 | [02-PRD](./docs/02-PRD-产品需求-Product-Requirements.md) | v0.1.3 | 产品需求 + 业务闭环 + §3.11 对话默认主入口 |
 | [03-Architecture](./docs/03-架构设计-Architecture-Design.md) | v0.1.1 | 四层架构 + pi 扩展 + §6.7 会话管理 |
-| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.3 | 任务登记 + 组件治理看板 + 里程碑 M0-M3 |
+| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.4 | 任务登记 + 组件治理看板 + 里程碑 M0-M3 |
 | [05-ERD](./docs/05-数据模型-ERD-Data-Model.md) | v0.1.1 | 全局库 + 学期库 + 三层记忆 |
 | [06-API](./docs/06-API契约-API-Contracts.md) | v0.1.1 | RPC 契约 + 100+ 方法 + 9 Streams |
 | [07-Workflow](./docs/07-工作流-Workflow.md) | v0.1.1 | 学生主路径 + 对话路径 + 11 状态机 |

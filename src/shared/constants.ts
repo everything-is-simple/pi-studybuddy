@@ -8,6 +8,20 @@
 export const IPC_CHANNELS = {
   /** renderer 请求建立到 agent-host 的 MessagePort 通道 */
   CONNECT_HOST: "desktop:connect-host",
+  /** 目录选择（dialog.showOpenDialog） */
+  SELECT_DIRECTORY: "desktop:select-directory",
+  /** 通用对话框（open/save/message） */
+  SHOW_DIALOG: "desktop:show-dialog",
+  /** 查询工具链发现结果 */
+  QUERY_TOOLCHAINS: "desktop:query-toolchains",
+  /** 窗口最大化状态 */
+  GET_WINDOW_STATE: "desktop:get-window-state",
+  /** 最小化窗口 */
+  MINIMIZE_WINDOW: "desktop:minimize-window",
+  /** 最大化/还原窗口 */
+  MAXIMIZE_WINDOW: "desktop:maximize-window",
+  /** 关闭窗口 */
+  CLOSE_WINDOW: "desktop:close-window",
 } as const;
 
 /**

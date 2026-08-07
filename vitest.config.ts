@@ -15,5 +15,10 @@ export default defineConfig({
     ],
     environment: "node",
     globals: false,
+    typecheck: {
+      enabled: true,
+      tsconfig: "./tsconfig.test.json",
+      include: ["tests/unit/contract.test.ts"],
+    },
   },
 });

@@ -9,9 +9,10 @@
  *   4. DTO 类型导出完整（每个 RPC 方法的 params/result 类型在 contract 中存在）
  *   5. registerTool 工具名前缀 studybuddy_*（03-Arch §3.1）
  *
- * 当前阶段（设计完成，待启动 M0）：
- *   - contract/api.ts 不存在 → 退出码 0，输出"骨架未就绪，跳过 AST 校验"
- *   - 仅做结构占位与未来契约规范的自描述
+ * 当前阶段（M0 骨架，T-M0-001/002 落地）：
+ *   - contract/api.ts 已存在 → 完整解析 Api 方法全集
+ *   - Api 方法若无 host handler → 警告不阻塞（业务 handler 由 M1+ 任务实现）
+ *   - unknown / duplicate handler → 硬失败（契约与实现结构冲突）
  *
  * 失败任一项 → 非零退出码，阻塞合并。
  *
@@ -139,15 +140,23 @@ const missing = apiMethods.filter((m) => !registeredSet.has(m));
 const duplicates = registered.filter((m, i) => registered.indexOf(m) !== i);
 const unknown = registered.filter((m) => !apiMethods.includes(m));
 
-if (missing.length) fail(`Missing host handlers for: ${missing.join(", ")}`);
+if (missing.length) {
+  console.warn(
+    `WARN: ${missing.length} 个 Api 方法暂无 host handler（业务 handler 由 M1+ 业务任务实现，不阻塞本阶段）：${missing.join(", ")}`,
+  );
+}
 if (duplicates.length) fail(`Duplicate host handlers: ${[...new Set(duplicates)].join(", ")}`);
 if (unknown.length) fail(`Handlers missing from Api contract: ${unknown.join(", ")}`);
 
 // ---- PiBridge 桥接链路 ----
 const piBridgeSection = desktopTs.slice(desktopTs.indexOf("export interface PiBridge"));
-const piBridgeMethods = [...piBridgeSection.matchAll(/^\s+([a-zA-Z]\w*):/gm)].map((m) => m[1]);
+// 兼容属性签名（name:）与方法签名（name(...): ）
+const piBridgeMethods = [
+  ...piBridgeSection.matchAll(/^\s+([a-zA-Z]\w*)\s*(?:\([^)]*\)\s*)?:/gm),
+].map((m) => m[1]);
 
-const missingPreloadMethods = piBridgeMethods.filter((m) => !preloadTs.includes(`${m}:`));
+// preload 方法以 `name() {` 语法定义，按方法名+左括号匹配
+const missingPreloadMethods = piBridgeMethods.filter((m) => !preloadTs.includes(`${m}(`));
 if (missingPreloadMethods.length) {
   fail(`Missing preload methods for PiBridge: ${missingPreloadMethods.join(", ")}`);
 }

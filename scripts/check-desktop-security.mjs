@@ -9,7 +9,7 @@
  *   2. 严格 CSP（default-src 'self'）            → 本任务实现 ✅
  *   3. preload 仅 exposeInMainWorld("piBridge")   → 本任务实现 ✅
  *   4. credential-vault 用 safeStorage           → T-M0-003 补全 ⏳
- *   5. Host RPC 契约化（api.ts 完整接口）         → T-M0-002 补全 ⏳
+ *   5. Host RPC 契约化（api.ts 完整接口）         → T-M0-002 已实现 ✅
  *   6. HTML 预览独立 CSP（form-action 'none'）    → T-M0-008 补全 ⏳
  *
  * 用法：
@@ -54,7 +54,7 @@ check(
   /exposeInMainWorld\s*\(\s*["']piBridge["']/.test(readSource("src/preload/preload.ts")),
 );
 
-// ---- 三条占位（后续任务补全） ----
+// ---- 三条占位（后续任务补全）+ INV-05 已落地 ----
 console.log("\n占位（后续任务补全）：");
 check(
   "INV-04",
@@ -62,12 +62,17 @@ check(
   false,
   "延迟到 T-M0-003",
 );
+
+// INV-05：Host RPC 契约化（06-API §3 ~100 方法）。断言 api.ts 含完整接口（方法数 ≥ 阈值）。
+const apiTs = readSource("src/contract/api.ts");
+const apiMethodCount = (apiTs.match(/^\s*"[a-zA-Z]+\.[a-zA-Z]+"\s*:/gm) || []).length;
 check(
   "INV-05",
   "Host RPC 契约化（api.ts 完整接口，不变量 5）→ T-M0-002",
-  false,
-  "延迟到 T-M0-002",
+  apiMethodCount >= 50,
+  `api.ts 方法数 ${apiMethodCount}（阈值 ≥ 50）`,
 );
+
 check(
   "INV-06",
   "HTML 预览独立 CSP（form-action 'none'，不变量 6）→ T-M0-008",
@@ -77,14 +82,14 @@ check(
 
 const failed = results.filter((r) => !r.ok);
 console.log(
-  `\n[check-desktop-security] ${results.length} 条不变量：通过 ${results.length - failed.length}，失败 ${failed.length}（其中 3 条为后续任务占位）`,
+  `\n[check-desktop-security] ${results.length} 条不变量：通过 ${results.length - failed.length}，失败 ${failed.length}（其中 2 条为后续任务占位）`,
 );
 
-// 已实现 3 条必须全绿；占位 3 条允许失败（未到对应任务）
-const implemented = results.filter((r) => ["INV-01", "INV-02", "INV-03"].includes(r.id));
+// 已实现 4 条必须全绿；占位 2 条允许失败（未到对应任务）
+const implemented = results.filter((r) => ["INV-01", "INV-02", "INV-03", "INV-05"].includes(r.id));
 if (implemented.some((r) => !r.ok)) {
   console.error("\n[check-desktop-security] FAILED：存在已实现不变量未通过");
   process.exit(1);
 }
 
-console.log("[check-desktop-security] 已实现 3 条不变量全部通过 ✅");
+console.log("[check-desktop-security] 已实现 4 条不变量全部通过 ✅");
