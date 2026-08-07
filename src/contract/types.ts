@@ -580,37 +580,74 @@ export interface CramPlanDay {
   };
 }
 
-/* ---- §3.8 S6 家长报告 ---- */
+/* ---- §3.8 S6 家长报告（DTO 对齐 05-ERD §2.2/§3.6） ---- */
 
+/** 报告类型（05-ERD §3.6.1 CHECK） */
+export type ParentReportType = "daily" | "weekly" | "monthly" | "exam_reminder";
+
+/** 投递渠道（05-ERD §2.2/§3.6.2 CHECK） */
+export type ReportChannel = "local_export" | "smtp" | "feishu_webhook" | "print";
+
+/** 投递状态（05-ERD §3.6.2 CHECK：delivered→sent 对齐 ERD） */
+export type ReportDeliveryStatus = "pending" | "sent" | "failed" | "retained_locally";
+
+/**
+ * 家长报告 DTO（05-ERD §3.6.1 parent_reports 表）
+ *
+ * 冻结快照：content_json + content_hash（SHA-256），保证投递内容一致。
+ * ruleGenerated/aiPolished/privacyCheckPassed 为 0/1 整数（对齐 ERD INTEGER 列）。
+ */
 export interface ParentReport {
   reportKey: string;
   semesterId: string;
-  reportType: string;
+  reportType: ParentReportType;
   periodStart: string;
   periodEnd: string;
-  contentJson: unknown;
-  contentHash: string;
-  frozenAt?: string;
+  contentJson: unknown; // 冻结脱敏快照（6 section + data_quality）
+  contentHash: string; // SHA-256
+  ruleGenerated: number; // 0=AI 润色 1=规则生成（ERD 列 rule_generated）
+  aiPolished: number; // 0/1（ERD 列 ai_polished）
+  aiModel?: string;
+  promptVersion?: string;
+  privacyCheckPassed: number; // 0/1（ERD 列 privacy_check_passed，assertNoSensitiveLeak 结果）
+  generatedAt: string;
   createdAt: string;
 }
 
+/**
+ * 报告投递 DTO（05-ERD §3.6.2 report_deliveries 表）
+ *
+ * PK(report_key, channel)：按 report_key+channel 去重。
+ * 至少一次投递语义；最多重试 maxRetries 次，达上限 retained_locally。
+ */
 export interface ReportDelivery {
-  id: string;
   reportKey: string;
-  channel: string;
-  status: "pending" | "delivered" | "failed" | "retained_locally";
-  attempts: number;
-  lastError?: string;
-  deliveredAt?: string;
+  channel: ReportChannel;
+  status: ReportDeliveryStatus;
+  retryCount: number;
+  maxRetries: number;
+  errorCode?: string;
+  sentAt?: string;
+  lastAttemptAt?: string;
+  createdAt: string;
 }
 
+/**
+ * 家长报告目标 DTO（05-ERD §2.2 parent_report_targets 表，全局库）
+ *
+ * 真实渠道地址（邮箱/Webhook URL）在 credential-vault，channelConfigJson 仅存别名。
+ */
 export interface ParentReportTarget {
   id: string;
   semesterId: string;
   targetName: string;
-  channelType: string;
-  channelConfig: Record<string, unknown>;
-  credentialKey?: string;
+  channelType: ReportChannel;
+  channelConfigJson: string; // 别名配置 JSON（真实地址在 credential-vault）
+  credentialKey?: string; // credential-vault 键名（如 parentContact:mom_email）
+  enabled: number; // 0/1
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }
 
 /* ---- §3.9 S7 课堂采集 ---- */

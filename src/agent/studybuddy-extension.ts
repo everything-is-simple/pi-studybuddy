@@ -5,16 +5,17 @@
  * createInnoExtension() 范式。pi 底座 ExtensionFactory = (pi: ExtensionAPI) => void | Promise<void>
  * （pi types.ts:1518），本工厂返回该签名的实现。
  *
- * 当前范围（T-M2-001）：
+ * 当前范围（T-M2-002）：
  *   - S1 学习节奏 6 个 studybuddy_* 工具注册（03-Arch §3.1 + §2.2 registerTool）
  *   - S2 资料笔记 6 个 studybuddy_* 工具注册
  *   - S3 限时练习 3 个 studybuddy_* 工具注册
  *   - S4 错题/薄弱点 4 个 studybuddy_* 工具注册
  *   - S5 期末冲刺 2 个 studybuddy_* 工具注册
+ *   - S6 家长报告 3 个 studybuddy_* 工具注册
  *   - 通过各 S*Context 注入数据层句柄（业务数据根由环境变量或默认路径决定）
  *
  * 后续任务接入：
- *   - S6-S7 + TTS + 备份恢复 工具注册
+ *   - S7 + TTS + 备份恢复 工具注册
  *   - before_agent_start / tool_call / tool_result / model_select / turn_end 钩子（03-Arch §2.3）
  *   - pi-ai provider 注入（03-Arch §2.4 registerProvider）
  *   - Simple Mode 总开关（03-Arch §2.5）
@@ -31,11 +32,13 @@ import { S2Context } from "../agent-host/handlers/s2/context";
 import { S3Context } from "../agent-host/handlers/s3/context";
 import { S4Context } from "../agent-host/handlers/s4/context";
 import { S5Context } from "../agent-host/handlers/s5/context";
+import { S6Context } from "../agent-host/handlers/s6/context";
 import { createS1Tools } from "./tools/s1/tools";
 import { createS2Tools } from "./tools/s2/tools";
 import { createS3Tools } from "./tools/s3/tools";
 import { createS4Tools } from "./tools/s4/tools";
 import { createS5Tools } from "./tools/s5/tools";
+import { createS6Tools } from "./tools/s6/tools";
 
 /** 扩展标识（03-Arch §2.1 name 字段，pi 启动 Extensions 列表显示名） */
 export const STUDYBUDDY_EXTENSION_NAME = "pi-studybuddy";
@@ -73,6 +76,7 @@ export function createStudyBuddyExtension(): ExtensionFactory {
     const s3Ctx = new S3Context(dataRoot);
     const s4Ctx = new S4Context(dataRoot);
     const s5Ctx = new S5Context(dataRoot);
+    const s6Ctx = new S6Context(dataRoot);
 
     // 注册 S1 学习节奏 6 个工具（03-Arch §3.1）
     const s1Tools = createS1Tools(s1Ctx);
@@ -101,6 +105,12 @@ export function createStudyBuddyExtension(): ExtensionFactory {
     // 注册 S5 期末冲刺 2 个工具（03-Arch §3.1）
     const s5Tools = createS5Tools(s5Ctx);
     for (const tool of s5Tools) {
+      pi.registerTool(tool);
+    }
+
+    // 注册 S6 家长报告 3 个工具（03-Arch §3.1）
+    const s6Tools = createS6Tools(s6Ctx);
+    for (const tool of s6Tools) {
       pi.registerTool(tool);
     }
   };

@@ -13,7 +13,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
  *   - createStudyBuddyExtension() 返回可调用 factory（typeof === "function"）
  *   - factory 返回 Promise（async 签名，符合 ExtensionFactory 契约）
  *   - 调用 factory(stubPi) 不抛错（setup 实现）
- *   - stubPi.registerTool 被调用 21 次（S1 6 + S2 6 + S3 3 + S4 4 + S5 2 个 studybuddy_* 工具）
+ *   - stubPi.registerTool 被调用 24 次（S1 6 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 个 studybuddy_* 工具）
  *   - stubPi.on 未被调用（M1-004 暂不订阅钩子）
  *   - STUDYBUDDY_EXTENSION_NAME === "pi-studybuddy"
  *
@@ -45,7 +45,7 @@ function createStubPi(): {
   return { calls, registeredToolNames, pi };
 }
 
-describe("T-M1-001~004 + T-M2-001 studybuddy-extension 单件测试（S1+S2+S3+S4+S5 工具装配）", () => {
+describe("T-M1-001~004 + T-M2-001/002 studybuddy-extension 单件测试（S1+S2+S3+S4+S5+S6 工具装配）", () => {
   let originalDataRoot: string | undefined;
 
   beforeAll(() => {
@@ -90,18 +90,18 @@ describe("T-M1-001~004 + T-M2-001 studybuddy-extension 单件测试（S1+S2+S3+S
     await expect(factory(pi)).resolves.toBeUndefined();
   });
 
-  it("registerTool 被调用 21 次（S1 6 + S2 6 + S3 3 + S4 4 + S5 2 个 studybuddy_* 工具）", async () => {
+  it("registerTool 被调用 24 次（S1 6 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 个 studybuddy_* 工具）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(21);
+    expect(calls.registerTool).toBe(24);
   });
 
   it("注册的工具名全部匹配 ^studybuddy_[a-z_]+$", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
-    expect(registeredToolNames.length).toBe(21);
+    expect(registeredToolNames.length).toBe(24);
     for (const name of registeredToolNames) {
       expect(name).toMatch(/^studybuddy_[a-z_]+$/);
     }

@@ -9,6 +9,7 @@ node_modules/
 /data/
 runtime/
 tmp/
+reports/
 
 # 环境与密钥
 .env

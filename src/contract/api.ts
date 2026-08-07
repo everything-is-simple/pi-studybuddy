@@ -249,16 +249,30 @@ export interface Api {
 
   /* ---- §3.8 S6 家长报告：报告 ---- */
   "reports.generate": {
-    params: { semesterId: string; reportType: string; periodStart: string; periodEnd: string };
+    params: {
+      semesterId: string;
+      reportType: ParentReport["reportType"];
+      periodStart: string;
+      periodEnd: string;
+    };
     result: ParentReport;
   };
   "reports.freeze": { params: { reportKey: string }; result: ParentReport };
   "reports.get": { params: { reportKey: string }; result: ParentReport };
-  "reports.list": { params: { semesterId?: string; reportType?: string }; result: ParentReport[] };
+  "reports.list": {
+    params: { semesterId?: string; reportType?: ParentReport["reportType"] };
+    result: ParentReport[];
+  };
 
   /* ---- §3.8 S6：投递 ---- */
-  "deliveries.deliver": { params: { reportKey: string; channel: string }; result: ReportDelivery };
-  "deliveries.retry": { params: { reportKey: string; channel: string }; result: ReportDelivery };
+  "deliveries.deliver": {
+    params: { reportKey: string; channel: ReportDelivery["channel"] };
+    result: ReportDelivery;
+  };
+  "deliveries.retry": {
+    params: { reportKey: string; channel: ReportDelivery["channel"] };
+    result: ReportDelivery;
+  };
   "deliveries.list": { params: { reportKey?: string }; result: ReportDelivery[] };
 
   /* ---- §3.8 S6：报告目标 ---- */
@@ -267,8 +281,8 @@ export interface Api {
     params: {
       semesterId: string;
       targetName: string;
-      channelType: string;
-      channelConfig: Record<string, unknown>;
+      channelType: ParentReportTarget["channelType"];
+      channelConfigJson: string;
       credentialKey?: string;
     };
     result: ParentReportTarget;
