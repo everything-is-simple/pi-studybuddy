@@ -198,6 +198,21 @@ if (fs.existsSync(agentsPath)) {
   }
 }
 
+// ---- 7.5 根目录 .md 文件白名单校验（防幽灵副本 + 防幽灵治理资产）----
+// 依据：docs/12-目录治理（文档只应在 docs/ 下）+ AGENTS.md §3.3（治理资产清单）
+// 根目录仅允许 README.md / AGENTS.md 两份 .md；其余 .md 若与 docs/ 同名则为副本，
+// 若不与 docs/ 同名则为未登记治理资产（如曾出现的 CLAUDE.md）
+const allowedRootMd = new Set(["README.md", "AGENTS.md"]);
+const rootMdFiles = fs.readdirSync(root).filter((f) => f.endsWith(".md"));
+for (const file of rootMdFiles) {
+  if (allowedRootMd.has(file)) continue;
+  if (fs.existsSync(path.join(docsDir, file))) {
+    fail(`根目录存在 docs/ 文档副本：${file}（文档只应在 docs/ 下，见 docs/12-目录治理）`);
+  } else {
+    fail(`根目录存在未登记的 .md 文件：${file}（根目录仅允许 README.md / AGENTS.md，见 AGENTS.md §3.3 治理资产清单）`);
+  }
+}
+
 // ---- 8. 治理基线文件检查（AGENTS.md §11.1）----
 const baselineFiles = [
   "AGENTS.md",
