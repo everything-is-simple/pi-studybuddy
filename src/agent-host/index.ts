@@ -11,6 +11,7 @@
 import { createRpcServer, type AnyMessagePort } from "../contract/rpc";
 import type { Api } from "../contract/api";
 import { ping } from "./handlers/ping";
+import { toolchainHandlers } from "./handlers/toolchains";
 
 export interface AgentHost {
   dispose(): void;
@@ -21,6 +22,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   const server = createRpcServer();
   server.handle({
     "system.ping": (...args: unknown[]) => ping(args[0] as Api["system.ping"]["params"]),
+    ...toolchainHandlers,
   });
 
   let attached = false;

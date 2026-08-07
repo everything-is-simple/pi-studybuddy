@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.22
+**版本**：v0.1.23
 **日期**：2026-08-07
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -35,7 +35,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.1 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.6 已审查批准 | 任务登记（task-id 规范/字段/状态机）+ 组件治理看板（五阶段跟踪）+ 完成门槛（门禁）+ 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §7.1.1 M0 任务登记表（T-M0-001/002/003/006 done） |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.7 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §7.1.1 M0 任务登记表（T-M0-001/002/003/004/006 done） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.1 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -108,6 +108,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.23 | 2026-08-07 | T-M0-004 toolchain 完成：discovery→probe→install→prependPath 四段式框架落地（src/main/toolchains/ 11 文件 + src/agent-host/toolchain-runtime.ts + handlers）；14 种 capability 全保留，仅框架不实现组件下载；单件 16 + 集成 5 测试全绿，verify 全绿（121 测试）；04-Todo → v0.1.7；§三表格 04-Todo 版本号同步（T-M0-001/002/003/004/006 done） |
 | v0.1.22 | 2026-08-07 | T-M0-003 credential-vault 完成：src/main/credential-vault.ts（safeStorage/DPAPI 密钥库 + 原子写 0o600 + 键名校验 + 加密不可用安全降级）+ 单件 8 断言；scripts/check-desktop-security.mjs INV-04 占位转真实断言（已实现 5 条全绿）；verify 全绿（执行 7，跳过 2，100 测试）；04-Todo → v0.1.6；§三表格 04-Todo 版本号同步（T-M0-001/002/003/006 done） |
 | v0.1.21 | 2026-08-07 | T-M0-006 数据层 schema 完成：global.db 4 表 + semester.db 25 表 9 触发器 + 三层记忆（L1/L2/L3）+ PRAGMA + integrity 断言；node:sqlite 经 process.getBuiltinModule 动态加载规避 esbuild 剥离 node: 前缀；单件 13 + 集成 4 测试全绿，verify 全绿；04-Todo → v0.1.5；§三表格 04-Todo 版本号同步（T-M0-001/002/006 done） |
 | v0.1.20 | 2026-08-07 | T-M0-002 contract 类型化契约面完成：api 126 方法 + types DTO + streams 9 主题 + PiBridge 8 桥面 + preload 转发 + 类型契约测试 25 断言；04-Todo → v0.1.4；AGENTS.md §3.1 版本登记同步；§三表格 04-Todo 版本号同步 |
