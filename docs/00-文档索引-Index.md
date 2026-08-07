@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.27
+**版本**：v0.1.28
 **日期**：2026-08-07
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -35,7 +35,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.1 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.15 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明 + §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官） |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.17 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明 + §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001 done） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.1 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -102,6 +102,8 @@
 - [x] 04-Todo v0.1.12：登记 T-M0-008 开工（09-UI 三栏布局 + 标签页骨架：AppShell + TabBar 空壳，对话默认 Tab），更新 §9 任务统计
 - [x] 04-Todo v0.1.13：登记 T-M0-008 完成（09-UI 三栏布局 + 标签页骨架：tabs.ts 9 Tab + AppShell.tsx 三栏壳 + TabBar.tsx + App.tsx 组装 + renderer-layout.test.ts 14 断言；renderToStaticMarkup 静态渲染测试；vitest.config.ts 加 react 插件；168 测试全绿），更新 §9 任务统计
 - [x] 04-Todo v0.1.15：登记 T-M0-009 完成（M0 系统冒烟完整：smoke.mjs 扩展覆盖 §6.2 退出门槛六项 build+RPC+建库+vault+六不变量+汇总；补全 INV-06 HTML_PREVIEW_CSP form-action 'none' + protocol.ts 接入；check-desktop-security.mjs 六条转硬断言；verify.mjs desktop-security 改硬阻塞；171 测试全绿）+ §6.0 M0 完成与版本演进说明 + §9 统计口径修正（M0 9 task-id）+ 头部版本号滞后修正（v0.1.11→v0.1.15）。M0 收官，9 任务全 done
+- [x] 04-Todo v0.1.16：登记 T-M1-001 开工 + 前置 DTO 对齐 schema（contract/types.ts DTO 与 05-ERD schema 10 处不一致，按权威链 05-ERD > types.ts 修正 7 个 S1 DTO；新增 §7.2.1 M1 任务登记表 T-M1-001 in_progress；171 测试全绿）
+- [x] 04-Todo v0.1.17：登记 T-M1-001 完成（S1 学习节奏 25 RPC handler + 6 studybuddy_* 工具注册 + S1Context 句柄管理 + lookup 跨库查找 + SqlParams 类型对齐 node:sqlite；studybuddy-extension 接入 S1 工具注册；237 测试全绿，verify 7+2 全通过；§9 统计 M1 1 done + 9 pending）
 - [x] 01-TRD v0.2.2：§7 加决策 6「v0.1 交付形态：源码形态（pnpm dev），不打包 .exe」（依据 AGENTS.md §1.2 + §6.4；M0 完成后 04-Todo §6.0 补版本演进说明）
 - [x] 10-开发规范 v0.1.0 ✅ 已审查批准：16 步开发流程（准备/执行/收尾三阶段）+ TDD 纪律 + 单一执行任务门禁 + 文档治理检查 + diff 检查 + 用户授权门
 - [x] 11-组件装配 v0.1.0 ✅ 已审查批准："先分解再组合" SoT + 6 步装配流程 + 能力卡规范 + 试炼场边界 + 装配门禁四项
@@ -115,6 +117,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.28 | 2026-08-07 | T-M1-001 S1 学习节奏工具注册 + API 完成（M1 首任务）：25 RPC handler（semesters 6 含跨库写+状态机 / courses 5 / exams 4 含四态确认 / schedule 4 / tasks 4 含 dailyBrief 规则聚合 / events 2）+ 6 studybuddy_* 工具（TypeBox schema + execute 薄封装 handler）+ S1Context 句柄管理 + lookup 跨库查找 + SqlParams 类型对齐 node:sqlite SQLInputValue；studybuddy-extension 接入 S1 工具注册；单件 30 + 集成 33 + 扩展契约 5 测试，237 测试全绿，verify 7+2 全通过；04-Todo → v0.1.17（§7.2.1 T-M1-001 done + §9 统计 M1 1 done）；§三表格 04-Todo 版本号同步；§七登记 T-M1-001 done（含 v0.1.16 开工补登记） |
 | v0.1.27 | 2026-08-07 | T-M0-009 M0 系统冒烟完整完成（M0 收官）：smoke.mjs 扩展覆盖 §6.2 退出门槛六项（build 产物 10 项 + RPC system.ping 往返 + global.db 4 表建库 + semester.db 25 表建库 + credential-vault set→get 往返/磁盘无明文/键名校验 + 安全不变量六条子进程）；补全 INV-06（HTML_PREVIEW_CSP form-action 'none' + protocol.ts 对 .html 接入）；check-desktop-security.mjs 六条转硬断言移除占位宽松；verify.mjs desktop-security 改硬阻塞；invariants.test.ts 加 INV-04/05/06 三断言；171 测试全绿，verify 全绿（执行 7 跳过 2）；04-Todo → v0.1.15（§6.0 M0 完成与版本演进说明 + §9 统计口径修正 M0 9 task-id + 头部版本号滞后修正）；§三表格 04-Todo 版本号同步；§七登记 T-M0-009 done（M0 9 任务全 done） |
 | v0.1.26 | 2026-08-07 | T-M0-008 09-UI 三栏布局 + 标签页骨架完成：src/renderer/tabs.ts（9 Tab 纯数据 + DEFAULT_TAB_ID=chat）+ src/renderer/components/AppShell.tsx（三栏布局壳：标题栏 + 左侧栏导航 + 主内容区 TabBar + 朗读控制条占位 + 右侧面板上下文 + 状态栏）+ src/renderer/components/TabBar.tsx（9 Tab + aria-selected 激活态）+ App.tsx 组装 AppShell（保留 T-M0-001 RPC 通道验证）；测试策略：renderToStaticMarkup 静态渲染断言（不引入 jsdom/@testing-library/react）；vitest.config.ts 加 @vitejs/plugin-react 插件解析 tsx；单件 14 断言全绿，verify 全绿（168 测试）；04-Todo → v0.1.13；§三表格 04-Todo 版本号同步（T-M0-001/002/003/004/005/006/007/008 done） |
 | v0.1.25 | 2026-08-07 | T-M0-007 studybuddy-extension 空壳完成：src/agent/studybuddy-extension.ts（createStudyBuddyExtension 工厂返回 pi ExtensionFactory 空 setup，零工具/零钩子/零 provider）；pi 底座 @earendil-works/pi-coding-agent@0.80.10 + pi-ai@0.80.10 安装为 dependencies（计划 0.84.0 降级为 0.80.10，原因：0.84.0 npm 包缺 dist 目录）；tsconfig.node.json include 加 src/agent；pnpm-workspace.yaml allowBuilds 补 @google/genai + protobufjs；单件 7 + 集成 4 测试全绿，verify 全绿（154 测试）；04-Todo → v0.1.11（§4.1 看板 pi 阶段1/3 ✅ + §9 统计 M0 7 done）；§三表格 04-Todo 版本号同步（T-M0-001/002/003/004/005/006/007 done） |

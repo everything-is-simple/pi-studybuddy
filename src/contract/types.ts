@@ -88,16 +88,24 @@ export interface FileEntry {
   mtime?: string;
 }
 
-/* ---- §3.3 S1 学习节奏 ---- */
+/* ---- §3.3 S1 学习节奏（值域对齐 05-ERD §2.1 + §3.1） ---- */
+
+/** 学期状态机（05-ERD §2.1 CHECK，07-WF §2.2 四态） */
+export type SemesterStatus = "active" | "teaching_ended" | "follow_up" | "archived";
 
 export interface Semester {
   id: string;
+  studentName: string;
   label: string;
   startDate: string;
   endDate: string;
   timezone: string;
-  status: "planning" | "active" | "teaching_ended" | "follow_up" | "archived";
+  status: SemesterStatus;
   dbRelativePath: string;
+  ready: number; // 0=未就绪 1=就绪（学期库已初始化）
+  archivedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CourseInstance {
@@ -106,9 +114,13 @@ export interface CourseInstance {
   courseName: string;
   subject: string;
   teacher?: string;
-  /** 课程目录缓存路径（OCR/资料归属） */
-  courseDirPath?: string;
+  dailyMinutesTarget?: number;
+  availableTimeJson?: string;
+  targetScoreJson?: string;
+  retakeOf?: string;
+  status: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface SchedulePreview {
@@ -122,7 +134,14 @@ export interface SchedulePreview {
   confidence: number;
 }
 
-export type AssessmentType = "midterm" | "final" | "quiz" | "mock";
+/** 考试类型（05-ERD §3.1.2 CHECK） */
+export type AssessmentType = "midterm" | "final" | "makeup" | "retake" | "quiz";
+
+/** 考试来源（05-ERD §3.1.2 source 列） */
+export type AssessmentSource = "student_input" | "ocr_schedule" | "ai_extracted";
+
+/** 考试确认状态（05-ERD §3.1.2 CHECK 四态，07-WF §2.2） */
+export type ConfirmationStatus = "pending" | "confirmed" | "rejected" | "superseded";
 
 export interface AssessmentAttempt {
   id: string;
@@ -130,11 +149,16 @@ export interface AssessmentAttempt {
   examName: string;
   examType: AssessmentType;
   scheduledDate: string;
-  source: "manual" | "ocr" | "schedule";
+  actualDate?: string;
+  source: AssessmentSource;
   confidence?: number;
-  confirmationStatus: "pending" | "confirmed" | "superseded";
+  confirmationStatus: ConfirmationStatus;
   confirmedAt?: string;
-  newAttemptId?: string;
+  confirmedBy?: string;
+  changeHistoryJson?: string;
+  retakeOf?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ScheduleEntry {
@@ -144,24 +168,31 @@ export interface ScheduleEntry {
   startTime: string;
   endTime: string;
   location?: string;
+  weekPattern?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type StudyTaskType =
-  | "homework"
-  | "review"
-  | "practice"
-  | "reading"
-  | "assignment";
+/** 学习任务类型（05-ERD §3.1.4 CHECK） */
+export type StudyTaskType = "review" | "practice" | "note" | "exam_prep" | "other";
+
+/** 学习任务状态（05-ERD §3.1.4 CHECK 四态） */
+export type StudyTaskStatus = "pending" | "in_progress" | "completed" | "skipped";
 
 export interface StudyTask {
   id: string;
   courseId: string;
   title: string;
+  description?: string;
   taskType: StudyTaskType;
-  status: "pending" | "done";
+  status: StudyTaskStatus;
   dueDate?: string;
-  priority?: "low" | "medium" | "high";
-  sourceSystem: string;
+  priority: number; // 1-5（05-ERD §3.1.4 CHECK BETWEEN 1 AND 5，08-Test §3.2.5）
+  sourceSystem: string; // S1-S7
+  sourceRefId?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DailyBrief {
@@ -170,16 +201,19 @@ export interface DailyBrief {
   pendingItems: number;
 }
 
+/** 学习事件来源系统（05-ERD §3.1.5 CHECK S1-S7） */
+export type EventSourceSystem = "S1" | "S2" | "S3" | "S4" | "S5" | "S6" | "S7";
+
 export interface StudyEvent {
   id: string;
-  semesterId?: string;
+  semesterId: string; // 05-ERD §3.1.5 NOT NULL
   courseId?: string;
   eventType: string;
+  sourceSystem: EventSourceSystem;
+  sourceRefId?: string;
+  eventDataJson?: string;
   occurredAt: string;
-  /** 已复习标记（TTS 朗读 → practice_reviewed） */
-  reviewedAt?: string;
-  refType?: string;
-  refId?: string;
+  createdAt: string;
 }
 
 /* ---- §3.4 S2 资料笔记 ---- */

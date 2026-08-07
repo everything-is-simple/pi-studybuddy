@@ -1,28 +1,39 @@
-import { describe, it, expect } from "vitest";
-import { createStudyBuddyExtension, STUDYBUDDY_EXTENSION_NAME } from "../../src/agent/studybuddy-extension";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { rmSync, mkdirSync } from "node:fs";
+import {
+  createStudyBuddyExtension,
+  STUDYBUDDY_EXTENSION_NAME,
+} from "../../src/agent/studybuddy-extension";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 /**
- * T-M0-007 studybuddy-extension 单件测试（03-Arch §2.1 + pi ExtensionFactory 契约）
+ * T-M1-001 studybuddy-extension 单件测试（03-Arch §2.1 + §3.1 S1 工具装配）
  *
- * 断言（空壳契约）：
+ * 断言（T-M1-001 升级后）：
  *   - createStudyBuddyExtension() 返回可调用 factory（typeof === "function"）
- *   - factory 返回 Promise（async 签名，符合 ExtensionFactory = (pi) => void | Promise<void>）
- *   - 调用 factory(stubPi) 不抛错（setup 空实现）
- *   - stubPi.registerTool 未被调用（零工具注册，空壳核心断言）
- *   - stubPi.on 未被调用（零钩子订阅，空壳核心断言）
- *   - stubPi.registerProvider 未被调用（零 provider 注入）
- *   - STUDYBUDDY_EXTENSION_NAME === "pi-studybuddy"（扩展标识，03-Arch §2.1 name 字段）
+ *   - factory 返回 Promise（async 签名，符合 ExtensionFactory 契约）
+ *   - 调用 factory(stubPi) 不抛错（setup 实现）
+ *   - stubPi.registerTool 被调用 6 次（S1 全部 6 个 studybuddy_* 工具）
+ *   - stubPi.on 未被调用（M1-001 暂不订阅钩子）
+ *   - STUDYBUDDY_EXTENSION_NAME === "pi-studybuddy"
  *
- * 数据隔离（AGENTS.md §5.3）：纯函数测试无 IO，不涉及运行数据目录。
+ * 数据隔离（AGENTS.md §5.3）：通过 PI_STUDYBUDDY_DATA_ROOT 注入隔离目录。
  */
 
-/** 最小 stub pi：仅实现空壳可能调用的 API + 调用计数器，as ExtensionAPI 绕过完整接口 */
-function createStubPi(): { calls: { registerTool: number; on: number; registerProvider: number }; pi: ExtensionAPI } {
+const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M1-001\\extension-unit";
+
+/** 最小 stub pi：实现 registerTool + on + 调用计数器，as ExtensionAPI 绕过完整接口 */
+function createStubPi(): {
+  calls: { registerTool: number; on: number; registerProvider: number };
+  registeredToolNames: string[];
+  pi: ExtensionAPI;
+} {
   const calls = { registerTool: 0, on: 0, registerProvider: 0 };
+  const registeredToolNames: string[] = [];
   const pi = {
-    registerTool: () => {
+    registerTool: (tool: { name: string }) => {
       calls.registerTool++;
+      registeredToolNames.push(tool.name);
     },
     on: () => {
       calls.on++;
@@ -31,10 +42,35 @@ function createStubPi(): { calls: { registerTool: number; on: number; registerPr
       calls.registerProvider++;
     },
   } as unknown as ExtensionAPI;
-  return { calls, pi };
+  return { calls, registeredToolNames, pi };
 }
 
-describe("createStudyBuddyExtension", () => {
+describe("T-M1-001 studybuddy-extension 单件测试（S1 工具装配）", () => {
+  let originalDataRoot: string | undefined;
+
+  beforeAll(() => {
+    rmSync(ISOLATION_DIR, { recursive: true, force: true });
+    mkdirSync(ISOLATION_DIR, { recursive: true });
+    originalDataRoot = process.env.PI_STUDYBUDDY_DATA_ROOT;
+    process.env.PI_STUDYBUDDY_DATA_ROOT = ISOLATION_DIR;
+  });
+
+  afterAll(() => {
+    if (originalDataRoot === undefined) {
+      delete process.env.PI_STUDYBUDDY_DATA_ROOT;
+    } else {
+      process.env.PI_STUDYBUDDY_DATA_ROOT = originalDataRoot;
+    }
+    for (let i = 0; i < 3; i++) {
+      try {
+        rmSync(ISOLATION_DIR, { recursive: true, force: true });
+        break;
+      } catch {
+        // 忽略 EBUSY
+      }
+    }
+  });
+
   it("返回可调用 factory（typeof === 'function'）", () => {
     const factory = createStudyBuddyExtension();
     expect(typeof factory).toBe("function");
@@ -45,31 +81,56 @@ describe("createStudyBuddyExtension", () => {
     const { pi } = createStubPi();
     const result = factory(pi);
     expect(result).toBeInstanceOf(Promise);
-    // 消费 Promise 避免未处理的 rejection 警告
     return result;
   });
 
-  it("调用 factory(stubPi) 不抛错（setup 空实现）", async () => {
+  it("调用 factory(stubPi) 不抛错（setup 实现）", async () => {
     const factory = createStudyBuddyExtension();
     const { pi } = createStubPi();
     await expect(factory(pi)).resolves.toBeUndefined();
   });
 
-  it("不调用 registerTool（零工具注册，空壳核心断言）", async () => {
+  it("registerTool 被调用 6 次（S1 全部 6 个 studybuddy_* 工具）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(0);
+    expect(calls.registerTool).toBe(6);
   });
 
-  it("不调用 pi.on（零钩子订阅，空壳核心断言）", async () => {
+  it("注册的工具名全部匹配 ^studybuddy_[a-z_]+$", async () => {
+    const factory = createStudyBuddyExtension();
+    const { registeredToolNames, pi } = createStubPi();
+    await factory(pi);
+    expect(registeredToolNames.length).toBe(6);
+    for (const name of registeredToolNames) {
+      expect(name).toMatch(/^studybuddy_[a-z_]+$/);
+    }
+  });
+
+  it("注册的工具名含 S1 6 个工具（init_semester/add_exam/confirm_exam/daily_brief/complete_task/transition_semester）", async () => {
+    const factory = createStudyBuddyExtension();
+    const { registeredToolNames, pi } = createStubPi();
+    await factory(pi);
+    expect(registeredToolNames).toEqual(
+      expect.arrayContaining([
+        "studybuddy_init_semester",
+        "studybuddy_add_exam",
+        "studybuddy_confirm_exam",
+        "studybuddy_daily_brief",
+        "studybuddy_complete_task",
+        "studybuddy_transition_semester",
+      ]),
+    );
+  });
+
+  it("不调用 pi.on（M1-001 暂不订阅钩子）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
     expect(calls.on).toBe(0);
   });
 
-  it("不调用 registerProvider（零 provider 注入）", async () => {
+  it("不调用 registerProvider（M1-001 暂不注入 provider）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);

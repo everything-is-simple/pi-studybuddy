@@ -44,8 +44,9 @@ function isRpcError(e: unknown): e is RpcError {
   );
 }
 
-/** handler 抛出的内部异常 → 脱敏为 INTERNAL_ERROR（06-API §2.3 永不暴露内部栈） */
-function toError(_e: unknown): RpcError {
+/** handler 抛出的异常 → 已带 code/message 的 RpcError 保留（业务错误码 06-API §2.2），其余脱敏为 INTERNAL_ERROR（§2.3 永不暴露内部栈） */
+function toError(e: unknown): RpcError {
+  if (isRpcError(e)) return e;
   return { code: RpcErrorCode.INTERNAL_ERROR, message: "操作失败，请稍后重试" };
 }
 

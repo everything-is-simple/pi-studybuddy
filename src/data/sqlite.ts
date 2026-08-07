@@ -20,3 +20,6 @@ export const DatabaseSync = nodeSqlite.DatabaseSync;
 
 /** DatabaseSync 实例类型（与构造器同名，供 `db: DatabaseSync` 类型标注使用） */
 export type DatabaseSync = DatabaseSyncInstance;
+
+/** SQLite 命名参数绑定类型（与 node:sqlite SQLInputValue 对齐） */
+export type SqlParams = Record<string, string | number | bigint | Uint8Array | null>;

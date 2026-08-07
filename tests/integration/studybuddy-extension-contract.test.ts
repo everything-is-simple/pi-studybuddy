@@ -1,63 +1,103 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { rmSync, mkdirSync } from "node:fs";
 import { createStudyBuddyExtension } from "../../src/agent/studybuddy-extension";
 import type { ExtensionAPI, ExtensionFactory } from "@earendil-works/pi-coding-agent";
 
 /**
- * T-M0-007 studybuddy-extension 集成测试（阶段3：与 pi 底座契约对接验证）
+ * T-M1-001 studybuddy-extension × pi 底座契约对接（阶段3：S1 工具装配验证）
  *
- * 断言（类型契约对接 + 行为安全）：
- *   - createStudyBuddyExtension() 返回值赋给 ExtensionFactory 类型变量（编译时类型契约对接）
- *   - factory 符合 ExtensionFactory 签名：(pi: ExtensionAPI) => void | Promise<void>
- *   - 调用 factory(stubPi) 完成后 stubPi 状态不变（无副作用，空壳不修改 pi）
- *   - 多次调用 factory 安全（幂等空壳，无累积副作用）
+ * 断言（类型契约对接 + S1 工具装配行为）：
+ *   - createStudyBuddyExtension() 返回值符合 ExtensionFactory 类型契约
+ *   - factory(stubPi) 调用后 registerTool 被调用 6 次（S1 工具）
+ *   - 多次调用 factory 安全（每次注册 6 个工具，无异常）
+ *   - factory 返回 Promise<undefined>
  *
- * 注：真正的 pi 运行时加载（pi discoverAndLoadExtensions 加载 studybuddy-extension.ts）
- * 属于 03-Arch §6.7 会话管理后续任务，本测试只验证类型契约 + 调用安全。
- *
- * 数据隔离（AGENTS.md §5.3）：纯函数测试无 IO，不涉及运行数据目录。
+ * 数据隔离（AGENTS.md §5.3）：通过 PI_STUDYBUDDY_DATA_ROOT 注入隔离目录。
  */
 
-/** 最小 stub pi：调用计数器，as ExtensionAPI 绕过完整接口 */
-function createStubPi(): { calls: { total: number }; pi: ExtensionAPI } {
-  const calls = { total: 0 };
+const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M1-001\\extension-contract";
+
+/** 最小 stub pi：调用计数器 + 工具名收集，as ExtensionAPI 绕过完整接口 */
+function createStubPi(): {
+  calls: { registerTool: number; on: number; registerProvider: number };
+  toolNames: string[];
+  pi: ExtensionAPI;
+} {
+  const calls = { registerTool: 0, on: 0, registerProvider: 0 };
+  const toolNames: string[] = [];
   const pi = {
-    registerTool: () => {
-      calls.total++;
+    registerTool: (tool: { name: string }) => {
+      calls.registerTool++;
+      toolNames.push(tool.name);
     },
     on: () => {
-      calls.total++;
+      calls.on++;
     },
     registerProvider: () => {
-      calls.total++;
+      calls.registerProvider++;
     },
-    registerCommand: () => {
-      calls.total++;
-    },
+    registerCommand: () => {},
   } as unknown as ExtensionAPI;
-  return { calls, pi };
+  return { calls, toolNames, pi };
 }
 
-describe("studybuddy-extension × pi 底座契约对接（阶段3）", () => {
+describe("T-M1-001 studybuddy-extension × pi 底座契约对接（S1 工具装配）", () => {
+  let originalDataRoot: string | undefined;
+
+  beforeAll(() => {
+    rmSync(ISOLATION_DIR, { recursive: true, force: true });
+    mkdirSync(ISOLATION_DIR, { recursive: true });
+    originalDataRoot = process.env.PI_STUDYBUDDY_DATA_ROOT;
+    process.env.PI_STUDYBUDDY_DATA_ROOT = ISOLATION_DIR;
+  });
+
+  afterAll(() => {
+    if (originalDataRoot === undefined) {
+      delete process.env.PI_STUDYBUDDY_DATA_ROOT;
+    } else {
+      process.env.PI_STUDYBUDDY_DATA_ROOT = originalDataRoot;
+    }
+    for (let i = 0; i < 3; i++) {
+      try {
+        rmSync(ISOLATION_DIR, { recursive: true, force: true });
+        break;
+      } catch {
+        // 忽略 EBUSY
+      }
+    }
+  });
+
   it("createStudyBuddyExtension() 返回值符合 ExtensionFactory 类型契约（编译时对接）", () => {
-    // 类型契约对接：赋值给 ExtensionFactory 类型变量，编译时验证签名兼容
     const factory: ExtensionFactory = createStudyBuddyExtension();
     expect(typeof factory).toBe("function");
   });
 
-  it("factory(stubPi) 调用后 stubPi 状态不变（无副作用）", async () => {
+  it("factory(stubPi) 调用后 registerTool 被调用 6 次（S1 工具装配）", async () => {
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.total).toBe(0);
+    expect(calls.registerTool).toBe(6);
+    expect(calls.on).toBe(0);
+    expect(calls.registerProvider).toBe(0);
   });
 
-  it("多次调用 factory 安全（幂等空壳，无累积副作用）", async () => {
+  it("factory(stubPi) 注册的工具名全部以 studybuddy_ 开头", async () => {
+    const factory: ExtensionFactory = createStudyBuddyExtension();
+    const { toolNames, pi } = createStubPi();
+    await factory(pi);
+    expect(toolNames.length).toBe(6);
+    for (const name of toolNames) {
+      expect(name).toMatch(/^studybuddy_/);
+    }
+  });
+
+  it("多次调用 factory 安全（每次注册 6 个工具，无异常）", async () => {
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
     await factory(pi);
     await factory(pi);
-    expect(calls.total).toBe(0);
+    expect(calls.registerTool).toBe(18);
   });
 
   it("factory 返回 Promise<undefined>（符合 ExtensionFactory 返回 void | Promise<void>）", async () => {

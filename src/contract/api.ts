@@ -111,7 +111,7 @@ export interface Api {
       examName: string;
       examType: string;
       scheduledDate: string;
-      source: "manual" | "ocr" | "schedule";
+      source: "student_input" | "ocr_schedule" | "ai_extracted";
       confidence?: number;
     };
     result: AssessmentAttempt;
@@ -145,7 +145,7 @@ export interface Api {
       title: string;
       taskType: string;
       dueDate?: string;
-      priority?: string;
+      priority?: number;
     };
     result: StudyTask;
   };
