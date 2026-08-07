@@ -499,34 +499,61 @@ export interface WeakPoint {
 
 /* ---- §3.7 S5 期末冲刺 ---- */
 
+/**
+ * 模拟卷 DTO（05-ERD §3.5.1 mock_exam_papers + §3.5.2 mock_exam_questions 聚合视图）
+ * questions 始终防泄露（QuestionDTO 不含 correct_answer/acceptable_answers/explanation），
+ * 复盘用 mockExams.getResult 返回 MockExamResult（含 moduleAnalyses）。
+ */
 export interface MockExamPaper {
   id: string;
+  courseInstanceId: string;
   assessmentAttemptId: string;
+  paperTitle: string;
+  questionCount: number;
+  timeLimitMinutes?: number;
+  totalScore: number;
   sourceHash: string;
-  questions: QuestionDTO[];
-  timeLimit?: number;
+  aiModel: string;
+  promptVersion: string;
+  generatedAt: string;
   createdAt: string;
+  questions: QuestionDTO[];
 }
 
+/** 模拟考作答 DTO（05-ERD §3.5.3 mock_exam_attempts） */
 export interface MockExamAttempt {
   id: string;
   paperId: string;
-  status: "in_progress" | "submitted";
+  courseInstanceId: string;
+  status: "in_progress" | "submitted" | "graded";
   startedAt: string;
+  submittedAt?: string;
+  gradedAt?: string;
+  totalScore?: number;
+  maxScore?: number;
+  correctCount?: number;
+  durationMs?: number;
+  createdAt: string;
 }
 
+/** 模拟考结果 DTO（06-API §3.7：展示总分/正确率/耗时/模块分析） */
 export interface MockExamResult {
   attemptId: string;
   totalScore: number;
+  maxScore: number;
+  correctCount: number;
   correctRate: number;
   elapsedMs: number;
   moduleAnalyses: MockExamModuleAnalysis[];
 }
 
+/** 模拟考模块分析 DTO（05-ERD §3.5.5 mock_exam_module_analyses） */
 export interface MockExamModuleAnalysis {
   moduleId: string;
+  totalQuestions: number;
+  correctCount: number;
   correctRate: number;
-  strength: "strong" | "weak";
+  strength: "strong" | "medium" | "weak";
 }
 
 /** 临考速背 DTO（确定性只读，06-API §3.7）：不暴露题干/答案/作答 */
