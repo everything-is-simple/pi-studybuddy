@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.43
+**版本**：v0.1.44
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -120,11 +120,14 @@
 - [x] 治理 Skills：studybuddy-task-complete / studybuddy-component-assembly ✅ 已创建
 - [x] 工作流模板：.pi/prompts/wr.md / plan.md ✅ 已创建
 - [x] 治理脚本：scripts/verify.mjs + check-docs-governance.mjs + check-contract-coverage.mjs ✅ 已创建
+- [x] 04-Todo v0.1.37：登记 T-M1-010 完成（E2E-01~03 学生主路径端到端测试：3 E2E 文件 36 测试 + vitest + child_process.fork + Node.js IPC + 防泄露铁律 assertNoLeakage 双重检查 + 幂等归档 UNIQUE(question_id) + 薄弱点 evidence_count≥2 + 规则批改可证伪全错0分/全对满分 + AI 降级 mock 不连真实服务 + 运行数据隔离 H:\pi-studybuddy-tmp\runs\T-M1-010\；722 单元/集成 + 36 E2E 测试全绿，verify full 阶段全通过；§6.3 M1 退出门槛全勾选 + §9 统计 M1 6 done）—— M1 核心闭环 MVP 退出门槛达成
+- [x] 08-Test v0.1.2：§6 E2E 框架由 Playwright 改为 vitest + Electron 启动（pi-studybuddy 是 Electron 单体无独立后端，ai-studybuddy Playwright webServer 模式不适用；参考 pi-desktop 范式，不引入新依赖）
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.44 | 2026-08-08 | 04-Todo v0.1.37 登记 T-M1-010 完成（§7.2.1 T-M1-010 pending→done + §6.3 M1 退出门槛全勾选 + §9 统计 M1 done 5→6）。原因：T-M1-010 E2E-01~03 实施完成，质量门全通过（type-check + 722 单元/集成测试 + 36 E2E 测试 + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.43 | 2026-08-08 | 04-Todo v0.1.36 登记 T-M2-008 完成（§7.3.1 T-M2-008 in_progress→done + §9 统计 M2 in_progress 1→0 + done 5→6）。原因：T-M2-008 09-UI S5-S7+TTS+备份恢复 UI 实施完成，质量门全通过（type-check + 722 测试 + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.42 | 2026-08-08 | 04-Todo v0.1.35 登记 T-M2-008 开工（§7.3.1 T-M2-008 pending→in_progress + §9 统计 M2 pending 4→3 + in_progress 0→1）。原因：用户批准 T-M2-008 09-UI S5-S7+TTS+备份恢复 UI 开工（§7.5 全局执行顺序表第 2 行）。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.41 | 2026-08-08 | 04-Todo v0.1.34 登记 T-M1-009 完成（§7.2.1 T-M1-009 in_progress→done + §9 统计 M1 in_progress 1→0 + done 4→5）。原因：T-M1-009 09-UI S1-S4 业务 UI 实施完成，质量门全通过（type-check + 656 测试 + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
