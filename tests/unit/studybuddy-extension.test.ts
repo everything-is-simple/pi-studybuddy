@@ -45,7 +45,7 @@ function createStubPi(): {
   return { calls, registeredToolNames, pi };
 }
 
-describe("T-M1-001/T-M1-002 studybuddy-extension 单件测试（S1+S2 工具装配）", () => {
+describe("T-M1-001/T-M1-002/T-M1-003 studybuddy-extension 单件测试（S1+S2+S3 工具装配）", () => {
   let originalDataRoot: string | undefined;
 
   beforeAll(() => {
@@ -90,24 +90,24 @@ describe("T-M1-001/T-M1-002 studybuddy-extension 单件测试（S1+S2 工具装�
     await expect(factory(pi)).resolves.toBeUndefined();
   });
 
-  it("registerTool 被调用 12 次（S1 6 + S2 6 个 studybuddy_* 工具）", async () => {
+  it("registerTool 被调用 15 次（S1 6 + S2 6 + S3 3 个 studybuddy_* 工具）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(12);
+    expect(calls.registerTool).toBe(15);
   });
 
   it("注册的工具名全部匹配 ^studybuddy_[a-z_]+$", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
-    expect(registeredToolNames.length).toBe(12);
+    expect(registeredToolNames.length).toBe(15);
     for (const name of registeredToolNames) {
       expect(name).toMatch(/^studybuddy_[a-z_]+$/);
     }
   });
 
-  it("注册的工具名含 S1 6 个 + S2 6 个工具", async () => {
+  it("注册的工具名含 S1 6 个 + S2 6 个 + S3 3 个工具", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
@@ -127,6 +127,10 @@ describe("T-M1-001/T-M1-002 studybuddy-extension 单件测试（S1+S2 工具装�
         "studybuddy_replace_material_text",
         "studybuddy_update_note",
         "studybuddy_update_learn_status",
+        // S3
+        "studybuddy_generate_questions",
+        "studybuddy_submit_practice",
+        "studybuddy_get_practice_result",
       ]),
     );
   });

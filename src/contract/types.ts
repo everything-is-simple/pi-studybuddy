@@ -363,15 +363,24 @@ export interface PracticeSession {
   timeLimit?: number;
   difficulty?: number;
   questionTypes?: QuestionType[];
-  status: "in_progress" | "submitted" | "expired";
+  status: "in_progress" | "submitted" | "graded";
+  maxScore?: number;
+  totalScore?: number;
+  correctCount?: number;
+  startedAt: string;
+  submittedAt?: string;
+  gradedAt?: string;
   createdAt: string;
 }
 
 export interface PracticeResult {
   sessionId: string;
   totalScore: number;
+  maxScore: number;
   correctCount: number;
   elapsedMs: number;
+  submittedAt?: string;
+  gradedAt?: string;
   items: Array<{
     question: QuestionDTO;
     isCorrect: boolean;

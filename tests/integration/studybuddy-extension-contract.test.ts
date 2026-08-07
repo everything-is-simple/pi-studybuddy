@@ -41,7 +41,7 @@ function createStubPi(): {
   return { calls, toolNames, pi };
 }
 
-describe("T-M1-001/T-M1-002 studybuddy-extension × pi 底座契约对接（S1+S2 工具装配）", () => {
+describe("T-M1-001/T-M1-002/T-M1-003 studybuddy-extension × pi 底座契约对接（S1+S2+S3 工具装配）", () => {
   let originalDataRoot: string | undefined;
 
   beforeAll(() => {
@@ -72,11 +72,11 @@ describe("T-M1-001/T-M1-002 studybuddy-extension × pi 底座契约对接（S1+S
     expect(typeof factory).toBe("function");
   });
 
-  it("factory(stubPi) 调用后 registerTool 被调用 12 次（S1 6 + S2 6 工具装配）", async () => {
+  it("factory(stubPi) 调用后 registerTool 被调用 15 次（S1 6 + S2 6 + S3 3 工具装配）", async () => {
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(12);
+    expect(calls.registerTool).toBe(15);
     expect(calls.on).toBe(0);
     expect(calls.registerProvider).toBe(0);
   });
@@ -85,19 +85,19 @@ describe("T-M1-001/T-M1-002 studybuddy-extension × pi 底座契约对接（S1+S
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { toolNames, pi } = createStubPi();
     await factory(pi);
-    expect(toolNames.length).toBe(12);
+    expect(toolNames.length).toBe(15);
     for (const name of toolNames) {
       expect(name).toMatch(/^studybuddy_/);
     }
   });
 
-  it("多次调用 factory 安全（每次注册 12 个工具，无异常）", async () => {
+  it("多次调用 factory 安全（每次注册 15 个工具，无异常）", async () => {
     const factory: ExtensionFactory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
     await factory(pi);
     await factory(pi);
-    expect(calls.registerTool).toBe(36);
+    expect(calls.registerTool).toBe(45);
   });
 
   it("factory 返回 Promise<undefined>（符合 ExtensionFactory 返回 void | Promise<void>）", async () => {
