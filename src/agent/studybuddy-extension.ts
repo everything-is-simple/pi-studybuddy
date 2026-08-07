@@ -39,6 +39,7 @@ import { S7Context } from "../agent-host/handlers/s7/context";
 import { TtsContext } from "../agent-host/handlers/tts/context";
 import { BackupContext } from "../agent-host/handlers/backup/context";
 import { createS1Tools } from "./tools/s1/tools";
+import { createOcrTools } from "./tools/s1/ocr-tools";
 import { createS2Tools } from "./tools/s2/tools";
 import { createS3Tools } from "./tools/s3/tools";
 import { createS4Tools } from "./tools/s4/tools";
@@ -75,7 +76,7 @@ function resolveDataRoot(): string {
  *   4. 注册 S2 资料笔记 6 个 studybuddy_* 工具
  *   5. 注册 S3-S7 + TTS + 备份恢复 工具
  *
- * 工具总数：S1 6 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 = 34。
+ * 工具总数：S1 6 + OCR 1 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 = 35。
  */
 export function createStudyBuddyExtension(): ExtensionFactory {
   return async (pi: ExtensionAPI): Promise<void> => {
@@ -93,6 +94,12 @@ export function createStudyBuddyExtension(): ExtensionFactory {
     // 注册 S1 学习节奏 6 个工具（03-Arch §3.1）
     const s1Tools = createS1Tools(s1Ctx);
     for (const tool of s1Tools) {
+      pi.registerTool(tool);
+    }
+
+    // 注册 S1 OCR 课程表识别 1 个工具（03-Arch §3.1 + §5.3 studybuddy-ocr-schedule）
+    const ocrTools = createOcrTools();
+    for (const tool of ocrTools) {
       pi.registerTool(tool);
     }
 

@@ -13,3 +13,7 @@ export function notFound(message: string): RpcError {
 export function badRequest(message: string): RpcError {
   return { code: "BAD_REQUEST", message };
 }
+
+export function internalError(message: string): RpcError {
+  return { code: "INTERNAL_ERROR", message };
+}

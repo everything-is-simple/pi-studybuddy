@@ -13,7 +13,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
  *   - createStudyBuddyExtension() 返回可调用 factory（typeof === "function"）
  *   - factory 返回 Promise（async 签名，符合 ExtensionFactory 契约）
  *   - 调用 factory(stubPi) 不抛错（setup 实现）
- *   - stubPi.registerTool 被调用 34 次（S1 6 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 个 studybuddy_* 工具）
+ *   - stubPi.registerTool 被调用 35 次（S1 6 + OCR 1 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 个 studybuddy_* 工具）
  *   - stubPi.on 未被调用（M1-004 暂不订阅钩子）
  *   - STUDYBUDDY_EXTENSION_NAME === "pi-studybuddy"
  *
@@ -90,24 +90,24 @@ describe("T-M1-001~004 + T-M2-001~005 studybuddy-extension 单件测试（S1+S2+
     await expect(factory(pi)).resolves.toBeUndefined();
   });
 
-  it("registerTool 被调用 34 次（S1 6 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 个 studybuddy_* 工具）", async () => {
+  it("registerTool 被调用 35 次（S1 6 + OCR 1 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 个 studybuddy_* 工具）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.registerTool).toBe(34);
+    expect(calls.registerTool).toBe(35);
   });
 
   it("注册的工具名全部匹配 ^studybuddy_[a-z_]+$", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
-    expect(registeredToolNames.length).toBe(34);
+    expect(registeredToolNames.length).toBe(35);
     for (const name of registeredToolNames) {
       expect(name).toMatch(/^studybuddy_[a-z_]+$/);
     }
   });
 
-  it("注册的工具名含 S1 6 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 个工具", async () => {
+  it("注册的工具名含 S1 7（含 OCR）+ S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 个工具", async () => {
     const factory = createStudyBuddyExtension();
     const { registeredToolNames, pi } = createStubPi();
     await factory(pi);
@@ -120,6 +120,8 @@ describe("T-M1-001~004 + T-M2-001~005 studybuddy-extension 单件测试（S1+S2+
         "studybuddy_daily_brief",
         "studybuddy_complete_task",
         "studybuddy_transition_semester",
+        // S1 OCR
+        "studybuddy_ocr_schedule",
         // S2
         "studybuddy_upload_material",
         "studybuddy_convert_material",
