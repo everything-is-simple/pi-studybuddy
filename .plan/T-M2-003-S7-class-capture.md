@@ -364,15 +364,15 @@ INSERT INTO study_events (
 - [x] 步骤 13：更新 04-Todo v0.1.26 + 00-索引 v0.1.34 + AGENTS.md v0.1.14（任务 done + 版本号同步）
 - [x] 步骤 14：文档治理检查（node scripts/check-docs-governance.mjs，exit 0，1 条既有非阻塞警告）
 - [x] 步骤 15：diff 检查（git diff --check，exit 0，仅 LF→CRLF 行尾警告 Windows 正常）+ 实施记录创建（.record/T-M2-003-实施记录.md，8 章节完整）
-- [ ] 步骤 16：提交交付（★ 用户授权，AGENTS.md §8.3 提交纪律：显式路径 + type(scope): 中文描述）
+- [x] 步骤 16：提交交付（★ 用户授权，AGENTS.md §8.3：显式路径 + commit 18d15f7 + ff-only 合并 + origin/master 推送）
 
 ## 10. 证据登记
 
 - 测试日志路径：H:\pi-studybuddy-tmp\runs\T-M2-003\（5 子目录隔离：unit-wav-validator / unit-whisper-adapter / unit-class-capture / unit-tools / integration）
 - 测试总数（基线 455 → 实际）：509（+54：wav-validator 14 + whisper-adapter 8 + class-capture 14 + s7-tools 9 + s7-handlers 9）
 - verify 状态：type-check ✅ + build ✅ + test 509 ✅ + smoke 6/6 ✅ + docs-governance ✅ + git diff --check ✅
-- 提交哈希：（待用户授权提交）
-- 推送状态：（待用户授权推送）
+- 提交哈希：18d15f7（feat(s7): S7 课堂采集工具注册 + API，25 文件 +2838/-53）
+- 推送状态：aba93e9..18d15f7 ✅（origin/master）
 - 实施记录路径：.record/T-M2-003-实施记录.md
 
 ---
@@ -385,7 +385,7 @@ INSERT INTO study_events (
 
 - 完成日期：2026-08-07
 - 实施记录：.record/T-M2-003-实施记录.md（8 章节完整）
-- 状态：✅ 实施完成（待用户授权提交推送，AGENTS.md §8.4 三者齐全才算正式完成）
+- 状态：✅ 正式完成（AGENTS.md §8.4 三者齐全：docs/04 v0.1.26 done + master 18d15f7 + origin/master 推送）
 
 ---
 
