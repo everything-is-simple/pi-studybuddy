@@ -12,6 +12,8 @@ import { createRpcServer, type AnyMessagePort } from "../contract/rpc";
 import type { Api } from "../contract/api";
 import { ping } from "./handlers/ping";
 import { toolchainHandlers } from "./handlers/toolchains";
+import { createFileWatchService } from "./file-watch";
+import { createFileHandlers } from "./handlers/files";
 
 export interface AgentHost {
   dispose(): void;
@@ -20,9 +22,11 @@ export interface AgentHost {
 /** 启动 agent-host RPC 服务：监听 parentPort 的 connect 消息并 attach 业务端口 */
 export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   const server = createRpcServer();
+  const fileWatch = createFileWatchService(server);
   server.handle({
     "system.ping": (...args: unknown[]) => ping(args[0] as Api["system.ping"]["params"]),
     ...toolchainHandlers,
+    ...createFileHandlers(fileWatch),
   });
 
   let attached = false;
@@ -49,6 +53,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   return {
     dispose() {
       server.dispose();
+      fileWatch.dispose();
       attached = false;
     },
   };

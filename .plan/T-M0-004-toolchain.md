@@ -277,8 +277,8 @@ export function prependPath(
 ## 11. 证据登记（收尾时填写）
 
 - 测试日志路径：`pnpm verify` 121 tests passed（2026-08-07）
-- 提交哈希：待用户授权后提交
-- 推送状态：待用户授权后推送
+- 提交哈希：edb181b
+- 推送状态：✅ 已推送至 origin/master
 - 实施记录路径：`.record/T-M0-004-实施记录.md`
 
 ## 审查记录
