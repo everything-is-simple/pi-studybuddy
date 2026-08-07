@@ -14,5 +14,5 @@
     "sourceMap": true,
     "types": ["node"]
   },
-  "include": ["src/main", "src/preload", "src/agent-host", "src/contract", "src/shared"]
+  "include": ["src/main", "src/preload", "src/agent-host", "src/contract", "src/shared", "src/data"]
 }

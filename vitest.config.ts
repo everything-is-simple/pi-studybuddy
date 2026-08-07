@@ -15,10 +15,19 @@ export default defineConfig({
     ],
     environment: "node",
     globals: false,
+    deps: {
+      optimizer: {
+        ssr: {
+          // node:sqlite 是 Node experimental 内置模块，esbuild 不认识会剥离 node: 前缀，
+          // 排除优化，让 vite-node 以原生 require 加载
+          exclude: ["node:sqlite"],
+        },
+      },
+    },
     typecheck: {
       enabled: true,
       tsconfig: "./tsconfig.test.json",
-      include: ["tests/unit/contract.test.ts"],
+      include: ["tests/unit/contract.test.ts", "tests/unit/data-schema.test.ts"],
     },
   },
 });

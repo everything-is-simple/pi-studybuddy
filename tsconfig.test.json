@@ -4,6 +4,6 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/contract", "tests/unit/contract.test.ts"],
+  "include": ["src/contract", "src/data", "tests/unit/contract.test.ts", "tests/unit/data-schema.test.ts"],
   "exclude": ["dist", "node_modules", "tests/integration", "tests/security"]
 }
