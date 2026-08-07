@@ -5,12 +5,12 @@
  * 硬断言脚本：静态审计 src/ 关键安全配置，任一断言失败立即退出（非零码）。
  *
  * 六条不变量：
- *   1. sandbox:true（webPreferences）            → 本任务实现 ✅
- *   2. 严格 CSP（default-src 'self'）            → 本任务实现 ✅
- *   3. preload 仅 exposeInMainWorld("piBridge")   → 本任务实现 ✅
- *   4. credential-vault 用 safeStorage           → T-M0-003 补全 ⏳
- *   5. Host RPC 契约化（api.ts 完整接口）         → T-M0-002 已实现 ✅
- *   6. HTML 预览独立 CSP（form-action 'none'）    → T-M0-008 补全 ⏳
+ *   1. sandbox:true（webPreferences）            → T-M0-001 实现 ✅
+ *   2. 严格 CSP（default-src 'self'）            → T-M0-001 实现 ✅
+ *   3. preload 仅 exposeInMainWorld("piBridge")   → T-M0-001 实现 ✅
+ *   4. credential-vault 用 safeStorage           → T-M0-003 实现 ✅
+ *   5. Host RPC 契约化（api.ts 完整接口）         → T-M0-002 实现 ✅
+ *   6. HTML 预览独立 CSP（form-action 'none'）    → T-M0-009 实现 ✅
  *
  * 用法：
  *   node scripts/check-desktop-security.mjs
@@ -36,8 +36,8 @@ function check(id, name, ok, detail = "") {
 
 console.log("[check-desktop-security] 安全不变量校验（08-Test §5.7）");
 
-// ---- 已实现（T-M0-001 / T-M0-002 / T-M0-003） ----
-console.log("\n已实现（T-M0-001 / T-M0-002 / T-M0-003）：");
+// ---- 六条不变量（T-M0-001 / T-M0-002 / T-M0-003 / T-M0-009 全部实现） ----
+console.log("\n六条不变量校验（08-Test §5.7）：");
 check(
   "INV-01",
   "sandbox:true（webPreferences，08-Test §5.7 不变量 1）",
@@ -71,27 +71,28 @@ check(
   `api.ts 方法数 ${apiMethodCount}（阈值 ≥ 50）`,
 );
 
-// --- 占位（后续任务补全） ---
-console.log("\n占位（后续任务补全）：");
+// INV-06：HTML 预览独立 CSP（form-action 'none'）。断言 constants.ts 含 HTML_PREVIEW_CSP
+// 且 protocol.ts 对 .html 响应接入（08-Test §5.7 不变量 6，T-M0-009 补全）。
+const constantsSrc = readSource("src/shared/constants.ts");
+const protocolSrc = readSource("src/main/protocol.ts");
 check(
   "INV-06",
-  "HTML 预览独立 CSP（form-action 'none'，不变量 6）→ T-M0-008",
-  false,
-  "延迟到 T-M0-008",
+  "HTML 预览独立 CSP（form-action 'none'，不变量 6）→ T-M0-009",
+  constantsSrc.includes("HTML_PREVIEW_CSP") &&
+    constantsSrc.includes("form-action 'none'") &&
+    protocolSrc.includes("HTML_PREVIEW_CSP"),
+  "constants.ts 定义 HTML_PREVIEW_CSP + protocol.ts 接入",
 );
 
 const failed = results.filter((r) => !r.ok);
 console.log(
-  `\n[check-desktop-security] ${results.length} 条不变量：通过 ${results.length - failed.length}，失败 ${failed.length}（其中 1 条为后续任务占位）`,
+  `\n[check-desktop-security] ${results.length} 条不变量：通过 ${results.length - failed.length}，失败 ${failed.length}`,
 );
 
-// 已实现 5 条必须全绿；占位 1 条允许失败（未到对应任务）
-const implemented = results.filter((r) =>
-  ["INV-01", "INV-02", "INV-03", "INV-04", "INV-05"].includes(r.id),
-);
-if (implemented.some((r) => !r.ok)) {
-  console.error("\n[check-desktop-security] FAILED：存在已实现不变量未通过");
+// 六条全绿才通过（08-Test §5.7：任一断言失败阻塞合并）
+if (failed.length > 0) {
+  console.error("\n[check-desktop-security] FAILED：存在未通过的不变量");
   process.exit(1);
 }
 
-console.log("[check-desktop-security] 已实现 5 条不变量全部通过 ✅");
+console.log("[check-desktop-security] 六条不变量全部通过 ✅");

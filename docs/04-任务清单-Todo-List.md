@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.11
+**版本**：v0.1.15
 **日期**：2026-08-07
-**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -240,6 +240,36 @@ pending → in_progress → testing → done
 
 > 依据 03-Architecture §9.2 装配顺序（壳层→公用零件→业务模块）+ ai-studybuddy 已验证 S1-S7 业务认知。
 
+### 6.0 M0 完成与版本演进说明（01-TRD §7 决策 6 约定）
+
+**M0 骨架搭建已于 2026-08-07 完成**（T-M0-001 ~ T-M0-009 全部 done）。
+
+**退出门槛六项全部通过**（§6.2 + 08-Test §5）：
+- ✅ Electron 应用可启动（build 产物齐全 + main 入口可加载，`pnpm dev` 人工验证）
+- ✅ contract RPC 可 renderer→main→agent-host 往返（`system.ping` 冒烟通过）
+- ✅ global.db + semester.db 可建库（4 表 + 25 表 + integrity_check 通过）
+- ✅ credential-vault 可加密/解密往返（safeStorage set→get 一致 + 磁盘无明文 + 键名校验）
+- ✅ 安全不变量校验脚本六条全过（INV-01~06 硬断言，T-M0-009 补全 INV-06）
+- ✅ M0 系统冒烟通过（`pnpm smoke` 六项全过，退出码 0）
+
+**版本演进**（01-TRD §7 决策 6：v0.1 交付形态为源码形态，不打包 .exe）：
+- v0.1 交付：源码形态运行（`pnpm install && pnpm dev`），不打包 .exe 安装包
+- 依据：AGENTS.md §1.2（v0.1 禁用运行级使用）+ §6.4（禁止提前设计 v0.2+ 产品化机制）
+- v0.2+ 产品化（打包/签名/自动更新）延后至用户明确需求时启动
+
+**M0 交付的九个任务**（详见 §7.1.1 登记表）：
+| task-id | 标题 | commit |
+|---|---|---|
+| T-M0-001 | Electron 四进程骨架 + 自研 RPC + 最小 contract | 37e85e6 |
+| T-M0-002 | contract 类型化契约面（api 126 方法 + types + streams + PiBridge） | 53942d8 |
+| T-M0-003 | credential-vault（safeStorage/DPAPI 密钥库） | fb76ecf |
+| T-M0-004 | toolchain 发现-探测-安装-绝对路径执行框架 | edb181b |
+| T-M0-005 | file-watch（fs.watch recursive + 100ms 防抖） | 47a2357 |
+| T-M0-006 | 数据层 schema（global.db + semester.db + L3 三层记忆） | de70670 |
+| T-M0-007 | studybuddy-extension 空壳 | b0d7d55 |
+| T-M0-008 | 09-UI 三栏布局 + 标签页骨架 | 034969c |
+| T-M0-009 | M0 系统冒烟完整 | （本任务） |
+
 ### 6.1 里程碑总览
 
 ```
@@ -375,6 +405,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M0-005 | file-watch（fs.watch recursive + 100ms 防抖 → Streams["files.changed"]） | 壳层 | P1 | done | 阶段5 | 03-Arch §6.5/§6.6 + 06-API §3.2/§4 | [.record/T-M0-005 实施记录](../.record/T-M0-005-实施记录.md) |
 | T-M0-007 | studybuddy-extension 空壳（createStudyBuddyExtension 可 setup 无工具） | 扩展层 | P1 | done | 阶段3 | 03-Arch §2.1/§2.2 + pi ExtensionFactory 契约 | [.record/T-M0-007 实施记录](../.record/T-M0-007-实施记录.md) |
 | T-M0-008 | 09-UI 三栏布局 + 标签页骨架（AppShell + TabBar 空壳） | 壳层 | P1 | done | 阶段4 | 09-UI §2-§4 | [.record/T-M0-008 实施记录](../.record/T-M0-008-实施记录.md) |
+| T-M0-009 | M0 系统冒烟完整（应用启动 + RPC 往返 + 建库 + 安全不变量六条） | 测试 | P1 | done | 阶段5 | 08-Test §5 + §5.7 + 04-Todo §6.2 | [.record/T-M0-009 实施记录](../.record/T-M0-009-实施记录.md) |
 
 ### 7.2 M1 核心闭环 MVP 任务大纲
 
@@ -442,11 +473,13 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 里程碑 | 总任务数 | pending | in_progress | testing | done | blocked |
 |---|---|---|---|---|---|---|
-| M0 | 12 | 3 | 0 | 0 | 8 | 0 |
+| M0 | 9 | 0 | 0 | 0 | 9 | 0 |
 | M1 | 10 | 10 | 0 | 0 | 0 | 0 |
 | M2 | 9 | 9 | 0 | 0 | 0 | 0 |
 | M3 | 8 | 8 | 0 | 0 | 0 | 0 |
-| **合计** | **39** | **30** | **0** | **0** | **8** | **0** |
+| **合计** | **36** | **27** | **0** | **0** | **9** | **0** |
+
+> 注：M0 总任务数按实际 task-id 计为 9（§7.1 大纲 12 项中，安全沙箱合并入 T-M0-001，数据层 global/semester/三层记忆 3 项合并为 T-M0-006）。v0.1.15 修正口径。
 
 ---
 
@@ -454,6 +487,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.15 | 2026-08-07 | 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正（v0.1.11→v0.1.15）+ §9 统计口径修正（M0 总任务数 12→9，按实际 task-id，3 项大纲合并）：§7.1.1 登记表 T-M0-009 done（M0 系统冒烟完整：smoke.mjs 扩展覆盖 §6.2 退出门槛六项 build+RPC+建库+vault+六不变量+汇总；补全 INV-06 HTML_PREVIEW_CSP form-action 'none' + protocol.ts 接入；check-desktop-security.mjs 六条转硬断言移除占位宽松；verify.mjs desktop-security 改硬阻塞；invariants.test.ts 加 INV-04/05/06 三断言），§6.0 补 M0 完成说明 + 版本演进（01-TRD §7 决策 6 约定），§9 统计 M0 9 done（M0 收官）。依据：AGENTS.md §7 受控收尾流程 + §11.2 修订纪律（口径修正显式记录） |
+| v0.1.14 | 2026-08-07 | 登记 T-M0-009 开工：§7.1.1 登记表新增 T-M0-009 in_progress（M0 系统冒烟完整：应用启动 + RPC 往返 + 建库 + 安全不变量六条），更新 §9 统计。依据：AGENTS.md §4.4 单一执行任务门禁 + §5.1 TDD 纪律 |
 | v0.1.13 | 2026-08-07 | 登记 T-M0-008 完成：§7.1.1 登记表 T-M0-008 done（09-UI 三栏布局 + 标签页骨架：tabs.ts 9 Tab 纯数据 + AppShell.tsx 三栏布局壳 + TabBar.tsx 标签页栏 + App.tsx 组装 + renderer-layout.test.ts 14 断言；对话默认 Tab + 内联样式 + renderToStaticMarkup 静态渲染测试；vitest.config.ts 加 react 插件解析 tsx），§9 统计 M0 3 pending + 8 done。依据：AGENTS.md §7 受控收尾流程 |
 | v0.1.12 | 2026-08-07 | 登记 T-M0-008 开工：§7.1.1 登记表新增 T-M0-008 in_progress（09-UI 三栏布局 + 标签页骨架：AppShell + TabBar 空壳，对话默认 Tab），更新 §9 统计（M0 3 pending + 1 in_progress + 7 done）。依据：AGENTS.md §4.4 单一执行任务门禁 + §5.1 TDD 纪律 |
 | v0.1.11 | 2026-08-07 | 登记 T-M0-007 完成：§7.1.1 登记表 T-M0-007 done（studybuddy-extension 空壳：createStudyBuddyExtension 工厂返回 pi ExtensionFactory 空 setup，零工具/零钩子/零 provider；pi 底座 @earendil-works/pi-coding-agent@0.80.10 + pi-ai@0.80.10 安装为 dependencies；7 单件 + 4 集成测试全绿），§4.1 看板 pi 行阶段1/3 标记 ✅（已安装 + 集成契约验证），§9 统计 M0 4 pending + 7 done。依据：AGENTS.md §7 受控收尾流程 + §6.2 组件化装配流程 |

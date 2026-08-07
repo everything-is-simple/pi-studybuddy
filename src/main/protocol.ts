@@ -7,7 +7,7 @@
 import { protocol } from "electron";
 import path from "node:path";
 import fs from "node:fs";
-import { RENDERER_CSP } from "../shared/constants";
+import { RENDERER_CSP, HTML_PREVIEW_CSP } from "../shared/constants";
 
 const RENDERER_ROOT = path.join(__dirname, "../renderer");
 
@@ -40,11 +40,14 @@ export function registerAppProtocol(): void {
     }
 
     const body = fs.readFileSync(filePath);
+    // .html 响应用更严格的 HTML_PREVIEW_CSP（含 form-action 'none'，08-Test §5.7 不变量 6），
+    // 其他类型用 RENDERER_CSP。
+    const csp = ext === ".html" ? HTML_PREVIEW_CSP : RENDERER_CSP;
     return new Response(new Uint8Array(body), {
       status: 200,
       headers: {
         "content-type": contentType,
-        "content-security-policy": RENDERER_CSP,
+        "content-security-policy": csp,
       },
     });
   });

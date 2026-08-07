@@ -35,3 +35,19 @@ export const RENDERER_CSP = [
   "base-uri 'none'",
   "frame-ancestors 'none'",
 ].join("; ");
+
+/**
+ * HTML 预览独立 CSP（08-Test §5.7 不变量 6）。
+ *
+ * 用于 app:// 协议下 .html 响应的更严格策略：在 RENDERER_CSP 基础上追加
+ * `form-action 'none'`，禁止预览内容提交表单到任何目标（防范 HTML 资料预览
+ * 内嵌表单外泄数据）。M0 阶段仅定义常量并接入协议层，预览渲染器本体在 M1+ S2 落地。
+ */
+export const HTML_PREVIEW_CSP = [
+  "default-src 'self' app:",
+  "script-src 'self' app:",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'none'",
+].join("; ");

@@ -1,15 +1,18 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { RENDERER_CSP } from "../../src/shared/constants";
+import { RENDERER_CSP, HTML_PREVIEW_CSP } from "../../src/shared/constants";
 
 /**
- * T-M0-001 安全不变量测试（08-Test §5.7，本任务实现三条）
+ * 安全不变量测试（08-Test §5.7 六条）
  *
- * 三条硬断言：
+ * 六条硬断言：
  *   1. windowConfig.webPreferences.sandbox === true
  *   2. CSP 含 default-src 'self'
  *   3. preload 仅 contextBridge.exposeInMainWorld("piBridge", ...)
+ *   4. credential-vault 用 safeStorage（T-M0-003）
+ *   5. Host RPC 契约化（api.ts 完整接口，T-M0-002）
+ *   6. HTML 预览独立 CSP 含 form-action 'none'（T-M0-009 补全）
  *
  * 静态审计源码（在统一质量门 check-desktop-security.mjs 中重复执行，供 shell 侧校验）。
  */
@@ -20,7 +23,7 @@ function readSource(rel: string): string {
   return fs.readFileSync(path.join(ROOT, rel), "utf8");
 }
 
-describe("安全不变量（08-Test §5.7 三条）", () => {
+describe("安全不变量（08-Test §5.7 六条）", () => {
   it("不变量1：main 窗口 webPreferences.sandbox === true", () => {
     const src = readSource("src/main/window.ts");
     expect(src).toContain("sandbox: true");
@@ -47,5 +50,26 @@ describe("安全不变量（08-Test §5.7 三条）", () => {
     expect(exposed).toEqual(["piBridge"]);
     // 禁止直接把 ipcRenderer 等对象暴露到全局
     expect(preload).not.toContain('exposeInMainWorld("ipcRenderer"');
+  });
+
+  it("不变量4：credential-vault 用 safeStorage（T-M0-003）", () => {
+    const src = readSource("src/main/credential-vault.ts");
+    expect(/import\s*\{\s*safeStorage\s*\}\s*from\s*["']electron["']/.test(src)).toBe(true);
+  });
+
+  it("不变量5：Host RPC 契约化（api.ts 完整接口，T-M0-002）", () => {
+    const apiTs = readSource("src/contract/api.ts");
+    const methodCount = (apiTs.match(/^\s*"[a-zA-Z]+\.[a-zA-Z]+"\s*:/gm) || []).length;
+    expect(methodCount).toBeGreaterThanOrEqual(50);
+  });
+
+  it("不变量6：HTML 预览独立 CSP 含 form-action 'none'（T-M0-009）", () => {
+    // HTML_PREVIEW_CSP 常量存在且含 form-action 'none'
+    expect(HTML_PREVIEW_CSP).toBeDefined();
+    expect(HTML_PREVIEW_CSP).toContain("form-action 'none'");
+    expect(HTML_PREVIEW_CSP).toContain("default-src 'self'");
+    // protocol.ts 对 .html 响应注入 HTML_PREVIEW_CSP（更严格）
+    const protocol = readSource("src/main/protocol.ts");
+    expect(protocol).toContain("HTML_PREVIEW_CSP");
   });
 });

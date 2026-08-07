@@ -104,7 +104,7 @@ const m0Checks = [
   ...designChecks,
   { label: "unit-tests", cmd: "npm", args: ["test"], guard: () => hasScript("test") },
   { label: "contract-coverage", cmd: "node", args: ["scripts/check-contract-coverage.mjs"], guard: () => hasFile("scripts/check-contract-coverage.mjs") },
-  { label: "desktop-security", cmd: "node", args: ["scripts/check-desktop-security.mjs"], optional: true, guard: () => hasFile("scripts/check-desktop-security.mjs") },
+  { label: "desktop-security", cmd: "node", args: ["scripts/check-desktop-security.mjs"], guard: () => hasFile("scripts/check-desktop-security.mjs") },
   { label: "build", cmd: "npm", args: ["run", "build"], guard: () => hasScript("build") },
   { label: "smoke", cmd: "npm", args: ["run", "smoke"], guard: () => hasScript("smoke") },
 ];
