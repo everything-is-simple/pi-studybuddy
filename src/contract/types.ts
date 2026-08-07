@@ -688,6 +688,12 @@ export interface BackupSchedule {
 }
 
 /* ---- §3.10 TTS ---- */
+export interface TtsSpeakResult {
+  playbackId: string;
+  engine: "sapi" | "edge-tts";
+  fallbackUsed?: boolean;
+}
+
 export interface TtsStatus {
   state: "playing" | "paused" | "stopped";
   position: number;

@@ -303,7 +303,7 @@ export interface Api {
   /* ---- §3.10 TTS 朗读 ---- */
   "tts.speak": {
     params: { text: string; engine?: "sapi" | "edge-tts" };
-    result: { playbackId: string };
+    result: { playbackId: string; engine: "sapi" | "edge-tts"; fallbackUsed?: boolean };
   };
   "tts.control": {
     params: { playbackId: string; action: "play" | "pause" | "stop"; rate?: number };
