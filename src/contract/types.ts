@@ -222,6 +222,11 @@ export interface FileMeta {
   name: string;
   size: number;
   mime: string;
+  /**
+   * 文件系统绝对路径（Electron 文件选择器返回，S7 课堂采集读取 PCM WAV 头部用）。
+   * S2 上传场景不用此字段（可选）；S7 必填（handler 运行时校验）。
+   */
+  path?: string;
 }
 
 /** Material.status（05-ERD §3.2.1 CHECK + §8.3 状态机） */

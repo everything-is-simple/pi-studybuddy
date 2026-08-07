@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.25
+**版本**：v0.1.26
 **日期**：2026-08-07
-**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done；v0.1.20 登记 T-M1-003 开工 + §7.2.1 M1 任务登记表；v0.1.21 登记 T-M1-003 完成 + §9 统计 M1 3 done；v0.1.22 登记 T-M1-004 开工 + §7.2.1 M1 任务登记表；v0.1.23 登记 T-M1-004 完成 + §9 统计 M1 4 done；v0.1.24 登记 T-M2-001 完成 + §7.3.1 M2 任务登记表 + §9 统计 M2 1 done；v0.1.25 登记 T-M2-002 完成 + §7.3.1 M2 任务登记表 T-M2-002 done + §9 统计 M2 2 done）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done；v0.1.20 登记 T-M1-003 开工 + §7.2.1 M1 任务登记表；v0.1.21 登记 T-M1-003 完成 + §9 统计 M1 3 done；v0.1.22 登记 T-M1-004 开工 + §7.2.1 M1 任务登记表；v0.1.23 登记 T-M1-004 完成 + §9 统计 M1 4 done；v0.1.24 登记 T-M2-001 完成 + §7.3.1 M2 任务登记表 + §9 统计 M2 1 done；v0.1.25 登记 T-M2-002 完成 + §7.3.1 M2 任务登记表 T-M2-002 done + §9 统计 M2 2 done；v0.1.26 登记 T-M2-003 完成 + §7.3.1 M2 任务登记表 T-M2-003 done + §9 统计 M2 3 done）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -451,6 +451,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 |---|---|---|---|---|---|---|---|
 | T-M2-001 | S5 期末冲刺（模拟考/速背卡/冲刺计划）工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.6 + 06-API §3.7 + 03-Arch §3.1 + 05-ERD §3.5 + 08-Test §3.1/§3.2/§5.5/§6.2 | [.record/T-M2-001 实施记录](../.record/T-M2-001-实施记录.md) |
 | T-M2-002 | S6 家长报告（规则生成/冻结/脱敏/投递）工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §3 + 06-API §3.8 + 03-Arch §3.1 + 05-ERD §2.2/§3.6 + 02-PRD §5.2 + 08-Test §3.1/§3.2/§5.4/§5.5 | [.record/T-M2-002 实施记录](../.record/T-M2-002-实施记录.md) |
+| T-M2-003 | S7 课堂采集（许可确认/PCM WAV/whisper.cpp/handoff）工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.7 + 06-API §3.9 + 03-Arch §3.1/§3.3 + 05-ERD §3.2.1/§3.2.2/§3.1.5 + 08-Test §3.3.2/§5.4 | [.record/T-M2-003 实施记录](../.record/T-M2-003-实施记录.md) |
 
 ### 7.4 M3 对话与打磨任务大纲
 
@@ -491,9 +492,9 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 |---|---|---|---|---|---|---|
 | M0 | 9 | 0 | 0 | 0 | 9 | 0 |
 | M1 | 10 | 5 | 0 | 0 | 4 | 0 |
-| M2 | 9 | 7 | 0 | 0 | 2 | 0 |
+| M2 | 9 | 6 | 0 | 0 | 3 | 0 |
 | M3 | 8 | 8 | 0 | 0 | 0 | 0 |
-| **合计** | **36** | **20** | **0** | **0** | **15** | **0** |
+| **合计** | **36** | **19** | **0** | **0** | **16** | **0** |
 
 > 注：M0 总任务数按实际 task-id 计为 9（§7.1 大纲 12 项中，安全沙箱合并入 T-M0-001，数据层 global/semester/三层记忆 3 项合并为 T-M0-006）。v0.1.15 修正口径。
 
@@ -503,6 +504,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.26 | 2026-08-07 | 登记 T-M2-003 完成：§7.3.1 登记表 T-M2-003 done（S7 课堂采集 2 RPC handler + 2 studybuddy_* 工具注册：classCapture.transcribe 许可确认强制 permissionConfirmed=false→BAD_REQUEST + PCM WAV 文件头服务端字节级验证（RIFF/WAVE/PCM/16kHz/单声道/16-bit 44 字节头部 8 项校验）+ WhisperCppAdapter 可注入（mock/failing/real 三实现，真实 spawn 框架不连真实子进程 08-Test §5.4 全 mock）+ 错误消息固定文案不泄漏路径/stdout/stderr/密钥 + 原始音频 tmp/class-capture/<request-id>/ finally 清理不留存；classCapture.saveTranscription handoff 到 S2 materials+normalized_texts+study_events（source_type='class_audio_transcription' / status='converted' / permission_confirmed=1 / content_hash=SHA-256 / event_type='class_handoff_saved' source_system='S7'）；前置 DTO/schema 已就绪无需修改；studybuddy-extension 接入 S7 共 26 工具；扩展装配测试同步更新 24→26），§9 统计 M2 3 done。509 测试全绿（34 test files），type-check + build + smoke 6 项全通过。依据：AGENTS.md §7 受控收尾流程 + §5.1 TDD 纪律 + §5.4 不连真实外部服务 |
 | v0.1.24 | 2026-08-07 | 登记 T-M2-001 完成：新增 §7.3.1 M2 任务登记表 T-M2-001 done（S5 期末冲刺 8 RPC handler + 2 studybuddy_* 工具注册：mockExams.generatePaper 触发器校验 confirmed + source_hash 防重复 + MockExamGenerator 可注入默认 mock + AI 失败不创建空卷→INTERNAL_ERROR、getPaper 未提交不含 correct_answer 防泄露、startAttempt 状态机 in_progress、submitAttempt 复用 S3 grader 三策略批改 + in_progress→graded + 模块分析 weakness_level strong/medium/weak + study_events 写入、getResult/getModuleAnalyses 只读查询；cramCards.get 确定性只读 DTO 不暴露题干/答案/作答 + 未确认考试 BAD_REQUEST；cramPlan.get 7 天 DTO 确定性只读不替学生改写事实 + 按剩余天数排序；studybuddy-extension 接入 S5 共 21 工具），§9 统计 M2 1 done。420 测试全绿（27 test files），verify 7+2 全通过。依据：AGENTS.md §7 受控收尾流程 + §5.1 TDD 纪律 |
 | v0.1.23 | 2026-08-07 | 登记 T-M1-004 完成：§7.2.1 登记表 T-M1-004 done（S4 错题/薄弱点 10 RPC handler + 4 studybuddy_* 工具注册：mistakes.archive 幂等归档 UNIQUE(question_id)+UNIQUE(source_practice_answer_id)、confirmErrorCause 六分类学生确认、suggestErrorCause 可注入 ErrorCauseAdvisor 默认 mock + AI 失败降级、redo 状态机 needs_review↔mastered + evidence_count≥2 归纳 weak_point；weakPoints.resolve/regress 状态机 active→resolved→regressed；schema 修复 mistake_evidence.source_practice_answer_id 改为可空以支持 redo 证据不依赖新 practice_answer；studybuddy-extension 接入 S4 共 19 工具），§9 统计 M1 4 done。383 测试全绿（25 test files），verify 7+2 全通过。依据：AGENTS.md §7 受控收尾流程 + §5.1 TDD 纪律 |
 | v0.1.22 | 2026-08-07 | 登记 T-M1-004 开工：§7.2.1 登记表新增 T-M1-004 in_progress（S4 错题/薄弱点 10 RPC handler + 4 studybuddy_* 工具注册：mistakes.archive 幂等归档 UNIQUE(question_id)+UNIQUE(source_practice_answer_id)、confirmErrorCause 六分类学生确认、suggestErrorCause 可注入 ErrorCauseAdvisor 默认 mock 带"不确定"标记 + AI 失败降级 INTERNAL_ERROR、redo 重做正确→evidence_count≥2 归纳 weak_point+mastered/错误→保持 needs_review；weakPoints.resolve/regress 状态机；aggregator 私有 evidence_count≥2 才形成 + UNIQUE(course_instance_id, knowledge_module_id)；S4Context 复用 S1/S2/S3 模式 + ErrorCauseAdvisor 注入；DTO 对齐 ERD §3.4 三表 mistakes/mistake_evidence/weak_points：ErrorCategory 六分类全修正、Mistake 补 7 字段 + 移除 archived、MistakeEvidence 新增类型、RedoResult 补 2 字段、WeakPoint 补 4 字段；错题状态机 needs_review↔mastered、薄弱点状态机 active→resolved→regressed；studybuddy-extension 接入 S4 工具注册共 19 工具），更新 §9 统计（M1 5 pending + 1 in_progress + 3 done）。依据：AGENTS.md §4.4 单一执行任务门禁 + §5.1 TDD 纪律 |
