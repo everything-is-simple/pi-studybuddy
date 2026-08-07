@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.9
+**版本**：v0.1.11
 **日期**：2026-08-07
-**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -169,7 +169,7 @@ pending → in_progress → testing → done
 
 | 组件 | 阶段1 下载 | 阶段2 单件 | 阶段3 集成 | 阶段4 组装 | 阶段5 冒烟E2E | 状态 |
 |---|---|---|---|---|---|---|
-| `pi`（npm peerDeps） | ✅ | — | — | — | — | 已下载 |
+| `pi`（npm dependencies） | ✅ | — | ✅ | — | — | T-M0-007 已安装 + 集成契约验证 |
 | `pi-skills`（git clone） | ✅ | — | — | — | — | 已下载 |
 | `pi-desktop` 骨架 | ✅ | — | — | — | — | 已下载 |
 | `inno-agent` 范本 | ✅ | — | — | — | — | 已下载 |
@@ -373,6 +373,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M0-006 | 数据层 schema（global.db + semester.db + 三层记忆） | 数据层 | P1 | done | 阶段5 | 05-ERD §1-§10 + 03-Arch §4 + 08-Test §3.2 + §5.4 | [.record/T-M0-006 实施记录](../.record/T-M0-006-实施记录.md) |
 | T-M0-004 | toolchain 发现-探测-安装-绝对路径执行框架 | 壳层 | P1 | done | 阶段5 | 03-Arch §6.5 + 06-API §3.16 + 01-TRD §7 决策 1 | [.record/T-M0-004 实施记录](../.record/T-M0-004-实施记录.md) |
 | T-M0-005 | file-watch（fs.watch recursive + 100ms 防抖 → Streams["files.changed"]） | 壳层 | P1 | done | 阶段5 | 03-Arch §6.5/§6.6 + 06-API §3.2/§4 | [.record/T-M0-005 实施记录](../.record/T-M0-005-实施记录.md) |
+| T-M0-007 | studybuddy-extension 空壳（createStudyBuddyExtension 可 setup 无工具） | 扩展层 | P1 | done | 阶段3 | 03-Arch §2.1/§2.2 + pi ExtensionFactory 契约 | [.record/T-M0-007 实施记录](../.record/T-M0-007-实施记录.md) |
 
 ### 7.2 M1 核心闭环 MVP 任务大纲
 
@@ -440,11 +441,11 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 里程碑 | 总任务数 | pending | in_progress | testing | done | blocked |
 |---|---|---|---|---|---|---|
-| M0 | 12 | 6 | 1 | 0 | 5 | 0 |
+| M0 | 12 | 4 | 0 | 0 | 7 | 0 |
 | M1 | 10 | 10 | 0 | 0 | 0 | 0 |
 | M2 | 9 | 9 | 0 | 0 | 0 | 0 |
 | M3 | 8 | 8 | 0 | 0 | 0 | 0 |
-| **合计** | **39** | **33** | **1** | **0** | **5** | **0** |
+| **合计** | **39** | **31** | **0** | **0** | **7** | **0** |
 
 ---
 
@@ -452,6 +453,9 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.11 | 2026-08-07 | 登记 T-M0-007 完成：§7.1.1 登记表 T-M0-007 done（studybuddy-extension 空壳：createStudyBuddyExtension 工厂返回 pi ExtensionFactory 空 setup，零工具/零钩子/零 provider；pi 底座 @earendil-works/pi-coding-agent@0.80.10 + pi-ai@0.80.10 安装为 dependencies；7 单件 + 4 集成测试全绿），§4.1 看板 pi 行阶段1/3 标记 ✅（已安装 + 集成契约验证），§9 统计 M0 4 pending + 7 done。依据：AGENTS.md §7 受控收尾流程 + §6.2 组件化装配流程 |
+| v0.1.10 | 2026-08-07 | 登记 T-M0-007 开工 + §4.1 看板 pi 修正：§7.1.1 登记表新增 T-M0-007 in_progress（studybuddy-extension 空壳：createStudyBuddyExtension 工厂 + pi ExtensionFactory 类型化契约 + 空 setup 无工具）；§4.1 看板 pi 行修正——"✅ 已下载"为自指断言（实际 node_modules 无 @earendil-works，阶段1 未完成）→ 改 ⏳ T-M0-007 安装中，"peerDeps"→"dependencies"（跟随 pi-desktop 权威范式 [pi-desktop package.json:47-48] 固定版本 dependencies）；§9 统计 M0 5 pending + 1 in_progress + 6 done。依据：AGENTS.md §11.1 治理基线修改 + §3.2 pi-desktop 参考范式 + §11.2 修订纪律（自指断言修正） |
+| v0.1.9 | 2026-08-07 | 登记 T-M0-005 完成：§7.1.1 登记表 T-M0-005 done（file-watch：fs.watch recursive + 100ms 防抖 → Streams["files.changed"]，per-target lastExists 推断 changeType 规避 Windows eventType 不可靠），§9 统计 M0 6 done。前序 v0.1.8 收尾时遗漏版本历史条目与 §9 同步，本次补登。依据：AGENTS.md §7 受控收尾流程 + §11.2 修订纪律 |
 | v0.1.8 | 2026-08-07 | 登记 T-M0-005 开工：§7.1.1 登记表新增 T-M0-005 in_progress（file-watch：fs.watch recursive + 100ms 防抖 → Streams["files.changed"]），更新 §9 统计（M0 6 pending + 1 in_progress + 5 done）。依据：AGENTS.md §4.4 单一执行任务门禁 + §5.1 TDD 纪律 |
 | v0.1.7 | 2026-08-07 | 登记 T-M0-004 完成：§7.1.1 登记表 T-M0-004 done（toolchain 发现-探测-安装-绝对路径执行框架：11 文件 discovery→probe→install→prependPath + 三 handler 注册 + 14 种 capability 全保留），更新 §9 统计（M0 7 pending + 5 done）。依据：AGENTS.md §7 受控收尾流程 |
 | v0.1.6 | 2026-08-07 | 登记 T-M0-003 完成：§7.1.1 登记表 T-M0-003 done（credential-vault：safeStorage/DPAPI 密钥库 + 原子写 0o600 + 键名校验），更新 §9 统计（M0 8 pending + 4 done）。同时补全 scripts/check-desktop-security.mjs INV-04 占位为真实断言（已实现 5 条全绿）。依据：AGENTS.md §7 受控收尾流程 |

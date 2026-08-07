@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.24
+**版本**：v0.1.25
 **日期**：2026-08-07
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -35,7 +35,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.1 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.9 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §7.1.1 M0 任务登记表（T-M0-001/002/003/004/005/006 done） |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.11 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §7.1.1 M0 任务登记表（T-M0-001/002/003/004/005/006/007 done） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.1 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -97,6 +97,8 @@
 - [x] 04-Todo v0.1.6：登记 T-M0-003 完成（credential-vault：safeStorage/DPAPI 密钥库 + 原子写 0o600 + 键名校验；补全 check-desktop-security.mjs INV-04 占位为真实断言，已实现 5 条不变量全绿），更新 §9 任务统计
 - [x] 04-Todo v0.1.7：登记 T-M0-004 完成（toolchain 发现-探测-安装-绝对路径执行框架：14 种 capability 全保留，仅框架不实现组件下载；src/main/toolchains/ 11 文件 + toolchain-runtime.ts + handlers；121 测试全绿），更新 §9 任务统计
 - [x] 04-Todo v0.1.9：登记 T-M0-005 完成（file-watch：fs.watch recursive + 100ms 防抖 → Streams["files.changed"]；per-target lastExists 推断 changeType；src/agent-host/file-watch.ts + handlers/files.ts + index.ts 装配；14 单件 + 8 集成测试，143 测试全绿），更新 §9 任务统计
+- [x] 04-Todo v0.1.10：登记 T-M0-007 开工 + §4.1 看板 pi 修正（"✅ 已下载"自指断言 → ⏳ T-M0-007 安装中；peerDeps → dependencies 跟随 pi-desktop 范式），更新 §9 任务统计
+- [x] 04-Todo v0.1.11：登记 T-M0-007 完成（studybuddy-extension 空壳：createStudyBuddyExtension 工厂返回 pi ExtensionFactory 空 setup；pi 底座 0.80.10 安装为 dependencies；7 单件 + 4 集成测试，154 测试全绿），§4.1 看板 pi 阶段1/3 ✅，更新 §9 任务统计
 - [x] 01-TRD v0.2.2：§7 加决策 6「v0.1 交付形态：源码形态（pnpm dev），不打包 .exe」（依据 AGENTS.md §1.2 + §6.4；M0 完成后 04-Todo §6.0 补版本演进说明）
 - [x] 10-开发规范 v0.1.0 ✅ 已审查批准：16 步开发流程（准备/执行/收尾三阶段）+ TDD 纪律 + 单一执行任务门禁 + 文档治理检查 + diff 检查 + 用户授权门
 - [x] 11-组件装配 v0.1.0 ✅ 已审查批准："先分解再组合" SoT + 6 步装配流程 + 能力卡规范 + 试炼场边界 + 装配门禁四项
@@ -110,6 +112,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.25 | 2026-08-07 | T-M0-007 studybuddy-extension 空壳完成：src/agent/studybuddy-extension.ts（createStudyBuddyExtension 工厂返回 pi ExtensionFactory 空 setup，零工具/零钩子/零 provider）；pi 底座 @earendil-works/pi-coding-agent@0.80.10 + pi-ai@0.80.10 安装为 dependencies（计划 0.84.0 降级为 0.80.10，原因：0.84.0 npm 包缺 dist 目录）；tsconfig.node.json include 加 src/agent；pnpm-workspace.yaml allowBuilds 补 @google/genai + protobufjs；单件 7 + 集成 4 测试全绿，verify 全绿（154 测试）；04-Todo → v0.1.11（§4.1 看板 pi 阶段1/3 ✅ + §9 统计 M0 7 done）；§三表格 04-Todo 版本号同步（T-M0-001/002/003/004/005/006/007 done） |
 | v0.1.24 | 2026-08-07 | T-M0-005 file-watch 完成：fs.watch({ recursive: true }) + 100ms 防抖 → Streams["files.changed"] 推送 { path, changeType }；per-target lastExists 跟踪推断 changeType（避开 Windows eventType 不可靠）；src/agent-host/file-watch.ts + handlers/files.ts + index.ts 装配；单件 14 + 集成 8 测试全绿，verify 全绿（143 测试）；04-Todo → v0.1.9；§三表格 04-Todo 版本号同步（T-M0-001/002/003/004/005/006 done） |
 | v0.1.23 | 2026-08-07 | T-M0-004 toolchain 完成：discovery→probe→install→prependPath 四段式框架落地（src/main/toolchains/ 11 文件 + src/agent-host/toolchain-runtime.ts + handlers）；14 种 capability 全保留，仅框架不实现组件下载；单件 16 + 集成 5 测试全绿，verify 全绿（121 测试）；04-Todo → v0.1.7；§三表格 04-Todo 版本号同步（T-M0-001/002/003/004/006 done） |
 | v0.1.22 | 2026-08-07 | T-M0-003 credential-vault 完成：src/main/credential-vault.ts（safeStorage/DPAPI 密钥库 + 原子写 0o600 + 键名校验 + 加密不可用安全降级）+ 单件 8 断言；scripts/check-desktop-security.mjs INV-04 占位转真实断言（已实现 5 条全绿）；verify 全绿（执行 7，跳过 2，100 测试）；04-Todo → v0.1.6；§三表格 04-Todo 版本号同步（T-M0-001/002/003/006 done） |
