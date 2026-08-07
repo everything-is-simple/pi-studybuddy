@@ -24,6 +24,11 @@ import { MaterialsTab } from "./tabs/MaterialsTab";
 import { NotesTab } from "./tabs/NotesTab";
 import { PracticeTab } from "./tabs/PracticeTab";
 import { MistakesTab } from "./tabs/MistakesTab";
+import { CramTab } from "./tabs/CramTab";
+import { ReportTab } from "./tabs/ReportTab";
+import { CaptureTab } from "./tabs/CaptureTab";
+import { TtsControlBar } from "./TtsControlBar";
+import { BackupPanel } from "./BackupPanel";
 import { TabContainer } from "./common/TabContainer";
 import { EmptyState } from "./common/EmptyState";
 import type { TypedRpcClient } from "../rpc-client";
@@ -61,10 +66,15 @@ function renderTab(
       return <PracticeTab rpc={rpc} courseId={courseId} />;
     case "mistakes":
       return <MistakesTab rpc={rpc} courseId={courseId} />;
-    case "chat":
     case "cram":
+      return <CramTab rpc={rpc} courseId={courseId} />;
     case "report":
+      return <ReportTab rpc={rpc} semesterId={semesterId} />;
     case "capture":
+      return <CaptureTab rpc={rpc} courseId={courseId} />;
+    case "backup":
+      return <BackupPanel rpc={rpc} />;
+    case "chat":
       return (
         <TabContainer>
           <EmptyState message="该标签页待后续里程碑填充" />
@@ -153,25 +163,8 @@ export function AppShell({
           {/* TabBar */}
           <TabBar tabs={TABS} activeTabId={activeTabId} onSelectTab={setActiveTabId} />
 
-          {/* 朗读控制条占位 */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              height: 32,
-              padding: "0 12px",
-              flexShrink: 0,
-              background: "var(--bg-panel, #f5f5f5)",
-              borderBottom: "1px solid var(--border, #e0e0e0)",
-              fontSize: 12,
-              color: "var(--text-muted, #888)",
-            }}
-          >
-            <span>TTS</span>
-            <span>|</span>
-            <span>朗读控制条占位</span>
-          </div>
+          {/* TTS 全局控制条（T-M2-008，09-UI §5.1-§5.5） */}
+          <TtsControlBar rpc={rpc} />
 
           {/* Tab 内容：根据 activeTabId 渲染对应业务组件（T-M1-009） */}
           {renderTab(activeTabId, rpc, semesterId, courseId)}
