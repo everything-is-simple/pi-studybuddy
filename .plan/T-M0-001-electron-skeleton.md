@@ -2,7 +2,7 @@
 
 **任务 ID**：T-M0-001
 **日期**：2026-08-07
-**状态**：📝 待审查
+**状态**：✅ 已批准执行中（2026-08-07 用户批准 A 方案：删除 electron-builder.yml，进入 TDD 实现）
 **关联文档**：03-Arch §6.1-§6.4 + §9.2 + 08-Test §5.7 + 09-UI §1.3
 **里程碑**：M0 骨架搭建
 
@@ -38,9 +38,10 @@
    - `package.json`（pnpm workspace，无业务依赖）
    - `tsconfig.json`（strict + ES2022 + moduleResolution:bundler）
    - `vite.config.ts`（renderer Vite 配置）
-   - `electron-builder.yml`（仅 Windows nsis 占位，不发布）
    - `.gitignore` 已存在（无修改）
    - `vitest.config.ts`（单件测试配置）
+
+   > 注：electron-builder.yml 已按 01-TRD 决策 6（v0.1 源码形态不打包 .exe）+ AGENTS.md §6.4（禁止提前设计 v0.2 产品化机制）从本任务范围删除，v0.2+ 再议。
 
 2. **main 进程**（`src/main/`）
    - `main.ts`：app.whenReady → createWindow → host-manager.fork
@@ -102,7 +103,6 @@
 | `tsconfig.json` | TypeScript 严格模式配置 |
 | `tsconfig.node.json` | main/preload/agent-host Node 环境 TS 配置 |
 | `vite.config.ts` | renderer Vite 配置 |
-| `electron-builder.yml` | Electron 打包配置占位 |
 | `vitest.config.ts` | vitest 测试配置 |
 | `src/main/main.ts` | Electron 主进程入口 |
 | `src/main/window.ts` | BrowserWindow 配置（sandbox:true） |
@@ -275,7 +275,7 @@ export type WireMessage =
 
 ### 项目配置
 
-- `package.json` / `tsconfig.json` / `tsconfig.node.json` / `vite.config.ts` / `electron-builder.yml` / `vitest.config.ts`
+- `package.json` / `tsconfig.json` / `tsconfig.node.json` / `vite.config.ts` / `vitest.config.ts`
 
 ### 文档更新
 
@@ -317,21 +317,23 @@ export type WireMessage =
 
 ## 审查记录
 
-（步骤 4 独立审查时填写）
+### 审查项（步骤 4 独立审查，2026-08-07）
 
-### 审查项
+1. **范围合理性** ✅：T-M0-001 仅做"四进程骨架 + 自研 RPC + 最小 contract"，credential-vault/toolchain/file-watch/数据层/扩展层/UI 全部明确为非目标，与 03-Arch §9.2 装配顺序（先四进程骨架 + contract）一致
+2. **TDD 纪律** ✅：单件测试列 7 条断言（覆盖五种 wire 消息 + 错误处理），先 RED 后 GREEN
+3. **安全不变量分阶段** ✅：与 08-Test §5.7 六条对齐，本任务实现三条（sandbox/CSP/preload），其余三条按依赖关系延迟（credential-vault→T-M0-003 / Host RPC 契约→T-M0-002 / HTML 预览 CSP→T-M0-008）
+4. **不复制参考代码** ✅：03-Arch §9.3 明确参考 pi-desktop 但独立重新实现
+5. **退出门槛明确** ✅：应用可启动 + RPC 往返 + 三条安全不变量
 
-1. **范围合理性**：T-M0-001 仅做"四进程骨架 + 自研 RPC + 最小 contract"，credential-vault/toolchain/file-watch/数据层/扩展层/UI 全部明确为非目标
-2. **TDD 纪律**：单件测试列 7 条断言（覆盖五种 wire 消息 + 错误处理），先 RED 后 GREEN
-3. **安全不变量分阶段**：本任务仅实现六条中的三条（sandbox/CSP/preload），剩余三条在后续任务按依赖关系补全
-4. **不复制参考代码**：03-Arch §9.3 明确参考 pi-desktop 但独立重新实现
-5. **退出门槛明确**：应用可启动 + RPC 往返 + 三条安全不变量
+### 审查发现的洞（需修正）
+
+- 🔴 **electron-builder.yml 应从范围移除**：01-TRD §7 决策 6 已定案"v0.1 源码形态（pnpm dev），不打包 .exe"，且明确"asar 打包、混淆等产品化机制延迟到 v0.2+ 届时再议"；AGENTS.md §6.4 禁止为将来提前设计 v0.2 产品化机制。`electron-builder.yml` 属该范畴，违反决策 6 与 §6.4。**处置**：从 §2 范围与 §3 文件清单删除 electron-builder.yml，v0.2+ 再议。
 
 ### 待用户审查关注点
 
 - 范围划分是否合理（T-M0-001 仅骨架，contract/api.ts 完整接口延迟到 T-M0-002）
-- 是否需要在骨架阶段就引入 ESLint + Prettier（建议引入，避免后续补配置成本）
-- electron-builder.yml 是否需要占位（建议占位，避免后续补配置影响 build 流程）
+- 是否需要在骨架阶段就引入 ESLint + Prettier（审查建议：**暂缓**，T-M0-001 最小可启动优先，lint 配置并入 T-M0-002 或独立 task，避免 §6.4 过度工程；由用户裁决）
+- ~~electron-builder.yml 是否需要占位~~（审查已判定：**应删除**，理由见"审查发现的洞"）
 
 ## 完成记录
 

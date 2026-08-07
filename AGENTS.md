@@ -1,8 +1,8 @@
 # AGENTS.md — pi-studybuddy 仓库操作宪章
 
-**版本**：v0.1.3
+**版本**：v0.1.4
 **日期**：2026-08-07
-**状态**：✅ 已审查批准（v0.1.0 用户 2026-08-07 批准；v0.1.1 治理资产清单同步更新；v0.1.2 省察修复 + §11.4 交叉审查元纪律；v0.1.3 §3.1 同步 01-TRD v0.2.2 决策 6）
+**状态**：✅ 已审查批准（v0.1.0 用户 2026-08-07 批准；v0.1.1 治理资产清单同步更新；v0.1.2 省察修复 + §11.4 交叉审查元纪律；v0.1.3 §3.1 同步 01-TRD v0.2.2 决策 6；v0.1.4 §10 补全 M0 pnpm 命令）
 **适用**：对人和 AI agent 同等约束（仿 pi 生态 AGENTS.md 约定，作为 context file 自动注入 system prompt）
 
 > 本文件是 pi-studybuddy 仓库的最高治理文件。任何 AI、开发者或自动化工具在对话中断后，只读本文件与 [docs/00-文档索引](./docs/00-文档索引-Index.md) 即可恢复系统身份、权威来源、当前任务和禁止事项；**不得依赖聊天记忆代替仓库文档**。
@@ -86,7 +86,7 @@
 | [01-TRD](./docs/01-TRD-技术需求-Technical-Requirements.md) | v0.2.2 | 技术底座决策 + 六点定案（含 v0.1 交付形态） |
 | [02-PRD](./docs/02-PRD-产品需求-Product-Requirements.md) | v0.1.3 | 产品需求 + 业务闭环 + §3.11 对话默认主入口 |
 | [03-Architecture](./docs/03-架构设计-Architecture-Design.md) | v0.1.1 | 四层架构 + pi 扩展 + §6.7 会话管理 |
-| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.2 | 任务登记 + 组件治理看板 + 里程碑 M0-M3 |
+| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.3 | 任务登记 + 组件治理看板 + 里程碑 M0-M3 |
 | [05-ERD](./docs/05-数据模型-ERD-Data-Model.md) | v0.1.1 | 全局库 + 学期库 + 三层记忆 |
 | [06-API](./docs/06-API契约-API-Contracts.md) | v0.1.1 | RPC 契约 + 100+ 方法 + 9 Streams |
 | [07-Workflow](./docs/07-工作流-Workflow.md) | v0.1.1 | 学生主路径 + 对话路径 + 11 状态机 |
@@ -368,21 +368,34 @@ master 分支只代表已集成、已验证、docs/04 已同步的事实。
 
 ---
 
-## §10 开发命令（M0 启动后补全）
+## §10 开发命令（M0 已启动）
 
-> M0 骨架搭建启动时，本节补全以下命令：
-> - `pnpm install` / `pnpm dev` / `pnpm build`
-> - `pnpm type-check` / `pnpm test` / `pnpm smoke`
-> - `pnpm verify`（统一质量门）
-> - `pnpm check:docs` / `pnpm check:contract`
-> - `python -m pytest`（WPS COM / OCR 桥）
+**M0 骨架开发命令（T-M0-001 落地，pnpm 包管理）**：
 
-**当前阶段（设计完成，治理体系已就绪，待启动 M0）**：
-- 文档维护命令：`node scripts/check-docs-governance.mjs`（文档治理检查）
-- 契约占位命令：`node scripts/check-contract-coverage.mjs`（M0 后启用完整校验）
-- 统一质量门：`node scripts/verify.mjs`（design 阶段：仅 docs-governance；m0 阶段：补 type-check + test + build + smoke；full 阶段：补 e2e）
+```
+pnpm install              # 安装依赖（electron/esbuild 已加入 pnpm-workspace.yaml allowBuilds）
+pnpm dev                  # 构建 + 启动 Electron（npm run build && electron .）
+pnpm build                # tsc 编译 main/preload/agent-host + vite 打包 renderer
+pnpm type-check           # tsc --noEmit（tsconfig.json + tsconfig.node.json 双配置）
+pnpm test                 # vitest run（单件 + 集成 + 安全不变量）
+pnpm smoke                # node scripts/smoke.mjs（构建产物 + RPC 冒烟）
+pnpm verify               # 统一质量门（node scripts/verify.mjs）
+```
 
-> M0 骨架搭建启动时，本节补全 pnpm 命令（pnpm install / dev / build / type-check / test / smoke / verify / check:docs / check:contract）。
+**专项校验脚本**：
+
+```
+node scripts/check-docs-governance.mjs      # 文档治理检查
+node scripts/check-contract-coverage.mjs    # 契约 AST 校验（M0 后启用完整校验）
+node scripts/check-desktop-security.mjs     # 08-Test §5.7 安全不变量（3 条实现 + 3 条占位）
+```
+
+> `python -m pytest`（WPS COM / OCR 桥）在 M1 引入时补全。
+
+**质量门阶段**（scripts/verify.mjs 自动按当前阶段选择）：
+- design 阶段：仅 docs-governance
+- m0 阶段：type-check + unit-test + contract-coverage + desktop-security + build + smoke
+- full 阶段：再补 e2e
 
 ---
 
@@ -435,6 +448,7 @@ master 分支只代表已集成、已验证、docs/04 已同步的事实。
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.4 | 2026-08-07 | §10 开发命令由"M0 启动后补全"落定为"M0 已启动"：补全 pnpm 命令清单（install/dev/build/type-check/test/smoke/verify）+ 专项校验脚本 + 质量门阶段说明 |
 | v0.1.3 | 2026-08-07 | §3.1 版本登记同步：01-TRD v0.2.2（§7 加决策 6 v0.1 交付形态：源码形态不打包 .exe）+ 00-索引 v0.1.18 |
 | v0.1.2 | 2026-08-07 | 省察修复批次：§3.1 版本登记同步（00-索引 v0.1.17 / 04-Todo v0.1.2）；新增 §11.4 交叉审查元纪律（≥2 独立审查者）；删除未登记的 CLAUDE.md 幽灵治理资产；治理脚本 check-docs-governance.mjs 加文档位置校验；.gitignore 补 .workbuddy/；T-M0-010 重编号为 T-M0-009 纠正跳号笔误；清空前序会话违规写入的 src/tests/6 源文件 + 6 配置文件（违反 §4.4 单一任务门禁与 §5.1 TDD 纪律） |
 | v0.1.1 | 2026-08-07 | §3.3 治理资产清单从"📝 待创建"全部更新为"✅ 已创建/已就绪"（五批治理资产分批推进完成）；§10 当前阶段补 design 阶段三个 node 脚本命令；新增 `.plan/` 和 `.record/` 两项资产登记 |

@@ -40,7 +40,7 @@ function ok(msg) {
 
 // ---- 阶段探测 ----
 const contractApiPath = path.join(root, "src/contract/api.ts");
-const handlersPath = path.join(root, "src/agent-host/handlers.ts");
+const agentHostDir = path.join(root, "src/agent-host");
 const preloadPath = path.join(root, "src/preload/preload.ts");
 const ipcPath = path.join(root, "src/main/ipc.ts");
 const desktopContractPath = path.join(root, "src/contract/desktop.ts");
@@ -67,16 +67,28 @@ function readIfExists(relativePath) {
 }
 
 const apiTs = readIfExists("src/contract/api.ts");
-const handlersTs = readIfExists("src/agent-host/handlers.ts");
 const desktopTs = readIfExists("src/contract/desktop.ts");
 const preloadTs = readIfExists("src/preload/preload.ts");
 const ipcTs = readIfExists("src/main/ipc.ts");
 
 if (!apiTs) fail("src/contract/api.ts 不存在但已被探测到——文件系统状态异常");
-if (!handlersTs) fail("src/agent-host/handlers.ts 不存在（M0 必须创建 handler 注册）");
+if (!fs.existsSync(agentHostDir)) fail("src/agent-host 目录不存在（M0 必须创建 handler 注册）");
 if (!desktopTs) fail("src/contract/desktop.ts 不存在（PiBridge 桥接契约）");
 if (!preloadTs) fail("src/preload/preload.ts 不存在（PiBridge preload 桥）");
 if (!ipcTs) fail("src/main/ipc.ts 不存在（IPC handler 注册）");
+
+// ---- 读取 agent-host 目录全部 .ts 源码（含 handlers/ 子目录），供扫描 server.handle 注册 ----
+function collectTsSource(dir) {
+  let out = "";
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out += collectTsSource(full);
+    else if (entry.name.endsWith(".ts")) out += fs.readFileSync(full, "utf8") + "\n";
+  }
+  return out;
+}
+const handlersTs = collectTsSource(agentHostDir);
 
 // ---- 解析 Api 接口方法名 ----
 const apiSource = ts.createSourceFile("api.ts", apiTs, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
