@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.38
+**版本**：v0.1.39
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -35,7 +35,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.1 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.31 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闘环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明 + §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~004 done + T-M1-005~010 pending）+ §7.3.1 M2 任务登记表（T-M2-001~005 done + T-M2-006~009 pending） |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.32 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明 + §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~004 done + T-M1-005~010 pending）+ §7.3.1 M2 任务登记表（T-M2-001~005 done + T-M2-006~009 pending）+ §7.4.1 M3 任务登记表（T-M3-001~008 pending）+ §7.5 全局执行顺序表（18 行 M1/M2/M3 pending 统一排序） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.1 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -125,6 +125,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.39 | 2026-08-08 | 04-Todo v0.1.32 登记 M3 task-id（§7.4.1 T-M3-001~008 全部 pending）+ 新增 §7.5 全局执行顺序表（18 行统一排序 M1/M2/M3 pending，明确前置依赖和执行理由）。原因：用户要求把 M3 和 M1/M2 的 pending 放一起明确先后顺序。影响：M3 登记表 +8 行，全局执行顺序表 +18 行，§9 统计数字不变。依据：AGENTS.md §11.2 修订纪律 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.38 | 2026-08-08 | 04-Todo v0.1.31 登记待做项 task-id（建议 B）：§7.2.1 M1 追加 T-M1-005~010（OCR venv Adapter / WPS COM 桥 / 资料转换管道 / 跨切钩子 / 09-UI S1-S4 / E2E-01~03，全部 pending）+ §7.3.1 M2 追加 T-M2-006~009（S6 UUID 泄漏检测 / whisper.cpp 真实 Adapter / 09-UI S5-S7+TTS+备份恢复 / E2E-04~09，全部 pending）。原因：用户核对发现 §6.3/§6.4 范围项与已登记 task 数量对不上，待做项未登记导致统计无法反映真实待办。影响：登记表行数增加 10 行，§9 统计数字不变（M1 10/6/4、M2 9/4/5 已正确），但含义清晰化——总任务数=已登记 task-id 数，里程碑退出门槛未全勾选前不算完成。依据：AGENTS.md §11.2 修订纪律 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.37 | 2026-08-08 | 04-Todo v0.1.30 §9 统计修正：M1 pending 5→6（大纲 10 行 - done 4 = 6，原写 5 为计数错误），合计 pending 17→18。原因：用户核对发现计划任务与实现任务数量对不上。影响：仅统计数字修正，无权威条款变更。依据：AGENTS.md §11.2 修订纪律 |
 | v0.1.36 | 2026-08-08 | T-M2-005 备份恢复工具注册 + API 完成（M2 第 5 任务，M2 最后一个业务 Adapter）：7 RPC handler（backup.course 单课程 zip 打包 manifest.json+data/*.jsonl+storage/ + content_hash=SHA-256 + 写 backup_records(manual) / backup.allCourses 遍历 course_instances 逐个备份 / backup.restore 解压+content_hash 校验+schema_version 兼容+冲突 overwrite/create_new/none+jsonl 导入+storage 复制+PRAGMA integrity_check / backup.list 按 semesterId/courseInstanceId 过滤 / backup.configureSchedule 写 backup_schedules cron_expression+timezone / backup.listSchedules 查询 / backup.toggleSchedule 启用/禁用）+ 5 studybuddy_* 工具（backup_course/backup_all_courses/restore_course/list_backups/configure_backup_schedule）+ BackupContext 句柄管理 + 手写最小 zip 格式（Node 内置 zlib，无外部依赖）+ zip 炸弹防护条目数+解压比限制 AGENTS.md §9.4 + 符号链接逃逸防护 + 错误码固定文案不泄漏路径/stdout/stderr + backup_records 状态机 in_progress→completed/failed + Streams["backup.progress"] 推送 + 调度配置 CRUD + DTO 对齐 05-ERD §2.3/§2.4（BackupRecord 15 字段+BackupSchedule 10 字段+RestoreResult 补 schemaVersion）；studybuddy-extension 接入备份恢复共 34 工具；扩展装配测试同步更新 29→34；单件 backup-zip-packer 7 + backup-zip-restorer 6 + backup-handlers 10 + backup-tools 8 + 集成 backup-handlers 5 测试，598 测试全绿（43 test files），type-check + build + smoke 6 项全通过 + 文档治理检查通过；04-Todo → v0.1.29（§7.3.1 T-M2-005 done + §9 统计 M2 5 done）；§三表格 04-Todo 版本号同步；§七登记 T-M2-005 done —— M2 业务 Adapter 层全部完成 |
