@@ -658,17 +658,39 @@ export interface ParentReportTarget {
 /* ---- §3.9 S7 课堂采集 ---- */
 /* （transcribe 返回 { transcription }，saveTranscription 返回 Material，无独立新 DTO） */
 
-/* ---- §3.11 备份恢复 ---- */
+/* ---- §3.11 备份恢复（05-ERD §2.3/§2.4 对齐） ---- */
 
+/** 备份类型（05-ERD §2.3 CHECK 约束） */
+export type BackupType = "manual" | "scheduled" | "pre_archive" | "post_archive";
+
+/** 备份状态（05-ERD §2.3 CHECK 约束，状态机 in_progress→completed/failed） */
+export type BackupStatus = "in_progress" | "completed" | "failed";
+
+/**
+ * 备份记录（05-ERD §2.3 backup_records 表）
+ * 字段对齐 schema：14 字段 + 4 索引
+ */
 export interface BackupRecord {
   id: string;
+  semesterId: string;
   courseInstanceId: string;
-  semesterId?: string;
+  backupType: BackupType;
   targetPath: string;
+  zipFilename: string;
+  contentHash: string;
+  fileSizeBytes: number;
+  status: BackupStatus;
+  errorCode?: string;
+  scheduleCron?: string;
+  startedAt: string;
+  completedAt?: string;
   createdAt: string;
-  sizeBytes: number;
 }
 
+/**
+ * 恢复结果（06-API §3.11）
+ * schemaVersion 来自 manifest.json（05-ERD §8.1）
+ */
 export interface RestoreResult {
   success: boolean;
   restoredCourseId: string;
@@ -676,8 +698,13 @@ export interface RestoreResult {
   tablesImported: string[];
   filesRestored: number;
   integrityCheck: "ok" | "warning";
+  schemaVersion?: string;
 }
 
+/**
+ * 备份调度配置（05-ERD §2.4 backup_schedules 表）
+ * 字段对齐 schema：10 字段 + 索引
+ */
 export interface BackupSchedule {
   id: string;
   semesterId: string;
@@ -685,6 +712,10 @@ export interface BackupSchedule {
   cronExpression: string;
   timezone: string;
   enabled: boolean;
+  lastRunAt?: string;
+  nextRunAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /* ---- §3.10 TTS ---- */

@@ -344,7 +344,7 @@ describe("防泄露与关键 DTO（06-API §5.1 + §3）", () => {
     }>();
   });
 
-  it("RestoreResult 结构与 §3.11 对齐", () => {
+  it("RestoreResult 结构与 §3.11 对齐（含 schemaVersion，05-ERD §8.1 manifest）", () => {
     expectTypeOf<RestoreResult>().toEqualTypeOf<{
       success: boolean;
       restoredCourseId: string;
@@ -352,6 +352,7 @@ describe("防泄露与关键 DTO（06-API §5.1 + §3）", () => {
       tablesImported: string[];
       filesRestored: number;
       integrityCheck: "ok" | "warning";
+      schemaVersion?: string;
     }>();
   });
 
