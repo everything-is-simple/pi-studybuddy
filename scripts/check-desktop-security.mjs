@@ -36,8 +36,8 @@ function check(id, name, ok, detail = "") {
 
 console.log("[check-desktop-security] 安全不变量校验（08-Test §5.7）");
 
-// ---- 三条已实现（本任务） ----
-console.log("\n已实现（T-M0-001）：");
+// ---- 已实现（T-M0-001 / T-M0-002 / T-M0-003） ----
+console.log("\n已实现（T-M0-001 / T-M0-002 / T-M0-003）：");
 check(
   "INV-01",
   "sandbox:true（webPreferences，08-Test §5.7 不变量 1）",
@@ -53,14 +53,12 @@ check(
   "preload 仅 exposeInMainWorld('piBridge')（不变量 3）",
   /exposeInMainWorld\s*\(\s*["']piBridge["']/.test(readSource("src/preload/preload.ts")),
 );
-
-// ---- 三条占位（后续任务补全）+ INV-05 已落地 ----
-console.log("\n占位（后续任务补全）：");
 check(
   "INV-04",
   "credential-vault 用 safeStorage（不变量 4）→ T-M0-003",
-  false,
-  "延迟到 T-M0-003",
+  /import\s*\{\s*safeStorage\s*\}\s*from\s*["']electron["']/.test(
+    readSource("src/main/credential-vault.ts"),
+  ),
 );
 
 // INV-05：Host RPC 契约化（06-API §3 ~100 方法）。断言 api.ts 含完整接口（方法数 ≥ 阈值）。
@@ -73,6 +71,8 @@ check(
   `api.ts 方法数 ${apiMethodCount}（阈值 ≥ 50）`,
 );
 
+// --- 占位（后续任务补全） ---
+console.log("\n占位（后续任务补全）：");
 check(
   "INV-06",
   "HTML 预览独立 CSP（form-action 'none'，不变量 6）→ T-M0-008",
@@ -82,14 +82,16 @@ check(
 
 const failed = results.filter((r) => !r.ok);
 console.log(
-  `\n[check-desktop-security] ${results.length} 条不变量：通过 ${results.length - failed.length}，失败 ${failed.length}（其中 2 条为后续任务占位）`,
+  `\n[check-desktop-security] ${results.length} 条不变量：通过 ${results.length - failed.length}，失败 ${failed.length}（其中 1 条为后续任务占位）`,
 );
 
-// 已实现 4 条必须全绿；占位 2 条允许失败（未到对应任务）
-const implemented = results.filter((r) => ["INV-01", "INV-02", "INV-03", "INV-05"].includes(r.id));
+// 已实现 5 条必须全绿；占位 1 条允许失败（未到对应任务）
+const implemented = results.filter((r) =>
+  ["INV-01", "INV-02", "INV-03", "INV-04", "INV-05"].includes(r.id),
+);
 if (implemented.some((r) => !r.ok)) {
   console.error("\n[check-desktop-security] FAILED：存在已实现不变量未通过");
   process.exit(1);
 }
 
-console.log("[check-desktop-security] 已实现 4 条不变量全部通过 ✅");
+console.log("[check-desktop-security] 已实现 5 条不变量全部通过 ✅");

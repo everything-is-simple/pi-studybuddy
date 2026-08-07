@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.4
+**版本**：v0.1.6
 **日期**：2026-08-07
-**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -369,6 +369,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 |---|---|---|---|---|---|---|---|
 | T-M0-001 | Electron 四进程骨架 + 自研 RPC + 最小 contract | 壳层 | P1 | done | 阶段5 | 03-Arch §6 + §9.2 + 08-Test §5.7 | [.record/T-M0-001 实施记录](../.record/T-M0-001-实施记录.md) |
 | T-M0-002 | contract 类型化 IPC + RPC 完整接口 | 壳层 | P1 | done | 阶段5 | 03-Arch §6.3 + 06-API §1.2-§5 | [.record/T-M0-002 实施记录](../.record/T-M0-002-实施记录.md) |
+| T-M0-003 | credential-vault（safeStorage/DPAPI 密钥库） | 壳层 | P1 | done | 阶段5 | 03-Arch §4.5 + 06-API §3.15 + 01-TRD §9.2 + 08-Test §5.6-§5.7 | [.record/T-M0-003 实施记录](../.record/T-M0-003-实施记录.md) |
 | T-M0-006 | 数据层 schema（global.db + semester.db + 三层记忆） | 数据层 | P1 | done | 阶段5 | 05-ERD §1-§10 + 03-Arch §4 + 08-Test §3.2 + §5.4 | [.record/T-M0-006 实施记录](../.record/T-M0-006-实施记录.md) |
 
 ### 7.2 M1 核心闭环 MVP 任务大纲
@@ -437,11 +438,11 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 里程碑 | 总任务数 | pending | in_progress | testing | done | blocked |
 |---|---|---|---|---|---|---|
-| M0 | 12 | 9 | 0 | 0 | 3 | 0 |
+| M0 | 12 | 8 | 0 | 0 | 4 | 0 |
 | M1 | 10 | 10 | 0 | 0 | 0 | 0 |
 | M2 | 9 | 9 | 0 | 0 | 0 | 0 |
 | M3 | 8 | 8 | 0 | 0 | 0 | 0 |
-| **合计** | **39** | **36** | **0** | **0** | **3** | **0** |
+| **合计** | **39** | **35** | **0** | **0** | **4** | **0** |
 
 ---
 
@@ -449,6 +450,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.6 | 2026-08-07 | 登记 T-M0-003 完成：§7.1.1 登记表 T-M0-003 done（credential-vault：safeStorage/DPAPI 密钥库 + 原子写 0o600 + 键名校验），更新 §9 统计（M0 8 pending + 4 done）。同时补全 scripts/check-desktop-security.mjs INV-04 占位为真实断言（已实现 5 条全绿）。依据：AGENTS.md §7 受控收尾流程 |
 | v0.1.5 | 2026-08-07 | 登记 T-M0-006 完成：§7.1.1 登记表 T-M0-006 done（数据层 schema：global.db 4 表 + semester.db 25 表 9 触发器 + 三层记忆 L1/L2/L3 + PRAGMA + integrity 断言；node:sqlite 经 process.getBuiltinModule 动态加载规避 esbuild 剥离 node: 前缀），更新 §9 统计（M0 9 pending + 3 done）。依据：AGENTS.md §7 受控收尾流程 |
 | v0.1.4 | 2026-08-07 | 登记 T-M0-002 完成：§7.1.1 登记表 T-M0-002 done（contract 类型化契约面：api ~126 方法 + types DTO + streams 9 主题 + PiBridge 8 桥面），更新 §9 统计（M0 10 pending + 2 done）。依据：AGENTS.md §7 受控收尾流程 |
 | v0.1.3 | 2026-08-07 | 登记 T-M0-001 完成：新增 §7.1.1 M0 任务登记表（T-M0-001 done），更新 §9 任务统计（M0 12→11 pending + 1 done）。依据：AGENTS.md §7 受控收尾流程 |
