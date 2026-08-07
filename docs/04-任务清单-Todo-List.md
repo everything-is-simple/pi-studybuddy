@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.37
+**版本**：v0.1.38
 **日期**：2026-08-08
-**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done；v0.1.20 登记 T-M1-003 开工 + §7.2.1 M1 任务登记表；v0.1.21 登记 T-M1-003 完成 + §9 统计 M1 3 done；v0.1.22 登记 T-M1-004 开工 + §7.2.1 M1 任务登记表；v0.1.23 登记 T-M1-004 完成 + §9 统计 M1 4 done；v0.1.24 登记 T-M2-001 完成 + §7.3.1 M2 任务登记表 + §9 统计 M2 1 done；v0.1.25 登记 T-M2-002 完成 + §7.3.1 M2 任务登记表 T-M2-002 done + §9 统计 M2 2 done；v0.1.26 登记 T-M2-003 完成 + §7.3.1 M2 任务登记表 T-M2-003 done + §9 统计 M2 3 done；v0.1.27 登记 T-M2-004 开工 + §7.3.1 M2 任务登记表 T-M2-004 in_progress + §9 统计 M2 3 done + 1 in_progress；v0.1.28 登记 T-M2-004 完成 + §7.3.1 M2 任务登记表 T-M2-004 done + §9 统计 M2 4 done；v0.1.29 登记 T-M2-005 完成 + §7.3.1 M2 任务登记表 T-M2-005 done + §9 统计 M2 5 done；v0.1.30 §9 统计修正 M1 pending 5→6 合计 17→18；v0.1.31 登记待做项 task-id：M1 追加 T-M1-005~010（OCR/WPS COM/资料转换管道/跨切钩子/UI/E2E）+ M2 追加 T-M2-006~009（UUID 泄漏检测/whisper.cpp 真实 Adapter/UI/E2E）全部 pending；v0.1.32 登记 M3 task-id T-M3-001~008 + 新增 §7.5 全局执行顺序表 18 行统一排序 M1/M2/M3 pending；v0.1.33 登记 T-M1-009 开工：§7.2.1 T-M1-009 pending→in_progress + §9 统计 M1 pending 6→5 + in_progress 0→1；v0.1.34 登记 T-M1-009 完成：§7.2.1 T-M1-009 in_progress→done + §9 统计 M1 in_progress 1→0 + done 4→5；v0.1.35 登记 T-M2-008 开工：§7.3.1 T-M2-008 pending→in_progress + §9 统计 M2 pending 4→3 + in_progress 0→1；v0.1.36 登记 T-M2-008 完成：§7.3.1 T-M2-008 in_progress→done + §9 统计 M2 in_progress 1→0 + done 5→6；v0.1.37 登记 T-M1-010 完成：§7.2.1 T-M1-010 pending→done + §6.3 M1 退出门槛全勾选 + §9 统计 M1 done 5→6）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done；v0.1.20 登记 T-M1-003 开工 + §7.2.1 M1 任务登记表；v0.1.21 登记 T-M1-003 完成 + §9 统计 M1 3 done；v0.1.22 登记 T-M1-004 开工 + §7.2.1 M1 任务登记表；v0.1.23 登记 T-M1-004 完成 + §9 统计 M1 4 done；v0.1.24 登记 T-M2-001 完成 + §7.3.1 M2 任务登记表 + §9 统计 M2 1 done；v0.1.25 登记 T-M2-002 完成 + §7.3.1 M2 任务登记表 T-M2-002 done + §9 统计 M2 2 done；v0.1.26 登记 T-M2-003 完成 + §7.3.1 M2 任务登记表 T-M2-003 done + §9 统计 M2 3 done；v0.1.27 登记 T-M2-004 开工 + §7.3.1 M2 任务登记表 T-M2-004 in_progress + §9 统计 M2 3 done + 1 in_progress；v0.1.28 登记 T-M2-004 完成 + §7.3.1 M2 任务登记表 T-M2-004 done + §9 统计 M2 4 done；v0.1.29 登记 T-M2-005 完成 + §7.3.1 M2 任务登记表 T-M2-005 done + §9 统计 M2 5 done；v0.1.30 §9 统计修正 M1 pending 5→6 合计 17→18；v0.1.31 登记待做项 task-id：M1 追加 T-M1-005~010（OCR/WPS COM/资料转换管道/跨切钩子/UI/E2E）+ M2 追加 T-M2-006~009（UUID 泄漏检测/whisper.cpp 真实 Adapter/UI/E2E）全部 pending；v0.1.32 登记 M3 task-id T-M3-001~008 + 新增 §7.5 全局执行顺序表 18 行统一排序 M1/M2/M3 pending；v0.1.33 登记 T-M1-009 开工：§7.2.1 T-M1-009 pending→in_progress + §9 统计 M1 pending 6→5 + in_progress 0→1；v0.1.34 登记 T-M1-009 完成：§7.2.1 T-M1-009 in_progress→done + §9 统计 M1 in_progress 1→0 + done 4→5；v0.1.35 登记 T-M2-008 开工：§7.3.1 T-M2-008 pending→in_progress + §9 统计 M2 pending 4→3 + in_progress 0→1；v0.1.36 登记 T-M2-008 完成：§7.3.1 T-M2-008 in_progress→done + §9 统计 M2 in_progress 1→0 + done 5→6；v0.1.37 登记 T-M1-010 完成：§7.2.1 T-M1-010 pending→done + §6.3 M1 退出门槛全勾选 + §9 统计 M1 done 5→6；v0.1.38 登记 T-M2-009 完成：§7.3.1 T-M2-009 pending→done + §6.4 M2 退出门槛全勾选 + §9 统计 M2 done 6→7）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.2 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -341,12 +341,12 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 - 09-UI S5-S7 + TTS + 备份恢复 UI
 
 **退出门槛**：
-- [ ] S1-S7 全链路冒烟通过
-- [ ] E2E-01~09 通过
-- [ ] 家长报告 UUID 泄漏检测通过
-- [ ] TTS 跨子系统朗读冒烟通过
-- [ ] 备份恢复 content_hash + integrity_check 通过
-- [ ] 投递渠道独立失败隔离通过
+- [x] S1-S7 全链路冒烟通过
+- [x] E2E-01~09 通过
+- [x] 家长报告 UUID 泄漏检测通过
+- [x] TTS 跨子系统朗读冒烟通过
+- [x] 备份恢复 content_hash + integrity_check 通过
+- [x] 投递渠道独立失败隔离通过
 
 ### 6.5 M3：对话与打磨
 
@@ -463,7 +463,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M2-006 | S6 assertNoSensitiveLeak UUID 泄漏检测（独立校验脚本） | 业务Adapter | P1 | pending | 阶段2-5 | 03-Arch §8.2 + 08-Test §5.4 | — |
 | T-M2-007 | whisper.cpp Adapter（真实 PCM WAV 转写 CLI 接入，替换 mock） | 业务Adapter | P1 | pending | 阶段2-3 | 03-Arch §3.3 + 08-Test §3.3.2 | — |
 | T-M2-008 | 09-UI S5-S7 + TTS + 备份恢复 UI | 壳层 | P1 | done | 阶段4 | 09-UI §4.8-§4.10 + §5-§6 | 3 Tab + TtsControlBar + BackupPanel + 66 测试（确定性只读+隐私边界+合规确认+引擎降级+标记已复习+备份恢复校验）|
-| T-M2-009 | E2E-04~09（冲刺/报告/采集/TTS/备份恢复） | 测试 | P1 | pending | 阶段5 | 08-Test §6.2-§6.4 | — |
+| T-M2-009 | E2E-04~09（冲刺/报告/采集/TTS/备份恢复） | 测试 | P1 | done | 阶段5 | 08-Test §6.2-§6.4 | [.record/T-M2-009 实施记录](../.record/T-M2-009-实施记录.md) |
 
 ### 7.4 M3 对话与打磨任务大纲
 
@@ -544,9 +544,9 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 |---|---|---|---|---|---|---|
 | M0 | 9 | 0 | 0 | 0 | 9 | 0 |
 | M1 | 10 | 4 | 0 | 0 | 6 | 0 |
-| M2 | 9 | 3 | 0 | 0 | 6 | 0 |
+| M2 | 9 | 2 | 0 | 0 | 7 | 0 |
 | M3 | 8 | 8 | 0 | 0 | 0 | 0 |
-| **合计** | **36** | **15** | **0** | **0** | **21** | **0** |
+| **合计** | **36** | **14** | **0** | **0** | **22** | **0** |
 
 > 注：M0 总任务数按实际 task-id 计为 9（§7.1 大纲 12 项中，安全沙箱合并入 T-M0-001，数据层 global/semester/三层记忆 3 项合并为 T-M0-006）。v0.1.15 修正口径。
 >
@@ -560,6 +560,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.38 | 2026-08-08 | 登记 T-M2-009 完成：§7.3.1 登记表 T-M2-009 pending→done（E2E-04~09：S5 期末冲刺全链 11 用例 + S6 家长报告+UUID 泄漏检测+渠道隔离 6 用例 + S7 课堂采集→S2 handoff 8 用例 + TTS 跨子系统+引擎切换+不持久化 8 用例 + 备份恢复 content_hash+integrity_check 5 用例 + 定期调度备份 cron 校验 6 用例 = 44 新增 E2E 用例；复用 T-M1-010 vitest+child_process.fork+IPC 框架；test-main.js 扩展注册 S5-S7+TTS+Backup handler + test.seedModule 测试专用种子；tts-adapter mock 修复 engine 硬编码 bug；zip-restorer FK 映射修复子表 course_instance_id 重映射；E2E-01~09 全 80 用例通过）+ §6.4 M2 退出门槛全勾选 + §9 统计 M2 pending 3→2 + done 6→7。原因：T-M2-009 实施完成，质量门全通过（type-check + 722 单元/集成测试 + 80 E2E 测试 + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：M2 退出门槛六项全勾选，M2 完整闭环达成。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §5.1 TDD 纪律 |
 | v0.1.35 | 2026-08-08 | 登记 T-M2-008 开工：§7.3.1 登记表 T-M2-008 pending→in_progress（09-UI S5-S7+TTS+备份恢复 UI，3 Tab 组件 CramTab/ReportTab/CaptureTab + TtsControlBar 全局控制条 + BackupPanel 备份恢复面板 + 5 测试文件）+ §9 统计 M2 pending 4→3 + in_progress 0→1。原因：用户批准 T-M2-008 开工（§7.5 全局执行顺序表第 2 行，与 T-M1-009 同批复用 UI 模式）。影响：仅状态登记 + 统计数字，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.34 | 2026-08-08 | 登记 T-M1-009 完成：§7.2.1 登记表 T-M1-009 in_progress→done（09-UI S1-S4 标签页业务 UI：5 Tab 组件 HomeTab/MaterialsTab/NotesTab/PracticeTab/MistakesTab + 5 公共组件 EmptyState/LoadingState/ErrorState/ShortId/TabContainer + rpc-client 类型化封装 + AppShell 路由 + App.tsx 注入 + 58 新增测试覆盖防泄露铁律/隐私边界/六分类/AI 不确定标记）+ §9 统计 M1 in_progress 1→0 + done 4→5。原因：T-M1-009 实施完成，质量门全通过（type-check + 656 测试 + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅状态登记 + 统计数字，无权威条款变更。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.33 | 2026-08-08 | 登记 T-M1-009 开工：§7.2.1 登记表 T-M1-009 pending→in_progress（09-UI S1-S4 标签页业务 UI，5 Tab 组件 + 公共组件 + RPC 客户端注入 + 静态渲染测试）+ §9 统计 M1 pending 6→5 + in_progress 0→1。原因：用户批准 T-M1-009 开工（§7.5 全局执行顺序表第 1 行）。影响：仅状态登记 + 统计数字，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
