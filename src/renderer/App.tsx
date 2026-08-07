@@ -1,12 +1,14 @@
 /**
- * pi-studybuddy renderer 最小页面（03-Arch §6.2 + 09-UI §1.3）
+ * pi-studybuddy renderer 入口（03-Arch §6.2 + 09-UI §2.1）
  *
- * 显示"骨架就绪"占位，并通过 piBridge.connectHost() + RPC 层调用 system.ping
- * 验证 renderer→main→agent-host 通道往返。
+ * T-M0-008：组装 AppShell 三栏布局 + TabBar 骨架。
+ * 保留 T-M0-001 的 piBridge.connectHost() + system.ping RPC 通道验证，
+ * 将状态/结果/回调传给 AppShell 在主内容区显示。
  */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createRpcClient, type AnyMessagePort } from "../contract/rpc";
 import type { PiBridge } from "../contract/desktop";
+import { AppShell } from "./components/AppShell";
 
 declare global {
   interface Window {
@@ -40,13 +42,10 @@ export function App(): React.JSX.Element {
   }, []);
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", padding: 24 }}>
-      <h1>pi-studybuddy 骨架就绪</h1>
-      <p>状态：{status}</p>
-      <button type="button" onClick={() => void runPing()}>
-        验证 RPC 通道
-      </button>
-      {result && <p>ping 结果：{result}</p>}
-    </div>
+    <AppShell
+      rpcStatus={status}
+      rpcResult={result}
+      onVerifyRpc={() => void runPing()}
+    />
   );
 }

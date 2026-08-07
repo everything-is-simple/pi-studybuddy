@@ -374,6 +374,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M0-004 | toolchain 发现-探测-安装-绝对路径执行框架 | 壳层 | P1 | done | 阶段5 | 03-Arch §6.5 + 06-API §3.16 + 01-TRD §7 决策 1 | [.record/T-M0-004 实施记录](../.record/T-M0-004-实施记录.md) |
 | T-M0-005 | file-watch（fs.watch recursive + 100ms 防抖 → Streams["files.changed"]） | 壳层 | P1 | done | 阶段5 | 03-Arch §6.5/§6.6 + 06-API §3.2/§4 | [.record/T-M0-005 实施记录](../.record/T-M0-005-实施记录.md) |
 | T-M0-007 | studybuddy-extension 空壳（createStudyBuddyExtension 可 setup 无工具） | 扩展层 | P1 | done | 阶段3 | 03-Arch §2.1/§2.2 + pi ExtensionFactory 契约 | [.record/T-M0-007 实施记录](../.record/T-M0-007-实施记录.md) |
+| T-M0-008 | 09-UI 三栏布局 + 标签页骨架（AppShell + TabBar 空壳） | 壳层 | P1 | done | 阶段4 | 09-UI §2-§4 | [.record/T-M0-008 实施记录](../.record/T-M0-008-实施记录.md) |
 
 ### 7.2 M1 核心闭环 MVP 任务大纲
 
@@ -441,11 +442,11 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 里程碑 | 总任务数 | pending | in_progress | testing | done | blocked |
 |---|---|---|---|---|---|---|
-| M0 | 12 | 4 | 0 | 0 | 7 | 0 |
+| M0 | 12 | 3 | 0 | 0 | 8 | 0 |
 | M1 | 10 | 10 | 0 | 0 | 0 | 0 |
 | M2 | 9 | 9 | 0 | 0 | 0 | 0 |
 | M3 | 8 | 8 | 0 | 0 | 0 | 0 |
-| **合计** | **39** | **31** | **0** | **0** | **7** | **0** |
+| **合计** | **39** | **30** | **0** | **0** | **8** | **0** |
 
 ---
 
@@ -453,6 +454,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.13 | 2026-08-07 | 登记 T-M0-008 完成：§7.1.1 登记表 T-M0-008 done（09-UI 三栏布局 + 标签页骨架：tabs.ts 9 Tab 纯数据 + AppShell.tsx 三栏布局壳 + TabBar.tsx 标签页栏 + App.tsx 组装 + renderer-layout.test.ts 14 断言；对话默认 Tab + 内联样式 + renderToStaticMarkup 静态渲染测试；vitest.config.ts 加 react 插件解析 tsx），§9 统计 M0 3 pending + 8 done。依据：AGENTS.md §7 受控收尾流程 |
+| v0.1.12 | 2026-08-07 | 登记 T-M0-008 开工：§7.1.1 登记表新增 T-M0-008 in_progress（09-UI 三栏布局 + 标签页骨架：AppShell + TabBar 空壳，对话默认 Tab），更新 §9 统计（M0 3 pending + 1 in_progress + 7 done）。依据：AGENTS.md §4.4 单一执行任务门禁 + §5.1 TDD 纪律 |
 | v0.1.11 | 2026-08-07 | 登记 T-M0-007 完成：§7.1.1 登记表 T-M0-007 done（studybuddy-extension 空壳：createStudyBuddyExtension 工厂返回 pi ExtensionFactory 空 setup，零工具/零钩子/零 provider；pi 底座 @earendil-works/pi-coding-agent@0.80.10 + pi-ai@0.80.10 安装为 dependencies；7 单件 + 4 集成测试全绿），§4.1 看板 pi 行阶段1/3 标记 ✅（已安装 + 集成契约验证），§9 统计 M0 4 pending + 7 done。依据：AGENTS.md §7 受控收尾流程 + §6.2 组件化装配流程 |
 | v0.1.10 | 2026-08-07 | 登记 T-M0-007 开工 + §4.1 看板 pi 修正：§7.1.1 登记表新增 T-M0-007 in_progress（studybuddy-extension 空壳：createStudyBuddyExtension 工厂 + pi ExtensionFactory 类型化契约 + 空 setup 无工具）；§4.1 看板 pi 行修正——"✅ 已下载"为自指断言（实际 node_modules 无 @earendil-works，阶段1 未完成）→ 改 ⏳ T-M0-007 安装中，"peerDeps"→"dependencies"（跟随 pi-desktop 权威范式 [pi-desktop package.json:47-48] 固定版本 dependencies）；§9 统计 M0 5 pending + 1 in_progress + 6 done。依据：AGENTS.md §11.1 治理基线修改 + §3.2 pi-desktop 参考范式 + §11.2 修订纪律（自指断言修正） |
 | v0.1.9 | 2026-08-07 | 登记 T-M0-005 完成：§7.1.1 登记表 T-M0-005 done（file-watch：fs.watch recursive + 100ms 防抖 → Streams["files.changed"]，per-target lastExists 推断 changeType 规避 Windows eventType 不可靠），§9 统计 M0 6 done。前序 v0.1.8 收尾时遗漏版本历史条目与 §9 同步，本次补登。依据：AGENTS.md §7 受控收尾流程 + §11.2 修订纪律 |
