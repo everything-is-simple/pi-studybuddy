@@ -1,8 +1,8 @@
 # 04 任务清单
 
-**版本**：v0.1.30
+**版本**：v0.1.31
 **日期**：2026-08-08
-**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done；v0.1.20 登记 T-M1-003 开工 + §7.2.1 M1 任务登记表；v0.1.21 登记 T-M1-003 完成 + §9 统计 M1 3 done；v0.1.22 登记 T-M1-004 开工 + §7.2.1 M1 任务登记表；v0.1.23 登记 T-M1-004 完成 + §9 统计 M1 4 done；v0.1.24 登记 T-M2-001 完成 + §7.3.1 M2 任务登记表 + §9 统计 M2 1 done；v0.1.25 登记 T-M2-002 完成 + §7.3.1 M2 任务登记表 T-M2-002 done + §9 统计 M2 2 done；v0.1.26 登记 T-M2-003 完成 + §7.3.1 M2 任务登记表 T-M2-003 done + §9 统计 M2 3 done；v0.1.27 登记 T-M2-004 开工 + §7.3.1 M2 任务登记表 T-M2-004 in_progress + §9 统计 M2 3 done + 1 in_progress；v0.1.28 登记 T-M2-004 完成 + §7.3.1 M2 任务登记表 T-M2-004 done + §9 统计 M2 4 done；v0.1.29 登记 T-M2-005 完成 + §7.3.1 M2 任务登记表 T-M2-005 done + §9 统计 M2 5 done）
+**状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done；v0.1.20 登记 T-M1-003 开工 + §7.2.1 M1 任务登记表；v0.1.21 登记 T-M1-003 完成 + §9 统计 M1 3 done；v0.1.22 登记 T-M1-004 开工 + §7.2.1 M1 任务登记表；v0.1.23 登记 T-M1-004 完成 + §9 统计 M1 4 done；v0.1.24 登记 T-M2-001 完成 + §7.3.1 M2 任务登记表 + §9 统计 M2 1 done；v0.1.25 登记 T-M2-002 完成 + §7.3.1 M2 任务登记表 T-M2-002 done + §9 统计 M2 2 done；v0.1.26 登记 T-M2-003 完成 + §7.3.1 M2 任务登记表 T-M2-003 done + §9 统计 M2 3 done；v0.1.27 登记 T-M2-004 开工 + §7.3.1 M2 任务登记表 T-M2-004 in_progress + §9 统计 M2 3 done + 1 in_progress；v0.1.28 登记 T-M2-004 完成 + §7.3.1 M2 任务登记表 T-M2-004 done + §9 统计 M2 4 done；v0.1.29 登记 T-M2-005 完成 + §7.3.1 M2 任务登记表 T-M2-005 done + §9 统计 M2 5 done；v0.1.30 §9 统计修正 M1 pending 5→6 合计 17→18；v0.1.31 登记待做项 task-id：M1 追加 T-M1-005~010（OCR/WPS COM/资料转换管道/跨切钩子/UI/E2E）+ M2 追加 T-M2-006~009（UUID 泄漏检测/whisper.cpp 真实 Adapter/UI/E2E）全部 pending）
 **上游**：[01-TRD v0.2.1](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.1 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
 
@@ -430,6 +430,12 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M1-002 | S2 资料/笔记/知识模块 工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.3 + 06-API §3.4 + 03-Arch §3.1 + 05-ERD §3.2 + 08-Test §3.1/§3.2 | [.record/T-M1-002 实施记录](../.record/T-M1-002-实施记录.md) |
 | T-M1-003 | S3 限时练习 工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.4 + 06-API §3.5 + 03-Arch §3.1 + 05-ERD §3.3 + 08-Test §3.1/§3.2 | [.record/T-M1-003 实施记录](../.record/T-M1-003-实施记录.md) |
 | T-M1-004 | S4 错题/薄弱点 工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.5 + 06-API §3.6 + 03-Arch §3.1 + 05-ERD §3.4 + 08-Test §3.1/§3.2 | [.record/T-M1-004 实施记录](../.record/T-M1-004-实施记录.md) |
+| T-M1-005 | OCR venv Adapter（课表图片识别） | 业务Adapter | P1 | pending | 阶段2-3 | 03-Arch §3.3 + 08-Test §3.3 | — |
+| T-M1-006 | WPS COM 桥（doc/ppt/xls 转换） | 业务Adapter | P1 | pending | 阶段2-3 | 03-Arch §3.3 + 08-Test §3.3.1 | — |
+| T-M1-007 | 资料转换管道（PDF/DOCX/PPTX/图片 OCR） | 业务Adapter | P1 | pending | 阶段2-4 | 07-WF §2.3 | — |
+| T-M1-008 | 跨切钩子（before_agent_start/session_start/tool_call/tool_result 业务级逻辑） | 扩展层 | P1 | pending | 阶段3 | 03-Arch §2.3 + 08-Test §4.2 | — |
+| T-M1-009 | 09-UI S1-S4 标签页业务 UI | 壳层 | P1 | pending | 阶段4 | 09-UI §4.3-§4.7 | — |
+| T-M1-010 | E2E-01~03（学期初始化/资料笔记/练习→错题→薄弱点） | 测试 | P1 | pending | 阶段5 | 08-Test §6.1 | — |
 
 ### 7.3 M2 完整闭环任务大纲
 
@@ -454,6 +460,10 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M2-003 | S7 课堂采集（许可确认/PCM WAV/whisper.cpp/handoff）工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §2.7 + 06-API §3.9 + 03-Arch §3.1/§3.3 + 05-ERD §3.2.1/§3.2.2/§3.1.5 + 08-Test §3.3.2/§5.4 | [.record/T-M2-003 实施记录](../.record/T-M2-003-实施记录.md) |
 | T-M2-004 | TTS skill（SAPI + edge-tts 降级 + 跨子系统朗读 + 状态机）工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §4 + 06-API §3.10 + 03-Arch §3.1/§3.3 + 08-Test §3.5/§5.4 + 02-PRD §3.9 + 09-UI §5 | [.record/T-M2-004 实施记录](../.record/T-M2-004-实施记录.md) |
 | T-M2-005 | 备份恢复（zip 打包/解包 + content_hash + 恢复 + 调度）工具注册 + API | 业务Adapter | P1 | done | 阶段2-4 | 07-WF §5 + 06-API §3.11 + 03-Arch §3.1 + 05-ERD §2.3/§2.4/§8.1-§8.3 + 02-PRD §3.10 + 08-Test §3.1/§5.3/§5.4/§7.6 + 09-UI §6 | [.record/T-M2-005 实施记录](../.record/T-M2-005-实施记录.md) |
+| T-M2-006 | S6 assertNoSensitiveLeak UUID 泄漏检测（独立校验脚本） | 业务Adapter | P1 | pending | 阶段2-5 | 03-Arch §8.2 + 08-Test §5.4 | — |
+| T-M2-007 | whisper.cpp Adapter（真实 PCM WAV 转写 CLI 接入，替换 mock） | 业务Adapter | P1 | pending | 阶段2-3 | 03-Arch §3.3 + 08-Test §3.3.2 | — |
+| T-M2-008 | 09-UI S5-S7 + TTS + 备份恢复 UI | 壳层 | P1 | pending | 阶段4 | 09-UI §4.8-§4.10 + §5-§6 | — |
+| T-M2-009 | E2E-04~09（冲刺/报告/采集/TTS/备份恢复） | 测试 | P1 | pending | 阶段5 | 08-Test §6.2-§6.4 | — |
 
 ### 7.4 M3 对话与打磨任务大纲
 
@@ -499,6 +509,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | **合计** | **36** | **18** | **0** | **0** | **18** | **0** |
 
 > 注：M0 总任务数按实际 task-id 计为 9（§7.1 大纲 12 项中，安全沙箱合并入 T-M0-001，数据层 global/semester/三层记忆 3 项合并为 T-M0-006）。v0.1.15 修正口径。
+>
+> 注（v0.1.31）：总任务数 = 已登记 task-id 数（与 §7.x.1 登记表行数一致）。M1/M2 的 pending 行已登记 task-id（T-M1-005~010 / T-M2-006~009），涵盖 OCR/WPS COM/资料转换管道/跨切钩子/UI/E2E/UUID 泄漏检测/whisper.cpp 真实 Adapter。里程碑退出门槛（§6.3/§6.4）未全部勾选前，里程碑不算完成。
 
 ---
 
@@ -506,6 +518,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.31 | 2026-08-08 | 登记待做项 task-id（建议 B）：§7.2.1 M1 追加 T-M1-005~010（OCR venv Adapter / WPS COM 桥 / 资料转换管道 / 跨切钩子 / 09-UI S1-S4 / E2E-01~03，全部 pending）+ §7.3.1 M2 追加 T-M2-006~009（S6 UUID 泄漏检测 / whisper.cpp 真实 Adapter / 09-UI S5-S7+TTS+备份恢复 / E2E-04~09，全部 pending）。原因：用户核对发现 §6.3/§6.4 范围项与已登记 task 数量对不上，待做项未登记导致统计无法反映真实待办。影响：登记表行数增加 10 行，§9 统计数字不变（M1 10/6/4、M2 9/4/5 已正确），但含义清晰化——总任务数=已登记 task-id 数，里程碑退出门槛未全勾选前不算完成。依据：AGENTS.md §11.2 修订纪律 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.30 | 2026-08-08 | §9 统计修正：M1 pending 5→6（大纲 10 行 - done 4 = 6，原写 5 为计数错误），合计 pending 17→18。原因：用户核对发现计划任务与实现任务数量对不上。影响：仅统计数字修正，无权威条款变更。依据：AGENTS.md §11.2 修订纪律 |
 | v0.1.29 | 2026-08-08 | 登记 T-M2-005 完成：§7.3.1 登记表 T-M2-005 done（备份恢复 7 RPC handler + 5 studybuddy_* 工具注册：backup.course 单课程 zip 打包 manifest.json+data/*.jsonl+storage/ + content_hash=SHA-256 + 写 backup_records(manual)；backup.allCourses 遍历 course_instances 逐个备份；backup.restore 解压+content_hash 校验+schema_version 兼容+冲突 overwrite/create_new/none+jsonl 导入+storage 复制+PRAGMA integrity_check；backup.list 按 semesterId/courseInstanceId 过滤；backup.configureSchedule 写 backup_schedules cron_expression+timezone；backup.listSchedules 查询；backup.toggleSchedule 启用/禁用；zip 打包用 Node 内置 zlib/fs 无外部依赖；zip 炸弹防护条目数+解压比限制 AGENTS.md §9.4；符号链接逃逸防护；错误码固定文案不泄漏路径/stdout/stderr；backup_records 状态机 in_progress→completed/failed；Streams["backup.progress"] 推送；DTO 对齐 05-ERD §2.3/§2.4 BackupRecord 15 字段+BackupSchedule 10 字段+RestoreResult 补 schemaVersion；studybuddy-extension 接入备份恢复共 34 工具；扩展装配测试同步更新 29→34），§9 统计 M2 5 done。598 测试全绿（43 test files），type-check + build + smoke 6 项全通过 + 文档治理检查通过。依据：AGENTS.md §7 受控收尾流程 + §5.1 TDD 纪律 + §5.4 不连真实外部服务 + §9.4 组件安全 |
 | v0.1.28 | 2026-08-07 | 登记 T-M2-004 完成：§7.3.1 登记表 T-M2-004 done（TTS skill 4 RPC handler + 3 studybuddy_* 工具注册：tts.speak SAPI 默认 + edge-tts 降级 fallbackUsed=true + tts.control play/pause/stop 状态机 + tts.switchEngine 切换引擎 + tts.getStatus 查询 + TtsAdapter 双引擎可注入 sapiAdapter/edgeTtsAdapter mock/failing/real 三实现参照 WhisperCppAdapter 范式 + 朗读状态机 idle→playing→paused→stopped + Streams["tts.state"] 推送 + 无独立 TTS 表朗读不持久化（03-Arch §3.1）+ 朗读不写 StudyEvent（08-Test §3.5 断言 3）+ 不连真实 SAPI/edge-tts 全 mock 08-Test §5.4 + 契约微调 api.ts tts.speak result 扩展 engine/fallbackUsed 对齐 08-Test §3.5 断言 + types.ts 补 TtsSpeakResult + studybuddy-extension 接入 TTS 共 29 工具），§9 统计 M2 4 done。562 测试全绿（38 test files），type-check + build + smoke 6 项全通过。依据：AGENTS.md §7 受控收尾流程 + §5.1 TDD 纪律 + §5.4 不连真实外部服务 |
