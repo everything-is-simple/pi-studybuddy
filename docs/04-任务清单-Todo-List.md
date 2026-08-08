@@ -1,10 +1,10 @@
 # 04 任务清单
 
-**版本**：v0.1.70
+**版本**：v0.1.73
 **日期**：2026-08-08
 **状态**：✅ 已审查批准（v0.1.0 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过；v0.1.1 追加 §1.4 治理体系就绪状态；v0.1.2 纠正 T-M0-009 跳号笔误；v0.1.3 登记 T-M0-001 完成；v0.1.4 登记 T-M0-002 完成；v0.1.5 登记 T-M0-006 完成；v0.1.6 登记 T-M0-003 完成；v0.1.7 登记 T-M0-004 完成；v0.1.8 登记 T-M0-005 开工；v0.1.9 登记 T-M0-005 完成；v0.1.10 登记 T-M0-007 开工 + §4.1 看板 pi 修正；v0.1.11 登记 T-M0-007 完成 + §4.1 看板 pi 标记阶段1/3 ✅；v0.1.12 登记 T-M0-008 开工；v0.1.13 登记 T-M0-008 完成；v0.1.14 登记 T-M0-009 开工；v0.1.15 登记 T-M0-009 完成 + §6.0 M0 完成与版本演进说明 + 头部版本号滞后修正；v0.1.16 登记 T-M1-001 开工 + 前置 DTO 对齐 schema + §7.2.1 M1 任务登记表；v0.1.17 登记 T-M1-001 完成 + §9 统计 M1 1 done；v0.1.18 登记 T-M1-002 开工 + 前置 DTO 对齐 schema；v0.1.19 登记 T-M1-002 完成 + §9 统计 M1 2 done；v0.1.20 登记 T-M1-003 开工 + §7.2.1 M1 任务登记表；v0.1.21 登记 T-M1-003 完成 + §9 统计 M1 3 done；v0.1.22 登记 T-M1-004 开工 + §7.2.1 M1 任务登记表；v0.1.23 登记 T-M1-004 完成 + §9 统计 M1 4 done；v0.1.24 登记 T-M2-001 完成 + §7.3.1 M2 任务登记表 + §9 统计 M2 1 done；v0.1.25 登记 T-M2-002 完成 + §7.3.1 M2 任务登记表 T-M2-002 done + §9 统计 M2 2 done；v0.1.26 登记 T-M2-003 完成 + §7.3.1 M2 任务登记表 T-M2-003 done + §9 统计 M2 3 done；v0.1.27 登记 T-M2-004 开工 + §7.3.1 M2 任务登记表 T-M2-004 in_progress + §9 统计 M2 3 done + 1 in_progress；v0.1.28 登记 T-M2-004 完成 + §7.3.1 M2 任务登记表 T-M2-004 done + §9 统计 M2 4 done；v0.1.29 登记 T-M2-005 完成 + §7.3.1 M2 任务登记表 T-M2-005 done + §9 统计 M2 5 done；v0.1.30 §9 统计修正 M1 pending 5→6 合计 17→18；v0.1.31 登记待做项 task-id：M1 追加 T-M1-005~010（OCR/WPS COM/资料转换管道/跨切钩子/UI/E2E）+ M2 追加 T-M2-006~009（UUID 泄漏检测/whisper.cpp 真实 Adapter/UI/E2E）全部 pending；v0.1.32 登记 M3 task-id T-M3-001~008 + 新增 §7.5 全局执行顺序表 18 行统一排序 M1/M2/M3 pending；v0.1.33 登记 T-M1-009 开工：§7.2.1 T-M1-009 pending→in_progress + §9 统计 M1 pending 6→5 + in_progress 0→1；v0.1.34 登记 T-M1-009 完成：§7.2.1 T-M1-009 in_progress→done + §9 统计 M1 in_progress 1→0 + done 4→5；v0.1.35 登记 T-M2-008 开工：§7.3.1 T-M2-008 pending→in_progress + §9 统计 M2 pending 4→3 + in_progress 0→1；v0.1.36 登记 T-M2-008 完成：§7.3.1 T-M2-008 in_progress→done + §9 统计 M2 in_progress 1→0 + done 5→6；v0.1.37 登记 T-M1-010 完成：§7.2.1 T-M1-010 pending→done + §6.3 M1 退出门槛全勾选 + §9 统计 M1 done 5→6；v0.1.38 登记 T-M2-009 完成：§7.3.1 T-M2-009 pending→done + §6.4 M2 退出门槛全勾选 + §9 统计 M2 done 6→7；v0.1.39 登记 T-M1-005 开工：§7.2.1 T-M1-005 pending→in_progress + §9 统计 M1 pending 4→3 + in_progress 0→1；v0.1.40 登记 T-M1-005 完成：§7.2.1 T-M1-005 in_progress→done + §9 统计 M1 in_progress 1→0 + done 6→7（合计 in_progress 1→0 + done 22→23）；v0.1.41 登记 T-M1-006 开工：§7.2.1 T-M1-006 pending→in_progress + §9 统计 M1 pending 3→2 + in_progress 0→1（合计 pending 13→12 + in_progress 0→1）；v0.1.42 登记 T-M1-006 完成：§7.2.1 T-M1-006 in_progress→done + §9 统计 M1 in_progress 1→0 + done 7→8（合计 in_progress 1→0 + done 23→24）；v0.1.43 登记 T-M1-007 开工：§7.2.1 T-M1-007 pending→in_progress + §9 统计 M1 pending 2→1 + in_progress 0→1（合计 pending 12→11 + in_progress 0→1））；v0.1.44 登记 T-M1-007 完成：§7.2.1 T-M1-007 in_progress→done + §9 统计 M1 pending 1→0 + in_progress 1→0 + done 8→9（合计 pending 11→10 + in_progress 1→0 + done 24→25）；v0.1.45 登记 T-M1-008 完成：§7.2.1 T-M1-008 pending→done + §9 统计 M1 done 9→10（M1 全部 10 任务完成，pending 0）；v0.1.46 登记 T-M2-006 开工：§7.3.1 T-M2-006 pending→in_progress + §9 统计 M2 pending 2→1 + in_progress 0→1）；v0.1.47 登记 T-M2-006 完成：§7.3.1 T-M2-006 in_progress→done + §9 统计 M2 pending 1→0 + in_progress 1→0 + done 7→8（合计 pending 9→8 + in_progress 1→0 + done 26→27）；v0.1.56 登记 T-M3-004 开工：§7.4.1 T-M3-004 pending→in_progress + §9 统计 M3 pending 5→4 + in_progress 0→1（合计 pending 5→4 + in_progress 0→1）+ 头部版本号滞后修正（v0.1.52→v0.1.56）；v0.1.57 登记 T-M3-004 完成：§7.4.1 T-M3-004 in_progress→done + §9 统计 M3 in_progress 1→0 + done 3→4（合计 in_progress 1→0 + done 31→32）；v0.1.58 登记 T-M3-005 开工：§7.4.1 T-M3-005 pending→in_progress + §9 统计 M3 pending 4→3 + in_progress 0→1；v0.1.59 登记 T-M3-005 完成：§7.4.1 T-M3-005 in_progress→done + §9 统计 M3 in_progress 1→0 + done 4→5（合计 in_progress 1→0 + done 32→33）；v0.1.60 登记 T-M3-006 开工：§7.4.1 T-M3-006 pending→in_progress + §9 统计 M3 pending 3→2 + in_progress 0→1（合计 pending 3→2 + in_progress 0→1）；v0.1.61 登记 T-M3-006 完成：§7.4.1 T-M3-006 in_progress→done + §9 统计 M3 in_progress 1→0 + done 5→6（合计 in_progress 1→0 + done 33→34）；v0.1.62 登记 T-M3-007 开工：§7.4.1 T-M3-007 pending→in_progress + §9 统计 M3 pending 2→1 + in_progress 0→1（合计 pending 2→1 + in_progress 0→1）；v0.1.63 登记 T-M3-007 完成：§7.4.1 T-M3-007 in_progress→done + §9 统计 M3 in_progress 1→0 + done 6→7（合计 in_progress 1→0 + done 34→35）；v0.1.64 登记 T-M3-008 开工：§7.4.1 T-M3-008 pending→in_progress + §9 统计 M3 pending 1→0 + in_progress 0→1（合计 pending 1→0 + in_progress 0→1）；v0.1.65 登记 T-M3-008 完成：§7.4.1 登记表 T-M3-008 in_progress→done + §6.5 M3 退出门槛六项全勾选 + §9 统计 M3 in_progress 1→0 + done 7→8（合计 in_progress 1→0 + done 35→36）；v0.1.66 新增 M4 里程碑（业务接线 + 打包部署）+ §6.6 M4 退出门槛 + §7.6 M4 任务大纲 + §7.6.1 M4 任务登记表 18 任务 + §7.5 全局执行顺序表追加 M4 行 + §9 统计加 M4 行 + 01-TRD v0.2.3 决策 6 修订（打包能力常态化）；v0.1.68 M4 重新规划：重新读系统设计对比代码发现后端 5 处断裂（E2E 全绿但生产不可用）→ M4 任务 18→21（新增 5 个 P0 后端断裂修复 T-M4-001~005）+ §6.6 退出门槛增后端断裂修复项 + §7.6/§7.6.1 大纲与登记表重写 + §7.5 执行顺序表 M4 行 19-36→19-39 重排 + §9 统计 M4 18→21 合计 54→57）
 **上游**：[01-TRD v0.2.3](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.1](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.1](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1](./07-工作流-Workflow.md)、[08-Test v0.1.2 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.2](./09-使用者介面-UI-Design.md)
-**用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录
+**用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录；v0.1.72 登记 T-M4-022 实施与质量门完成（Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证，前置于 T-M4-006；Git 收口待用户明确授权，按 AGENTS.md §8.4 保持 in_progress）
 
 ---
 
@@ -553,7 +553,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 ### 7.6.1 M4 任务登记表（随开发动态更新）
 
-> v0.1.68 重新规划：原 T-M4-001~018（18 任务）→ 新 T-M4-001~021（21 任务），新增 5 个后端断裂修复 P0 任务。原因：重新读系统设计对比代码发现后端 5 处断裂（E2E 全绿但生产不可用）。
+> v0.1.73 追加并完成实施证据登记 T-M4-022：原 T-M4-001~021（21 任务）→ T-M4-001~022（22 任务）。原因：事实调查 Prompt 指出 Electron 33 的 Node 20 生产运行时与测试使用的 Node 22/24 + node:sqlite 不一致，真实桌面启动为 P0 阻塞；T-M4-022 前置于 T-M4-006，先做运行时兼容与真实 Electron 验证；后续审计又将业务 E2E harness 从 Node fork 迁移为 Electron 36.9.5 + 127.0.0.1 TCP JSON-lines，消除“Node 子进程冒充 Electron E2E”残留。
 
 | task-id | 标题 | 分类 | 优先级 | 状态 | 治理阶段 | 关联文档 | 证据 |
 |---|---|---|---|---|---|---|---|
@@ -562,6 +562,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M4-003 | credentials.*/settings.* handler 实现 + 装配（断裂 5 修复） | 壳层 | P0 | done | 阶段4 | 06-API §3.14/§3.15 + 03-Arch §4.5 | src/agent-host/handlers/credentials.ts + settings.ts + src/agent/settings-config.ts + tests/unit/credentials-settings-handlers.test.ts |
 | T-M4-004 | studybuddy-extension 接入 pi 内核 + extension-loader（断裂 2 修复） | 扩展层 | P0 | done | 阶段3-4 | 03-Arch §2.1/§6.2 | src/agent-host/studybuddy-extension-loader.ts createStudyBuddySession() + tests/integration/studybuddy-extension-loader.test.ts 4 断言（35 studybuddy_* 工具 + PI_CODING_AGENT_DIR 隔离） |
 | T-M4-005 | agent.send 接真实 pi 内核流式回复（断裂 3 修复，替换受控夹具） | 扩展层 | P0 | done | 阶段3-4 | 03-Arch §6.7 + 06-API §3.1.1 | src/agent-host/handlers/agent.ts 双路径（真实 pi 内核 prompt() + 受控夹具 fallback）+ studybuddy-extension-loader.ts 动态 import() + tests/integration/agent-real-pi-kernel.test.ts 8 断言（事件映射 + 脱敏 + UUID 过滤 + fallback） |
+| T-M4-022 | Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证 | 壳层/数据层/测试 | P0 | in_progress | 阶段1-5 | 01-TRD §7 决策6 + 03-Arch §4.3/§6.2 + 05-ERD §2 + 08-Test §5/§6 | 实施与质量门已通过；业务 E2E 真实 Electron 16 files/117 tests；两名独立审查完成；Git commit/push evidence pending user authorization（AGENTS.md §8.4） |
 | T-M4-006 | 设置页 UI（AI/Email/飞书密钥管理 + 工具链检查 + 学习偏好） | 壳层 | P0 | pending | 阶段4 | 09-UI §10 + 03-Arch §6.4 + 06-API §3.13/§3.14/§3.15/§3.16 | — |
 | T-M4-007 | 学期/课程切换 UI（左侧栏学期树 + 标题栏动态绑定） | 壳层 | P0 | pending | 阶段4 | 09-UI §3 + 03-Arch §6.7 + 06-API §3.3 | — |
 | T-M4-008 | AppShell 数据流重构（semesterId/courseId 全局状态 + 各 Tab useEffect 拉数据） | 壳层 | P0 | pending | 阶段4 | 03-Arch §6.7 + 09-UI §3 | — |
@@ -610,22 +611,23 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | 21 | T-M4-003 | M4 | credentials/settings handler | T-M4-001 | P0 基础：断裂5 修复，设置页依赖 |
 | 22 | T-M4-004 | M4 | studybuddy-extension 接入 pi 内核 | T-M4-002 | P0 基础：断裂2 修复，35工具+6钩子生效 |
 | 23 | T-M4-005 | M4 | agent.send 接真实 pi 流式 | T-M4-004 | P0 基础：断裂3 修复，受控夹具→真实pi createAgentSession |
-| 24 | T-M4-006 | M4 | 设置页 UI | T-M4-003 | P0：AI provider/密钥vault/工具链/学习偏好 |
-| 25 | T-M4-007 | M4 | 学期/课程切换 UI | T-M4-001 | P0：所有业务Tab依赖 semesterId/courseId |
-| 26 | T-M4-008 | M4 | AppShell 数据流重构 | T-M4-007 | P0：各Tab useEffect 拉数据 |
-| 27 | T-M4-009 | M4 | electron-builder 配置 + x64 setup | T-M4-008 | P0.5：尽早验证打包链路（01-TRD §7 决策6 v0.2.3"随时能打包"） |
-| 28 | T-M4-010 | M4 | S1 首页 Tab RPC 接线 | T-M4-008 | P1 核心：每日学习首页（"打开即看到今天该做什么"） |
-| 29 | T-M4-011 | M4 | S2 资料 Tab RPC 接线 | T-M4-008 | P1 核心：资料上传/转换 |
-| 30 | T-M4-012 | M4 | S2 笔记 Tab RPC 接线 | T-M4-008 | P1 核心：笔记/知识模块 |
-| 31 | T-M4-013 | M4 | S3 练习 Tab RPC 接线 | T-M4-008 | P1 核心：出题/作答/批改 |
-| 32 | T-M4-014 | M4 | S4 错题 Tab RPC 接线 | T-M4-008 | P1 核心：错题/薄弱点 |
-| 33 | T-M4-015 | M4 | S5 冲刺 Tab RPC 接线 | T-M4-008 | P2 完整：模拟考/速背卡 |
-| 34 | T-M4-016 | M4 | S6 报告 Tab RPC 接线 | T-M4-008 | P2 完整：家长报告 |
-| 35 | T-M4-017 | M4 | S7 采集 Tab RPC 接线 | T-M4-008 | P2 完整：课堂采集 |
-| 36 | T-M4-018 | M4 | TTS 控制条 RPC 接线 | T-M4-008 | P3 辅助：跨子系统朗读 |
-| 37 | T-M4-019 | M4 | 备份恢复面板 RPC 接线 | T-M4-008 | P3 辅助：数据安全 |
-| 38 | T-M4-020 | M4 | E2E 全链回归 | T-M4-005 + T-M4-006~019 | P4：后端断裂修复+设置页/学期切换+S1-S7接线全链回归 |
-| 39 | T-M4-021 | M4 | M4 收官验收 + 打包冒烟 | T-M4-020 + T-M4-009 | P4：安装包冒烟+安全不变量最终校验 |
+| 24 | T-M4-022 | M4 | Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证 | T-M4-005 | P0 阻塞：生产 Electron 必须真实启动并完成 global.db、BrowserWindow、preload、renderer、system.ping 全链路；不启动 T-M4-006 |
+| 25 | T-M4-006 | M4 | 设置页 UI | T-M4-003 | P0：AI provider/密钥vault/工具链/学习偏好 |
+| 26 | T-M4-007 | M4 | 学期/课程切换 UI | T-M4-001 | P0：所有业务Tab依赖 semesterId/courseId |
+| 27 | T-M4-008 | M4 | AppShell 数据流重构 | T-M4-007 | P0：各Tab useEffect 拉数据 |
+| 28 | T-M4-009 | M4 | electron-builder 配置 + x64 setup | T-M4-008 | P0.5：尽早验证打包链路（01-TRD §7 决策6 v0.2.3"随时能打包"） |
+| 29 | T-M4-010 | M4 | S1 首页 Tab RPC 接线 | T-M4-008 | P1 核心：每日学习首页（"打开即看到今天该做什么"） |
+| 30 | T-M4-011 | M4 | S2 资料 Tab RPC 接线 | T-M4-008 | P1 核心：资料上传/转换 |
+| 31 | T-M4-012 | M4 | S2 笔记 Tab RPC 接线 | T-M4-008 | P1 核心：笔记/知识模块 |
+| 32 | T-M4-013 | M4 | S3 练习 Tab RPC 接线 | T-M4-008 | P1 核心：出题/作答/批改 |
+| 33 | T-M4-014 | M4 | S4 错题 Tab RPC 接线 | T-M4-008 | P1 核心：错题/薄弱点 |
+| 34 | T-M4-015 | M4 | S5 冲刺 Tab RPC 接线 | T-M4-008 | P2 完整：模拟考/速背卡 |
+| 35 | T-M4-016 | M4 | S6 报告 Tab RPC 接线 | T-M4-008 | P2 完整：家长报告 |
+| 36 | T-M4-017 | M4 | S7 采集 Tab RPC 接线 | T-M4-008 | P2 完整：课堂采集 |
+| 37 | T-M4-018 | M4 | TTS 控制条 RPC 接线 | T-M4-008 | P3 辅助：跨子系统朗读 |
+| 38 | T-M4-019 | M4 | 备份恢复面板 RPC 接线 | T-M4-008 | P3 辅助：数据安全 |
+| 39 | T-M4-020 | M4 | E2E 全链回归 | T-M4-005 + T-M4-006~019 | P4：后端断裂修复+设置页/学期切换+S1-S7接线全链回归 |
+| 40 | T-M4-021 | M4 | M4 收官验收 + 打包冒烟 | T-M4-020 + T-M4-009 | P4：安装包冒烟+安全不变量最终校验 |
 
 ---
 
@@ -655,8 +657,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | M1 | 10 | 0 | 0 | 0 | 10 | 0 |
 | M2 | 9 | 0 | 0 | 0 | 9 | 0 |
 | M3 | 8 | 0 | 0 | 0 | 8 | 0 |
-| M4 | 21 | 16 | 0 | 0 | 5 | 0 |
-| **合计** | **57** | **16** | **0** | **0** | **41** | **0** |
+| M4 | 22 | 16 | 1 | 0 | 5 | 0 |
+| **合计** | **58** | **16** | **1** | **0** | **41** | **0** |
 
 > 注：M0 总任务数按实际 task-id 计为 9（§7.1 大纲 12 项中，安全沙箱合并入 T-M0-001，数据层 global/semester/三层记忆 3 项合并为 T-M0-006）。v0.1.15 修正口径。
 >
@@ -670,6 +672,9 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.73 | 2026-08-08 | T-M4-022 真实 Electron E2E 证据补强：旧业务 harness 的 Node `fork(test-main.js)` 路径已删除，`electron-launcher.ts` 直接启动 Electron 36.9.5，`test-main.js` 通过仅监听 `127.0.0.1` 的 TCP JSON-lines 收发 RPC；新增 runtime sentinel，完整 E2E 由真实 Electron 通过（16 files / 117 tests）。原因：用户 Prompt 明确禁止 Node 子进程冒充真实 Electron E2E；实测 Electron 主进程不可靠接收 stdin pipe，故采用回环 TCP。影响：仅测试边界/注释/证据同步，无生产 API 或业务范围变化；T-M4-022 仍因未获 Git 收口授权保持 in_progress。依据：AGENTS.md §4.5/§5.3/§9.1/§11.2 + 用户 T-M4-022 Prompt + `.record/T-M4-022-实施记录.md` |
+| v0.1.72 | 2026-08-08 | T-M4-022 实施与质量门证据登记：Electron 从 33.4.11 升级并精确锁定 36.9.5（实测内嵌 Node 22.19.0，`node:sqlite` 可用），修复 sandbox preload、utility process ready/MessagePort 接线与 host port 复用，新增真实 Electron 黑盒测试与桌面双启动 smoke。质量门通过：真实运行时 6/6、完整 E2E 15 files/116 tests、Node 24.14.0 `pnpm test`、Node 22 `pnpm verify`、type-check/build/smoke/contract/security/UUID/docs/diff-check 全通过；两名独立审查完成，无未处置阻塞洞。默认 Node25 仅触发既有 toolchain unverified 政策测试，未改阈值，已用 Node24.14.0 复验。影响：仅运行时修复、测试与证据同步，无契约方法新增，不修改设置页、Provider UI、S1-S7 Tab、TTS 或备份恢复业务。因尚未获用户 Git 收口授权，未 commit/push，任务继续保持 in_progress。依据：AGENTS.md §4.5/§7/§8.4/§11.2/§11.4 + 01-TRD §7 决策6 + 03-Arch §4.3/§6.2 + 05-ERD §2 + 08-Test §5/§6 + `.record/T-M4-022-实施记录.md` |
+| v0.1.71 | 2026-08-08 | 登记 T-M4-022 in_progress：Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证。新增原因：当前 Electron 33.4.11 内嵌 Node 20 与数据层 `process.getBuiltinModule("node:sqlite")` / `DatabaseSync` 的生产路径不一致，既有 E2E 使用系统 Node 子进程绕过真实 Electron，必须先解决 P0 启动阻塞。影响：M4 任务 21→22，T-M4-022 插入 T-M4-005 后、T-M4-006 前；M4 pending 16、in_progress 1、done 5；合计 58。无契约方法新增，不修改设置页、Provider UI、S1-S7 Tab、TTS 或备份恢复业务。当前仅完成治理登记与唯一计划，代码实施待用户批准计划。依据：AGENTS.md §4.4/§4.5/§7 + 01-TRD §7 决策6 + 03-Arch §4.3/§6.2 + 08-Test §5/§6 + 用户明确提供的 T-M4-022 Prompt |
 | v0.1.70 | 2026-08-08 | 登记 T-M4-004 + T-M4-005 完成（后端断裂修复批次 2——断裂 2+3 修复，后端 5 处断裂全部修复）：§7.6.1 登记表 T-M4-004 done + T-M4-005 pending→done + §9 统计 M4 pending 17→16 + done 3→5（合计 pending 17→16 + done 39→41）。原因：T-M4-004 studybuddy-extension 接入 pi 内核（src/agent-host/studybuddy-extension-loader.ts createStudyBuddySession 动态 import() 加载 pi 内核 + createAgentSessionServices + createAgentSessionFromServices + 35 studybuddy_* 工具注册验证）+ T-M4-005 agent.send 接真实 pi 内核流式回复（src/agent-host/handlers/agent.ts 双路径：真实 pi 内核 prompt() + 受控夹具 fallback，事件映射 agent_start→message_start / text_delta→token / tool_execution_start→tool_call / tool_execution_end→tool_result / compaction_end→context_compressed，toolCallId 本地 call-<n> 脱敏 + inputSummary/resultSummary UUID 过滤截断 + index.ts fire-and-forget 异步初始化 + VITEST 环境保护）。关键技术决策：pi-coding-agent 是 ESM-only 包（package.json exports 仅 import 无 require），CJS 编译产物用 new Function("return import(s)") 阻止 tsc 降级 + VITEST 环境直接 import() 双路径。质量门全通过：type-check + 991 单元/集成测试 + 110 E2E 测试（14 文件全绿）+ build + smoke 6/6 + verify full 全绿 + 契约覆盖 127 handlers + 安全不变量 6/6。影响：版本号同步 + 状态登记 + 后端断裂 2/3 修复（无契约方法新增，Api 方法总数仍 127）。后端 5 处断裂全部修复，M4 剩余 pending：T-M4-006~021（设置页/学期切换/AppShell/打包/S1-S7 接线/E2E/收官）。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.69 | 2026-08-08 | 登记 T-M4-001/002/003 三任务完成（后端断裂修复批次 1）：§7.6.1 登记表 T-M4-001 in_progress→done + T-M4-002 pending→done + T-M4-003 pending→done + §9 统计 M4 pending 20→17 + in_progress 1→0 + done 0→3（合计 pending 20→17 + in_progress 1→0 + done 36→39）。原因：T-M4-001 main.ts 数据根初始化（src/main/data-root-init.ts initializeDataRoot 建 global.db + 6 子目录 + main.ts whenReady 装配）+ T-M4-002 agent-host 生产入口装配 S1-S7/TTS/Backup 9 类 handler（src/agent-host/index.ts createBusinessHandlers 复用 studybuddy-extension 上下文创建模式）+ T-M4-003 credentials.*/settings.* handler（src/agent-host/handlers/credentials.ts 4 方法封装 CredentialVault + settings.ts 4 方法 + src/agent/settings-config.ts 原子写 config/settings.json）。质量门全通过：type-check + 979 单元/集成测试 + build + smoke 6/6 + 安全不变量 6/6。影响：仅版本号同步 + 状态登记 + 后端断裂 1/4/5 修复，无权威条款变更（无契约方法新增，Api 方法总数仍 127）。M4 剩余 pending：T-M4-004/005（后端断裂 2/3 修复）+ T-M4-006~021。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.68 | 2026-08-08 | M4 重新规划（后端断裂修复前置）：① 重新读系统设计（03-Arch/06-API/09-UI）对比代码发现 5 处后端断裂（E2E 全绿但生产不可用）：断裂1 agent-host 生产入口只装 6 类 handler（S1-S7/TTS/Backup 9 类未装配）+ 断裂2 studybuddy-extension 35 工具 6 钩子无生产调用（extension-loader 不存在）+ 断裂3 agent.send 是受控夹具（假 TOKEN_FRAGMENTS）+ 断裂4 main.ts 未初始化 global.db + 断裂5 credentials/settings handler 完全不存在 ② M4 任务 18→21：新增 5 个 P0 后端断裂修复 T-M4-001~005（数据根初始化/handler 装配/credentials+settings/extension 接入 pi/agent.send 接真实 pi）③ 原 T-M4-001~018 重编号为 T-M4-006~021（设置页→006/学期切换→007/AppShell→008/打包→009/S1-S7 接线→010~017/TTS→018/备份→019/E2E→020/收官→021）④ §6.6 退出门槛增"后端 5 处断裂全部修复"项 ⑤ §7.6/§7.6.1 大纲与登记表重写（21 任务）⑥ §7.5 执行顺序表 M4 行 19-36→19-39 重排（P0 后端修复 19-23 → P0 基础 UI 24-26 → P0.5 打包 27 → P1 接线 28-32 → P2 接线 33-35 → P3 辅助 36-37 → P4 收尾 38-39）⑦ §9 统计 M4 18→21 + 合计 54→57。原因：用户"重新读系统设计重新安排任务力争按系统设计完成系统直到系统如期运行"。影响：M4 任务结构重排 + 后端断裂修复前置，无权威条款变更（无契约方法新增，Api 方法总数仍 127）。M4 全部 21 任务 pending。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §11.2 修订纪律 + 03-Arch §6.2 生产入口装配要求 + 用户明确指令 |

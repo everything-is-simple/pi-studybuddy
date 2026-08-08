@@ -12,7 +12,7 @@
  *   - 薄弱点形成：evidence_count≥2 才形成 weak_point（单次错误不形成）（§7.3）
  *   - S4→S5 回流：weakPoints.list 可查（§7.1）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M1-010\e2e\e2e-03\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-03\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";

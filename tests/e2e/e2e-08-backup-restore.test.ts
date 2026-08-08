@@ -11,7 +11,7 @@
  *   - backup.restore → success + integrity_check=ok + tablesImported 含关键表（SQLite 崩溃后可恢复 §7.6）
  *   - 恢复后课程/资料/练习数据回来（数据贯通 §7.1）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M2-009\e2e\e2e-08\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-08\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import path from "node:path";

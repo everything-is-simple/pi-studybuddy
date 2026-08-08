@@ -10,7 +10,7 @@
  *   - mockExams.getModuleAnalyses 返回弱项分析（weakness_level strong/medium/weak）
  *   - cramCards.get / cramPlan.get 确定性只读（不建表、不持久化、不调 LLM）（§7.4）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M2-009\e2e\e2e-04\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-04\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";

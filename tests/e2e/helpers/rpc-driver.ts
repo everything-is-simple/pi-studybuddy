@@ -1,14 +1,14 @@
 /**
  * T-M1-010 E2E RPC 驱动器
  *
- * 通过 stdin/stdout JSON-lines 协议与 Electron 主进程通信，
+ * 通过 electron-launcher 提供的回环 TCP JSON-lines 通道与 Electron 主进程通信，
  * 驱动业务 RPC 调用（semesters.create / materials.upload / practice.* 等）。
  *
  * 设计依据（08-Test §6 + 计划 §3 步骤 1）：
  *   - 测试驱动器发送 {"type":"rpc","id":"...","method":"...","args":[params]}
  *   - Electron 主进程返回 {"id":"...","result":...} 或 {"id":"...","error":{code,message}}
  *
- * 安全：RPC 调用通过 stdin/stdout 通道，不绕过沙箱。
+ * 安全：RPC 调用仅经 127.0.0.1 回环通道，不绕过应用契约。
  */
 import type { E2EChannel } from "./electron-launcher";
 

@@ -14,7 +14,7 @@
  *   E2E-09 验证"定期调度"的配置能力全链（配置→校验→查询→启停），真实时间触发的守护进程
  *   不在 T-M2-005 范围，进 .record 偏差记录。
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M2-009\e2e\e2e-09\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-09\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";

@@ -10,7 +10,7 @@
  *   - exams.confirm 返回 confirmationStatus=confirmed
  *   - 未确认考试不驱动冲刺（规则优先可证伪）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M1-010\e2e\e2e-01\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-01\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";

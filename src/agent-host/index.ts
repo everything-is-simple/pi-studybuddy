@@ -130,10 +130,16 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   });
 
   let attached = false;
-  const onMessage = (ev: { data: unknown; ports?: AnyMessagePort[] }): void => {
-    const msg = ev.data as { type?: string };
+  const onMessage = (eventOrMessage: unknown, transferredPorts?: AnyMessagePort[]): void => {
+    const event =
+      typeof eventOrMessage === "object" && eventOrMessage !== null
+        ? (eventOrMessage as { data?: unknown; ports?: AnyMessagePort[] })
+        : undefined;
+    const data = event && "data" in event ? event.data : eventOrMessage;
+    const ports = event?.ports ?? transferredPorts;
+    const msg = data as { type?: string };
     if (!attached && msg?.type === "connect") {
-      const port = ev.ports?.[0];
+      const port = ports?.[0];
       if (port) {
         server.attachPort(port);
         attached = true;
@@ -144,7 +150,9 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   if (typeof parentPort.addEventListener === "function") {
     parentPort.addEventListener("message", onMessage);
   } else if (typeof parentPort.on === "function") {
-    parentPort.on("message", onMessage);
+    (parentPort as unknown as {
+      on(event: "message", listener: (message: unknown, ports?: AnyMessagePort[]) => void): void;
+    }).on("message", onMessage);
   } else {
     parentPort.onmessage = onMessage;
   }
@@ -166,4 +174,6 @@ const parentPort = (globalThis as unknown as { process?: { parentPort?: AnyMessa
   ?.parentPort;
 if (parentPort) {
   createAgentHost(parentPort);
+  // main 只有在收到 ready 后才转交 MessagePort，避免 spawn 与 listener 注册竞态。
+  parentPort.postMessage({ type: "ready" });
 }

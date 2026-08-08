@@ -12,7 +12,7 @@
  *   - 渠道隔离：deliver(smtp) 失败（注入 failing，test-main）不影响 local_export 已 sent（§7.2 + 07-WF §3.2）
  *   - 重复投递同渠道被拒（PK(report_key, channel) 去重）（05-ERD §3.6.2）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M2-009\e2e\e2e-06\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-06\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";

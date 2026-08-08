@@ -13,7 +13,7 @@
  *   - modules.updateLearnStatus 学习状态流转 not_started → learning → mastered
  *   - AI 降级：handler 仅写 job 记录不连真实 AI/WPS（08-Test §1.3 第 6 条）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M1-010\e2e\e2e-02\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-02\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";

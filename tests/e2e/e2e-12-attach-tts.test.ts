@@ -12,7 +12,7 @@
  *   - tts.getStatus → state=playing
  *   - events.markReviewed → study_events 多一条 practice_reviewed
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M3-008\e2e\e2e-12\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-12\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";

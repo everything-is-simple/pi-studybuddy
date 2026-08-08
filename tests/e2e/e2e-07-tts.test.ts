@@ -13,7 +13,7 @@
  *   - 朗读本身不写 study_events（即时行为不持久化，§3.5 断言 3）
  *   - events.markReviewed 标记已复习 → study_events 多一条 practice_reviewed
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M2-009\e2e\e2e-07\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-07\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";

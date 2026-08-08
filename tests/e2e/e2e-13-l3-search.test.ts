@@ -10,7 +10,7 @@
  *   - 命中项含 preview 摘要（不含完整 UUID，AGENTS.md §9.3）
  *   - L3 承载层：chunks_fts 有记录（05-ERD §4.3 bigram 索引）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M3-008\e2e\e2e-13\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-13\
  * 二次 launch 复用同一 dataRoot（electron-launcher reuseDataRoot 选项，重启语义）。
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";

@@ -12,7 +12,7 @@
  *   - sessionMeta 写回 → sessions.get 可见 subject/goal（09-UI §4.2）
  *   - 事件 payload 无完整 UUID（防泄露，AGENTS.md §9.3）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M3-008\e2e\e2e-11\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-11\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";

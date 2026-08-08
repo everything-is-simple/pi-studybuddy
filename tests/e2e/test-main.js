@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * T-M1-010 E2E 测试专用 Node.js 子进程入口
+ * T-M4-022 真实 Electron 业务 E2E 主进程入口
  *
  * 与生产 agent-host 的区别：
- *   - 不依赖 Electron utilityProcess，直接在 Node.js 22+ 中运行（node:sqlite 可用）
- *   - 注册 system.ping + 全部 S1-S7 + TTS + Backup 业务 handler
+ *   - 运行在真实 Electron 主进程中（Electron 36.9.5 / 内嵌 Node 22.19.0）
+ *   - 注册 system.ping + 全部 S1-S7 + TTS + Backup 业务 handler fixture
  *   - 数据根由 PI_STUDYBUDDY_DATA_ROOT 环境变量注入（运行数据隔离，AGENTS.md §5.3）
- *   - 通过 Node.js IPC 通道（process.on('message') / process.send）与测试驱动器通信
+ *   - 通过仅监听 127.0.0.1 的回环 TCP JSON-lines 与 Vitest 驱动器通信
  *
  * 依据：
  *   - 08-Test §6：全链回归（数据层 S1-S7 + TTS + 备份恢复完整链路）
@@ -15,8 +15,8 @@
  *     ReportPolisher/WhisperCppAdapter/TtsAdapter），不连真实 AI/WPS/whisper.cpp/SAPI（08-Test §1.3 第 6 条）
  *   - S6 SMTP 渠道注入失败 mock，验证渠道隔离（07-WF §3.2：smtp 失败不影响 local_export）
  *
- * 注：Electron 33 使用 Node.js 20，不含 node:sqlite；生产环境通过 utilityProcess.fork
- * 在独立进程运行 agent-host。E2E 测试复用此范式，用 child_process.fork 启动系统 Node.js 22。
+ * 该文件不再由系统 Node.js fork() 启动；由
+ * tests/e2e/helpers/electron-launcher.ts 直接启动 Electron 可执行文件。
  */
 const path = require("node:path");
 
@@ -47,10 +47,27 @@ const { createModelHandlers } = require("../../dist/agent-host/handlers/models")
 const { createFileHandlers } = require("../../dist/agent-host/handlers/files");
 const { indexTurnEndChunks } = require("../../dist/agent/turn-end");
 
+/** 真实 Electron 运行时标记与 TCP TCP 协议前缀。 */
+const isElectronRuntime = typeof process.versions.electron === "string";
+const PROTOCOL_PREFIX = "__PI_STUDYBUDDY_E2E__";
+const net = require("node:net");
+let transportSocket = null;
+let pendingOutbound = [];
+
+/** 向 Vitest 驱动器发送一条协议消息。 */
+function send(obj) {
+  const line = `${PROTOCOL_PREFIX}${JSON.stringify(obj)}\n`;
+  if (transportSocket && !transportSocket.destroyed && transportSocket.writable) {
+    transportSocket.write(line);
+  } else {
+    pendingOutbound.push(line);
+  }
+}
+
 /** 业务数据根（运行数据隔离） */
 const dataRoot = process.env.PI_STUDYBUDDY_DATA_ROOT;
 if (!dataRoot) {
-  process.send({ type: "error", error: "PI_STUDYBUDDY_DATA_ROOT 未设置" });
+  send({ type: "error", error: "PI_STUDYBUDDY_DATA_ROOT 未设置" });
   process.exit(1);
 }
 
@@ -168,11 +185,6 @@ allHandlers["test.turnEndIndex"] = (params) => {
   });
 };
 
-/** 发送消息到父进程 */
-function send(obj) {
-  process.send(obj);
-}
-
 /** 处理 RPC 请求 */
 function handleRpcRequest(msg) {
   const handler = allHandlers[msg.method];
@@ -206,18 +218,8 @@ function serializeError(e) {
   return { code: "INTERNAL_ERROR", message: e instanceof Error ? e.message : String(e) };
 }
 
-// IPC 消息监听
-process.on("message", (msg) => {
-  if (msg && msg.type === "rpc" && msg.method) {
-    handleRpcRequest(msg);
-  }
-});
-
-// 通知父进程就绪
-send({ type: "ready" });
-
-// 优雅退出
-process.on("SIGTERM", () => {
+/** 释放测试 fixture 打开的数据库连接。 */
+function disposeContexts() {
   s1Ctx.dispose();
   s2Ctx.dispose();
   s3Ctx.dispose();
@@ -226,5 +228,67 @@ process.on("SIGTERM", () => {
   s6Ctx.dispose();
   s7Ctx.dispose();
   backupCtx.dispose();
-  process.exit(0);
+}
+
+/** 分发驱动器传入的 RPC 消息。 */
+function dispatchMessage(msg) {
+  if (msg && msg.type === "rpc" && msg.method) {
+    handleRpcRequest(msg);
+  }
+}
+
+// 真实 Electron 启动器使用仅监听 127.0.0.1 的 TCP socket；不保留
+// 不保留旧的 Node 子进程兼容通道，避免非 Electron 进程冒充 E2E。
+if (!isElectronRuntime) {
+  process.stderr.write("[e2e electron] 必须由 Electron 主进程启动\n");
+  process.exit(1);
+}
+const port = Number(process.env.PI_STUDYBUDDY_E2E_PORT);
+if (!Number.isInteger(port) || port <= 0) {
+  send({ type: "error", error: "PI_STUDYBUDDY_E2E_PORT 未设置或无效" });
+  process.exit(1);
+}
+let transportBuffer = "";
+transportSocket = net.createConnection({ host: "127.0.0.1", port });
+transportSocket.setEncoding("utf8");
+transportSocket.on("connect", () => {
+  for (const line of pendingOutbound) transportSocket.write(line);
+  pendingOutbound = [];
 });
+transportSocket.on("data", (chunk) => {
+  transportBuffer += chunk.toString();
+  let newlineIndex = transportBuffer.indexOf("\n");
+  while (newlineIndex >= 0) {
+    const line = transportBuffer.slice(0, newlineIndex).replace(/\r$/, "");
+    transportBuffer = transportBuffer.slice(newlineIndex + 1);
+    if (line.startsWith(PROTOCOL_PREFIX)) {
+      try {
+        dispatchMessage(JSON.parse(line.slice(PROTOCOL_PREFIX.length)));
+      } catch (error) {
+        send({ type: "error", error: `RPC 协议解析失败: ${String(error)}` });
+      }
+    }
+    newlineIndex = transportBuffer.indexOf("\n");
+  }
+});
+transportSocket.on("error", (error) => {
+  process.stderr.write(`[e2e electron tcp] ${error.message}\n`);
+  process.exit(1);
+});
+
+// 通知父进程就绪，同时返回实际运行时事实，防止测试误用系统 Node。
+send({
+  type: "ready",
+  runtime: {
+    electron: isElectronRuntime ? process.versions.electron : null,
+    node: process.versions.node,
+  },
+});
+
+// 优雅退出
+function shutdown() {
+  disposeContexts();
+  process.exit(0);
+}
+process.once("SIGTERM", shutdown);
+process.once("SIGINT", shutdown);

@@ -13,7 +13,7 @@
  *   - study_events 写入 class_handoff_saved（source_system='S7'）
  *   - materials.generateNote 可从 converted 生成笔记 Job（note_generating）
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M2-009\e2e\e2e-05\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-05\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";

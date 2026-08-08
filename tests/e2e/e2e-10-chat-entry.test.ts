@@ -14,7 +14,7 @@
  *   - L1 画像注入语义：before_agent_start 钩子由 T-M1-008 集成测试覆盖，
  *     此处经承载层 sessions.context systemPrompt 断言承载就绪
  *
- * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M3-008\e2e\e2e-10\
+ * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-10\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
