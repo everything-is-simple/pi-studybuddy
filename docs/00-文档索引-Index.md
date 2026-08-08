@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.53
+**版本**：v0.1.55
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -130,11 +130,14 @@
 - [x] 04-Todo v0.1.45：登记 T-M1-008 完成（跨切钩子：before_agent_start 多源上下文注入 L1 画像/激活学期课程/最近事件 + session_start 初始化学期库/L1 目录 + tool_call workspace-path-guard 拦截 write/edit 逃逸业务数据根路径（normalizeToolPath + checkWorkspaceMutationPath + realpath 符号链接逃逸拦截）+ tool_result 集中错误日志 observability（errorCode 提取 + UNKNOWN_TOOL_ERROR 回退 + 日志脱敏）；799 单元/集成测试 + 80 E2E 测试全绿，type-check + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 全通过；§9 统计 M1 done 9→10）—— M1 最后一个任务完成，M1 全部 10 任务 done，M1 核心闭环 MVP 达成
 - [x] 04-Todo v0.1.46：登记 T-M2-006 开工（§7.3.1 T-M2-006 pending→in_progress + §9 统计 M2 pending 2→1 + in_progress 0→1）。用户批准 T-M2-006 S6 assertNoSensitiveLeak UUID 泄漏检测独立校验脚本开工（§7.5 全局执行顺序表第 10 行，前置依赖 T-M2-002 done，leak-detector.ts 已实现，本任务固化独立静态审计脚本 scripts/check-uuid-leak.mjs）—— M2 第 6 个任务开工
 - [x] 04-Todo v0.1.47：登记 T-M2-006 完成（S6 assertNoSensitiveLeak UUID 泄漏检测独立校验脚本 scripts/check-uuid-leak.mjs：7 条硬断言 UUID-01~07 静态审计 leak-detector/reports/errors/types 布线，仿 check-desktop-security.mjs 范式；--src 覆盖源根 + readSource 优雅降级；新增 tests/e2e/check-uuid-leak.script.test.ts 脚本冒烟 3 用例；799 单元/集成测试 + 83 E2E 测试全绿，type-check + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6 全通过；§9 统计 M2 in_progress 1→0 + done 7→8）—— M2 第 6 个任务完成，M2 剩余 pending：T-M2-007 whisper.cpp Adapter
+- [x] 04-Todo v0.1.49：登记 T-M2-007 完成（whisper.cpp 真实 Adapter：createStudyBuddyExtension 增加可选 whisper 配置 StudyBuddyExtensionOptions.whisperCliPath/whisperModelPath，优先级调用参数 > 环境变量 PI_STUDYBUDDY_WHISPER_CLI/MODEL > 空默认 mock；有 cliPath+modelPath 装配 createRealWhisperAdapter 接入 S7Context；whisper-adapter.ts 头注释更新为真实已接入；真实转写单件测试——合成 3s 正弦波 PCM WAV + 真实 whisper-cli -nt（stdout 即纯文本），探测 whisper-cli+ggml-base.bin 存在才跑，只断言 text 非空+无泄漏字段；装配测试——带 whisper 路径 setup 不抛错+工具数仍 35；集成/E2E 保持 mock 08-Test §9.3；802 单元/集成测试 + 83 E2E 测试全绿，type-check + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6 全通过；§9 统计 M2 in_progress 1→0 + done 8→9）—— M2 最后一个任务完成，M2 全部 9 任务 done
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.55 | 2026-08-08 | 04-Todo v0.1.49 登记 T-M2-007 完成（§7.3.1 T-M2-007 in_progress→done + §9 统计 M2 in_progress 1→0 + done 8→9）。原因：T-M2-007 whisper.cpp 真实 Adapter 替换 mock 实施完成，质量门全通过（type-check + build + 802 单元/集成测试 + 83 E2E 测试 + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：M2 全部 9 任务完成。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
+| v0.1.54 | 2026-08-08 | 04-Todo v0.1.48 登记 T-M2-007 开工（§7.3.1 T-M2-007 pending→in_progress + §9 统计 M2 pending 1→0 + in_progress 0→1）。原因：用户批准 T-M2-007 whisper.cpp 真实 Adapter 替换 mock 开工（§7.5 全局执行顺序表第 8 行，whisper.cpp CLI 就绪，阶段1 done）。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.53 | 2026-08-08 | 04-Todo v0.1.47 登记 T-M2-006 完成（§7.3.1 T-M2-006 in_progress→done + §9 统计 M2 in_progress 1→0 + done 7→8）。原因：T-M2-006 S6 assertNoSensitiveLeak UUID 泄漏检测独立校验脚本实施完成，质量门全通过（type-check + build + 799 单元/集成测试 + 83 E2E 测试 + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.52 | 2026-08-08 | 04-Todo v0.1.46 登记 T-M2-006 开工（§7.3.1 T-M2-006 pending→in_progress + §9 统计 M2 pending 2→1 + in_progress 0→1）。原因：用户批准 T-M2-006 S6 assertNoSensitiveLeak UUID 泄漏检测独立校验脚本开工（§7.5 全局执行顺序表第 10 行，前置依赖 T-M2-002 done）。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.51 | 2026-08-08 | 04-Todo v0.1.45 登记 T-M1-008 完成（§7.2.1 T-M1-008 pending→done + §9 统计 M1 done 9→10）。原因：T-M1-008 跨切钩子实施完成，质量门全通过（type-check + 799 单元/集成测试 + 80 E2E 测试 + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：M1 全部 10 任务完成，M1 核心闭环 MVP 达成。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
