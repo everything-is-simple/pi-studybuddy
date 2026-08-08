@@ -1,7 +1,7 @@
 # 07 工作流设计
 
-**版本**：v0.1.1
-**日期**：2026-08-07
+**版本**：v0.1.2
+**日期**：2026-08-08
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.2 §3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §3/§7](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.0](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.0](./06-API契约-API-Contracts.md)
 **下游**：08-Test、09-UI
@@ -370,11 +370,28 @@
 - **数据不独立**：对话复用 pi 原生会话目录 `~/.pi/agent/`（03-Architecture §4.1 物理隔离），无独立"对话表"
 - **会话可检索**：L3 FTS5 bigram 索引对话内容，支持历史搜索
 
-**与 S1-S7 主路径的衔接**：
-- 学生在对话里出题 → 跳转练习 Tab（S3）
-- 学生在对话里上传资料 → 跳转资料 Tab（S2）
+**与 S1-S7 主路径的衔接**（工具调用可跳转，09-UI §4.2）：
+
+对话中 AI 调用 registerTool 工具后，renderer 工具卡片展示跳转按钮（统一文案 `[去<Tab名>]`），点击跳转对应结构化 Tab（T-M3-004 落地）。工具→目标 Tab 映射表（35 工具全覆盖）：
+
+| 工具域 | 工具 | 目标 Tab | 衔接语义 |
+|---|---|---|---|
+| S3 练习 | generate_questions / submit_practice / get_practice_result | ✏️ 练习 | 出题后去练习（E2E-11） |
+| S2 笔记 | generate_note / update_note | 📝 笔记 | "查看"跳笔记（09-UI §4.2） |
+| S2 学习状态 | update_learn_status | 📝 笔记 | 学习状态归笔记域 |
+| S2 资料 | upload_material / convert_material / replace_material_text | 📁 资料 | 上传后去资料（S2） |
+| S4 错题 | confirm_error_cause / redo_mistake / archive_mistake / aggregate_weak_point | ❌ 错题 | 错题改错（S4） |
+| S5 冲刺 | generate_mock_exam / submit_mock_exam | 🎯 冲刺 | 模拟考（S5） |
+| S6 报告 | generate_parent_report / deliver_parent_report / manage_report_targets | 📋 报告 | 请求报告（S6） |
+| S7 采集 | transcribe_class / save_transcription | 🎤 采集 | 课堂转写（S7） |
+| S1 首页 | init_semester / transition_semester / add_exam / confirm_exam / complete_task / daily_brief / ocr_schedule | 📊 首页 | 学习节奏（S1） |
+| TTS | tts_speak / tts_control / tts_switch_engine | — | 无跳转（朗读控制条全局） |
+| 备份 | backup_course / backup_all_courses / restore_course / list_backups / configure_backup_schedule | — | 无跳转（TabBar 无备份 Tab，留会话管理 UI 落位） |
+
+跳转规则：仅工具调用 done 状态且有目标 Tab 时渲染跳转按钮；无目标 Tab 工具（TTS/备份域）不渲染。跳转携带会话上下文（sessionId，后续扩展 courseId）。
+
+补充衔接：
 - 学生在对话里问错题 → @引用错题 ID → AI 读取 S4 错题上下文
-- 学生在对话里请求报告 → 调用 studybuddy_generate_report（S6）
 
 **错误处理**：
 - AI provider 失败 → 返回 INTERNAL_ERROR + "AI 暂时不可用，请检查模型配置或稍后重试"
@@ -815,5 +832,6 @@ backup_records: in_progress → completed
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.2 | 2026-08-08 | §2.8 衔接段扩充为工具→目标 Tab 映射表（35 工具全覆盖，T-M3-004 裁决 1b）：S3→练习 / S2 笔记+学习状态→笔记 / S2 资料→资料 / S4→错题 / S5→冲刺 / S6→报告 / S7→采集 / S1+OCR→首页 / TTS 与备份域无目标 Tab 不渲染跳转；跳转规则（仅 done 且有目标 Tab 渲染 [去<Tab名>]，携带会话上下文）。依据：T-M3-004 五裁决 1/1a/3 + AGENTS.md §11.2 修订纪律。影响：权威条款增补映射表，原四条衔接 bullet 并入映射表语义，无 supersedes |
 | v0.1.1 | 2026-08-07 | 按用户反馈增强：§1.1 工作流分类新增"通用 AI 对话路径"（默认主入口）；新增 §2.8 通用 AI 对话工作流（应用启动默认打开 + 零碎问答 + AI 自主调用 S1-S7 工具 + @文件引用 + TTS 朗读 + L3 索引 + 与 S1-S7 衔接）；响应用户反馈"pi 天生自带对话，不能把 ai 输入基础功能废弃" |
 | v0.1.0 | 2026-08-07 | 初始草案：学生主路径（S1-S7 核心闭环 7 个工作流）；家长报告路径（生成→冻结→投递→重试）；TTS 朗读路径（随时可击发+场景化+标记已复习）；备份恢复路径（手动/定期/归档触发/恢复 4 个工作流+zip 结构引用）；组件治理流程（五阶段+失败退回+四参考仓库治理+装配顺序）；调度层（cron-scheduler+taskType 枚举+推送目标）；状态机汇总（11 个状态机）；错误处理与降级策略。输入：02-PRD §3 + 03-Architecture §3/§7/§9 + 05-ERD 状态机/触发器 + 06-API 方法表 |

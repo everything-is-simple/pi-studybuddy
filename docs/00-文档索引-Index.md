@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.61
+**版本**：v0.1.63
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -85,7 +85,7 @@
 - [x] 03-Architecture v0.1.1 ✅ 已审查批准：四层架构 + pi 扩展层 + 业务 Adapter + 数据层 + 技能体系 + 桌面壳 + 调度 + 安全 + §6.7 会话管理 pi 原生 AI 对话默认主入口
 - [x] 05-ERD v0.1.1 ✅ 已审查批准：全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 + ER 图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载
 - [x] 06-API v0.1.1 ✅ 已审查批准：RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表 + 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解
-- [x] 07-Workflow v0.1.1 ✅ 已审查批准：学生主路径（S1-S7 闭环）+ 家长报告 + TTS 朗读 + 备份恢复 + 组件治理 + 调度层 + 11 状态机汇总 + §2.8 通用 AI 对话路径
+- [x] 07-Workflow v0.1.2 ✅ 已审查批准：学生主路径（S1-S7 闭环）+ 家长报告 + TTS 朗读 + 备份恢复 + 组件治理 + 调度层 + 11 状态机汇总 + §2.8 通用 AI 对话路径 + 工具→Tab 映射表
 - [x] 08-Test v0.1.1 ✅ 已审查批准：测试金字塔 + 四层分层 + 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E
 - [x] 09-UI v0.1.2 ✅ 已审查批准：三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话，响应用户反馈不废弃）** + 8 学习标签页（S1-S7）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 —— 完整性/上游一致性/铁律落实/E2E 覆盖四项通过
 - [x] 04-Todo v0.1.0 ✅ 已审查批准：任务登记规范 + 组件治理看板 + 完成门槛 + 里程碑规划（M0-M3）+ 39 任务大纲 + 修复记录区 —— 里程碑划分/任务大纲粒度/task-id 规范/完成门槛四项通过
@@ -136,6 +136,8 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.63 | 2026-08-08 | 07-Workflow v0.1.1→v0.1.2（§2.8 衔接段扩充工具→目标 Tab 映射表 35 工具全覆盖 + 跳转规则，T-M3-004 裁决 1b 落地）+ AGENTS.md v0.1.43。原因：T-M3-004 实施中裁决 1b 落地——映射表条款归属 07-WF §2.8（衔接语义），实施完成后升格权威条款。影响：07-WF 权威条款增补，原四条衔接 bullet 并入映射表语义，无 supersedes。依据：AGENTS.md §11.2 修订纪律 |
+| v0.1.62 | 2026-08-08 | 04-Todo v0.1.56 登记 T-M3-004 开工（§7.4.1 T-M3-004 pending→in_progress + §9 统计 M3 pending 5→4 + in_progress 0→1）+ AGENTS.md v0.1.42。原因：用户批准 T-M3-004 AI 自主调用工具+跳转结构化 Tab 开工（§7.5 全局执行顺序表第 14 行，前置依赖 T-M3-002 + S1-S7 工具 done）。五裁决：① 工具→Tab 映射表（35 工具全覆盖 + update_learn_status→notes + backup_* 不渲染跳转按钮留 T-M3-006 + 映射表条款补 07-WF §2.8）② 触发词按域分组 ③ 跳转按钮统一 [去<Tab名>] ④ 跳转 context { tabId, sessionId?, courseId? } 脱敏 ⑤ 测试确定性。影响：仅版本号同步 + 状态登记，无权威条款变更。M3 剩余 pending：T-M3-005~008。依据：AGENTS.md §4.4 单一执行任务门禁 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.61 | 2026-08-08 | 04-Todo v0.1.55 登记 T-M3-003 完成（§7.4.1 T-M3-003 in_progress→done + §9 统计 M3 in_progress 1→0 + done 2→3）+ 06-API v0.1.4（§3.1 sessions.search 落地注解 + SessionSummary 扩展 subject/goal/mistakeIds + §3.1.1 agent.send sessionMeta 扩展注解）。原因：T-M3-003 学习场景业务化实施完成（L3 承载层/L1 写回/context-pack 扩展/会话元数据/sessions.search handler/ChatTab UI），质量门全通过（type-check + 892 单元/集成测试 + 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：仅版本号同步 + 状态登记 + 06-API 说明性增补，无权威条款变更。M3 剩余 pending：T-M3-004~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.60 | 2026-08-08 | 04-Todo v0.1.54 登记 T-M3-003 开工（§7.4.1 T-M3-003 pending→in_progress + §9 统计 M3 pending 6→5 + in_progress 0→1）+ 04-Todo 头部版本号滞后修正（v0.1.52→v0.1.54）。原因：用户批准 T-M3-003 学习场景业务化开工（§7.5 全局执行顺序表第 13 行，前置依赖 T-M3-001 + T-M3-002 done）。五裁决：① L3 边界——承载层（bigram 分词/写入/检索/sessions.search handler）归 T-M3-003，turn_end 钩子接线归 T-M3-005 ② sessions.search 落 L3 检索库；rename/export 留 T-M3-006 ③ L1 写回 preferred_subjects/goals 现成字段，version 1.0 不变，原子写 ④ 错题关联会话级元数据，不新增表 ⑤ bigram CJK bigram + ASCII 整词小写，完整 UUID 不索引。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.59 | 2026-08-08 | 04-Todo v0.1.53 登记 T-M3-002 完成（§7.4.1 T-M3-002 in_progress→done + §9 统计 M3 in_progress 1→0 + done 1→2）+ 06-API v0.1.3（§4 AgentEvent payload 结构化 + §3.2 files.read 落地注解 + §3.1.1 agent.send 扩展注解）。原因：T-M3-002 pi 原生能力承载实施完成，质量门全通过（type-check + 856 单元/集成测试 + 83 E2E 测试 + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记 + 06-API 说明性增补，无权威条款变更。M3 剩余 pending：T-M3-003~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
