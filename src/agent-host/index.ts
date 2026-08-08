@@ -14,6 +14,8 @@ import { ping } from "./handlers/ping";
 import { toolchainHandlers } from "./handlers/toolchains";
 import { createFileWatchService } from "./file-watch";
 import { createFileHandlers } from "./handlers/files";
+import { createModelHandlers } from "./handlers/models";
+import { resolveDataRoot } from "./allowed-roots";
 import { createSessionStore, defaultSessionFixture } from "./session-store";
 import { createSessionHandlers } from "./handlers/sessions";
 import { createAgentHandlers } from "./handlers/agent";
@@ -26,12 +28,15 @@ export interface AgentHost {
 export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   const server = createRpcServer();
   const fileWatch = createFileWatchService(server);
+  // T-M3-002：files.read 白名单门禁需业务数据根（AGENTS.md §9.4）
+  const dataRoot = resolveDataRoot();
   // T-M3-001：会话内存仓库 + sessions.*/agent.* handlers（对话 Tab 承载层）
   const sessionStore = createSessionStore(defaultSessionFixture());
   server.handle({
     "system.ping": (...args: unknown[]) => ping(args[0] as Api["system.ping"]["params"]),
     ...toolchainHandlers,
-    ...createFileHandlers(fileWatch),
+    ...createFileHandlers(fileWatch, { dataRoot }),
+    ...createModelHandlers(),
     ...createSessionHandlers(sessionStore),
     ...createAgentHandlers(server),
   });

@@ -787,10 +787,58 @@ export interface ToolchainStatus {
 
 /* ---- §4 Streams 推送主题 ---- */
 
+/**
+ * tool_call 事件脱敏载荷（T-M3-002，06-API §4 增补）
+ *
+ * 字段子集对齐 pi 底座 ExtensionAPI ToolCallEvent（types.d.ts:638-680）：
+ * toolCallId/toolName 字段同名；input 仅保留脱敏摘要 inputSummary。
+ *
+ * 安全（AGENTS.md §9.3）：inputSummary 只含截断后展示文本（≤120 字符），
+ * 不含完整输入/密钥/完整 UUID/文件路径；toolCallId 用短 id（call-<n>），非 UUID。
+ */
+export interface AgentEventToolCallPayload {
+  toolCallId: string;
+  toolName: string;
+  inputSummary: string;
+}
+
+/**
+ * tool_result 事件脱敏载荷（T-M3-002，06-API §4 增补）
+ *
+ * 字段子集对齐 pi 底座 ExtensionAPI ToolResultEvent（types.d.ts:681-721）：
+ * toolCallId/toolName/isError 字段同名；content 仅保留脱敏摘要 resultSummary。
+ *
+ * 安全（AGENTS.md §9.3）：resultSummary 只含截断后展示文本（≤160 字符），
+ * 不含完整输出/密钥/完整 UUID/文件路径。
+ */
+export interface AgentEventToolResultPayload {
+  toolCallId: string;
+  toolName: string;
+  isError: boolean;
+  resultSummary: string;
+}
+
+/**
+ * AgentEvent.payload 结构化联合（T-M3-002 类型化）
+ *
+ * 按 kind 区分：
+ *   - message_start       → {}（空对象）
+ *   - token               → { text }
+ *   - tool_call           → AgentEventToolCallPayload
+ *   - tool_result         → AgentEventToolResultPayload
+ *   - context_compressed  → { compressed: true }
+ */
+export type AgentEventPayload =
+  | Record<string, never>
+  | { text: string }
+  | AgentEventToolCallPayload
+  | AgentEventToolResultPayload
+  | { compressed: boolean };
+
 export interface AgentEvent {
   kind: "message_start" | "token" | "tool_call" | "tool_result" | "context_compressed";
   sessionId: string;
-  payload: unknown;
+  payload: AgentEventPayload;
 }
 
 /* ------------------------------------------------------------------ */
