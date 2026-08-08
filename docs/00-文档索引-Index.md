@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.50
+**版本**：v0.1.51
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -127,11 +127,13 @@
 - [x] 04-Todo v0.1.42：登记 T-M1-006 完成（WPS COM 桥 doc/ppt/xls 转换：Python 桥 wps_bridge.py 经 WPS COM KWPS/KET/KWPP.Application 转 docx/pptx/xlsx 中间格式 + pytest 5 用例三格式真实转换归一化 JSON + 崩溃隔离 + JSON 协议 + WpsAdapter 可注入三态 mock/failing/real + 接入 materials.convert/retryConversion 的 wps_convert 真实转换（成功 Material→converted + Job→completed；失败 conversion_failed + Job→failed；不写 normalized_texts 属 T-M1-007）+ 错误固定文案不泄漏路径/stdout/stderr + 数据隔离 runs/T-M1-006；754 单元/集成测试 + pytest 5 用例真实 WPS 转换全绿，type-check + build + smoke 6/6 + 文档治理 + 安全不变量 6/6 全通过；§9 统计 M1 in_progress 1→0 + done 7→8）—— M1 第二个真实组件 Adapter 完成，M1 剩余 pending：T-M1-007 资料转换管道 / T-M1-008 跨切钩子
 - [x] 04-Todo v0.1.43：登记 T-M1-007 开工（§7.2.1 T-M1-007 pending→in_progress + §9 统计 M1 pending 2→1 + in_progress 0→1）。用户批准 T-M1-007 资料转换管道（PDF/DOCX/PPTX/图片 OCR 编排 + normalized_texts 写入）开工（§7.5 全局执行顺序表第 6 行，依赖 T-M1-005 OCR 桥 + T-M1-006 WPS 桥均已就绪）—— M1 第三个真实组件管道编排任务，M1 剩余 pending：T-M1-008 跨切钩子
 - [x] 04-Todo v0.1.44：登记 T-M1-007 完成（资料转换管道：TextExtractor 三态 mock/failing/real + Node 库 pdf-parse/jszip/mammoth 真实提取 pdf/docx/pptx/xlsx + OcrAdapter 复用接入 ocr_image + materials.convert/retryConversion 按 job_type 分派提取/OCR + 成功写 normalized_texts（content_hash/char_count/source_type/先删后插幂等）+ Material→converted + 失败 conversion_failed + Job→failed（error_message 固定文案）+ wps_convert 补齐中间格式文本提取 + 合成夹具单件（jszip 构建 OOXML + 受控 pdf）；773 单元/集成测试 + 80 E2E 测试全绿，type-check + build + smoke 6/6 + verify 全绿 + 文档治理 + 安全不变量 6/6 全通过；§9 统计 M1 pending 1→0 + in_progress 1→0 + done 8→9）—— M1 第三个真实组件管道编排任务完成，M1 剩余 pending：T-M1-008 跨切钩子
+- [x] 04-Todo v0.1.45：登记 T-M1-008 完成（跨切钩子：before_agent_start 多源上下文注入 L1 画像/激活学期课程/最近事件 + session_start 初始化学期库/L1 目录 + tool_call workspace-path-guard 拦截 write/edit 逃逸业务数据根路径（normalizeToolPath + checkWorkspaceMutationPath + realpath 符号链接逃逸拦截）+ tool_result 集中错误日志 observability（errorCode 提取 + UNKNOWN_TOOL_ERROR 回退 + 日志脱敏）；799 单元/集成测试 + 80 E2E 测试全绿，type-check + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 全通过；§9 统计 M1 done 9→10）—— M1 最后一个任务完成，M1 全部 10 任务 done，M1 核心闭环 MVP 达成
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.51 | 2026-08-08 | 04-Todo v0.1.45 登记 T-M1-008 完成（§7.2.1 T-M1-008 pending→done + §9 统计 M1 done 9→10）。原因：T-M1-008 跨切钩子实施完成，质量门全通过（type-check + 799 单元/集成测试 + 80 E2E 测试 + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：M1 全部 10 任务完成，M1 核心闭环 MVP 达成。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.50 | 2026-08-08 | 04-Todo v0.1.44 登记 T-M1-007 完成（§7.2.1 T-M1-007 in_progress→done + §9 统计 M1 pending 1→0 + in_progress 1→0 + done 8→9）。原因：T-M1-007 资料转换管道实施完成，质量门全通过（type-check + build + 773 单元/集成测试 + 80 E2E 测试 + smoke 6/6 + verify 全绿 + 文档治理 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记，无权威条款变更。M1 剩余 pending：T-M1-008 跨切钩子。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.49 | 2026-08-08 | 04-Todo v0.1.43 登记 T-M1-007 开工（§7.2.1 T-M1-007 pending→in_progress + §9 统计 M1 pending 2→1 + in_progress 0→1）。原因：用户批准 T-M1-007 资料转换管道开工（§7.5 全局执行顺序表第 6 行，依赖 T-M1-005 OCR 桥 + T-M1-006 WPS 桥均已就绪）。影响：仅版本号同步 + 状态登记，无权威条款变更。M1 剩余 pending：T-M1-008 跨切钩子。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.48 | 2026-08-08 | 04-Todo v0.1.42 登记 T-M1-006 完成（§7.2.1 T-M1-006 in_progress→done + §9 统计 M1 in_progress 1→0 + done 7→8）。原因：T-M1-006 WPS COM 桥 doc/ppt/xls 转换实施完成，质量门全通过（type-check + 754 单元/集成测试 + pytest 5 用例真实 WPS 转换 + build + smoke 6/6 + 文档治理 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记，无权威条款变更。M1 剩余 pending：T-M1-007 资料转换管道 / T-M1-008 跨切钩子。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
