@@ -27,6 +27,7 @@ import { MistakesTab } from "./tabs/MistakesTab";
 import { CramTab } from "./tabs/CramTab";
 import { ReportTab } from "./tabs/ReportTab";
 import { CaptureTab } from "./tabs/CaptureTab";
+import { ChatTab } from "./tabs/ChatTab";
 import { TtsControlBar } from "./TtsControlBar";
 import { BackupPanel } from "./BackupPanel";
 import { TabContainer } from "./common/TabContainer";
@@ -75,11 +76,7 @@ function renderTab(
     case "backup":
       return <BackupPanel rpc={rpc} />;
     case "chat":
-      return (
-        <TabContainer>
-          <EmptyState message="该标签页待后续里程碑填充" />
-        </TabContainer>
-      );
+      return <ChatTab rpc={rpc} />;
     default:
       return (
         <TabContainer>

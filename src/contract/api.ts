@@ -69,6 +69,13 @@ export interface Api {
   };
   "sessions.search": { params: { query: string }; result: SessionSummary[] };
 
+  /* ---- §3.1.1 对话发送（agent.*，💬 对话 Tab 承载，T-M3-001） ---- */
+  /** 发送用户消息 → agent-host 触发 Streams["agent.events"] 受控序列 */
+  "agent.send": {
+    params: { sessionId: string; text: string };
+    result: { eventCount: number };
+  };
+
   /* ---- §3.2 文件体验（files.*） ---- */
   "files.selectDirectory": { params: {}; result: { path: string } };
   "files.list": { params: { dir: string }; result: FileEntry[] };
