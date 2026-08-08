@@ -26,14 +26,21 @@ function forkAgent(): AgentHostHandle {
   };
 }
 
-const hostManager = createHostManager({
-  forkAgent,
-  createChannelPair: () => {
-    const { port1, port2 } = new MessageChannelMain();
-    return { rendererEnd: port1, hostEnd: port2 };
-  },
-});
+let hostManager: ReturnType<typeof createHostManager> | null = null;
+
+function getHostManager() {
+  if (!hostManager) {
+    hostManager = createHostManager({
+      forkAgent,
+      createChannelPair: () => {
+        const { port1, port2 } = new MessageChannelMain();
+        return { rendererEnd: port1, hostEnd: port2 };
+      },
+    });
+  }
+  return hostManager;
+}
 
 export function registerConnectHostIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.CONNECT_HOST, () => hostManager.connectHost());
+  ipcMain.handle(IPC_CHANNELS.CONNECT_HOST, () => getHostManager().connectHost());
 }

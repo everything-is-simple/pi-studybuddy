@@ -1,18 +1,25 @@
 /**
  * pi-studybuddy main 进程入口（03-Arch §6.2）
  *
- * app.whenReady → 注册 app:// 协议 + 建立窗口 + fork agent-host。
+ * app.whenReady → 初始化业务数据根 + 注册 app:// 协议 + 建立窗口 + fork agent-host。
  * 严格遵循 v0.1 边界：单窗口、单用户、仅监听本机。
  */
 import { app, BrowserWindow } from "electron";
 import { registerAppProtocol } from "./protocol";
 import { createWindow } from "./window";
 import { registerConnectHostIpc } from "./ipc";
+import { resolveDataRoot } from "../agent-host/allowed-roots";
+import { initializeDataRoot } from "./data-root-init";
 
 /** Electron 单实例锁：防止多实例并发写同一数据根（AGENTS.md §1.1 单写进程） */
 void app.requestSingleInstanceLock?.();
 
 app.whenReady().then(() => {
+  // T-M4-001 业务数据根初始化（03-Arch §4.3 + 05-ERD §2）
+  // 首次启动建 global.db + 子目录；二次启动幂等（schema IF NOT EXISTS + mkdir recursive）
+  const dataRoot = resolveDataRoot();
+  initializeDataRoot(dataRoot);
+
   registerAppProtocol();
   registerConnectHostIpc();
   createWindow();
