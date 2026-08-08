@@ -12,10 +12,11 @@
  *   - 转写失败 → INTERNAL_ERROR + 固定文案"转写失败，请检查音频文件是否完整"
  *   - 返回值仅含 { text }，不含 stdout/stderr
  *
- * 本任务范围（08-Test §5.4 不连真实 whisper.cpp）：
- *   - createMockWhisperAdapter：默认 mock 确定性返回固定文本，所有测试用此
- *   - createRealWhisperAdapter：真实 spawn 框架（路径校验 + 文件头验证 + spawn 调用），
- *     集成测试不调真实子进程，仅校验路径未配置/文件头验证错误路径
+ * 本任务范围（T-M2-007 真实接入）：
+ *   - createMockWhisperAdapter：默认 mock 确定性返回固定文本，集成/E2E 用此（08-Test §9.3）
+ *   - createRealWhisperAdapter：真实 spawn whisper.cpp CLI（-nt 模式 stdout 即纯文本），
+ *     本机探到模型可真实转写（08-Test §9.3 允许），集成/E2E 不连真实子进程
+ *   - createFailingWhisperAdapter：模拟子进程失败路径
  */
 import { spawn } from "node:child_process";
 import type { RpcError } from "../../../contract/types";
@@ -76,12 +77,17 @@ export function createFailingWhisperAdapter(): WhisperCppAdapter {
 /**
  * Real Adapter：spawn whisper.cpp CLI 子进程。
  *
- * 本任务范围（08-Test §5.4 不连真实 whisper.cpp）：
+ * 本任务范围（T-M2-007 真实接入）：
  *   - 路径校验（cliPath/modelPath 非空）→ INTERNAL_ERROR
  *   - 文件头验证（validatePcmWav）→ BAD_REQUEST
- *   - 真实 spawn 调用 + stdout 解析：实现框架，但集成测试不触发此路径
+ *   - 真实 spawn 调用 + stdout 解析：真实 whisper.cpp CLI 已接入（-nt 模式 stdout 即纯文本）
  *
- * 真实 whisper.cpp 集成留待 E2E 受控夹具（08-Test §3.3.2 注释），不在本任务范围。
+ * 真实验证（T-M2-007，步骤1 边界验证）：
+ *   - CLI: H:\ai-studybuddy-components\local-asr-whispercpp\build-msvc-x64-release\bin\Release\whisper-cli.exe
+ *   - 模型: H:\ai-studybuddy-components\local-asr-whispercpp\models\ggml-base.bin
+ *   - 合成 3s 正弦波 PCM WAV，whisper-cli -nt 转录输出 "(crickets chirping)"，退出码 0，stdout 即纯文本
+ *
+ * 集成/E2E 保持 mock（08-Test §9.3），单件真实测试探测模型存在才跑（08-Test §9.3 允许本机真实）。
  */
 export function createRealWhisperAdapter(opts: {
   cliPath: string;

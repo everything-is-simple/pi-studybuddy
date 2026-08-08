@@ -179,4 +179,15 @@ describe("T-M1-001~004 + T-M2-001~005 studybuddy-extension 单件测试（S1+S2+
   it("STUDYBUDDY_EXTENSION_NAME === 'pi-studybuddy'（扩展标识）", () => {
     expect(STUDYBUDDY_EXTENSION_NAME).toBe("pi-studybuddy");
   });
+
+  // T-M2-007 whisper.cpp 真实 Adapter 装配测试（03-Arch §3.3 + 08-Test §5.4）
+  it("带 whisper 路径调用 createStudyBuddyExtension 不抛错，工具数仍 35", async () => {
+    const factory = createStudyBuddyExtension({
+      whisperCliPath: "test-cli",
+      whisperModelPath: "test-model",
+    });
+    const { calls, pi } = createStubPi();
+    await expect(factory(pi)).resolves.toBeUndefined();
+    expect(calls.registerTool).toBe(35);
+  });
 });

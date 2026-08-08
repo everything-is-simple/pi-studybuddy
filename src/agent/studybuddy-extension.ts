@@ -36,6 +36,7 @@ import { S4Context } from "../agent-host/handlers/s4/context";
 import { S5Context } from "../agent-host/handlers/s5/context";
 import { S6Context } from "../agent-host/handlers/s6/context";
 import { S7Context } from "../agent-host/handlers/s7/context";
+import { createRealWhisperAdapter } from "../agent-host/handlers/s7/whisper-adapter";
 import { TtsContext } from "../agent-host/handlers/tts/context";
 import { BackupContext } from "../agent-host/handlers/backup/context";
 import { createS1Tools } from "./tools/s1/tools";
@@ -71,6 +72,20 @@ function resolveDataRoot(): string {
 }
 
 /**
+ * 创建 pi-studybuddy 扩展工厂的可选配置（T-M2-007 whisper.cpp 真实 Adapter 接入）。
+ *
+ * whisper 配置优先级（03-Arch §3.3 CLI/模型路径只来自配置，不猜路径不回退云端）：
+ *   调用参数 options.whisperCliPath > 环境变量 PI_STUDYBUDDY_WHISPER_CLI > 空（默认 mock）
+ *   调用参数 options.whisperModelPath > 环境变量 PI_STUDYBUDDY_WHISPER_MODEL > 空（默认 mock）
+ *
+ * 无路径配置 → 默认 mock（08-Test §5.4 测试环境不连真实 whisper.cpp）。
+ */
+export interface StudyBuddyExtensionOptions {
+  whisperCliPath?: string;
+  whisperModelPath?: string;
+}
+
+/**
  * 创建 pi-studybuddy 扩展工厂。
  *
  * setup(pi) 在 pi 启动时被调用：
@@ -82,7 +97,9 @@ function resolveDataRoot(): string {
  *
  * 工具总数：S1 6 + OCR 1 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5 = 35。
  */
-export function createStudyBuddyExtension(): ExtensionFactory {
+export function createStudyBuddyExtension(
+  options?: StudyBuddyExtensionOptions,
+): ExtensionFactory {
   return async (pi: ExtensionAPI): Promise<void> => {
     const dataRoot = resolveDataRoot();
     const s1Ctx = new S1Context(dataRoot);
@@ -91,7 +108,21 @@ export function createStudyBuddyExtension(): ExtensionFactory {
     const s4Ctx = new S4Context(dataRoot);
     const s5Ctx = new S5Context(dataRoot);
     const s6Ctx = new S6Context(dataRoot);
-    const s7Ctx = new S7Context(dataRoot);
+
+    // T-M2-007 whisper.cpp 真实 Adapter 装配（03-Arch §3.3 + 08-Test §5.4）
+    // 调用参数 > 环境变量 > 空；有 cliPath+modelPath 才走真实，否则默认 mock
+    const whisperCliPath =
+      options?.whisperCliPath ?? process.env.PI_STUDYBUDDY_WHISPER_CLI ?? "";
+    const whisperModelPath =
+      options?.whisperModelPath ?? process.env.PI_STUDYBUDDY_WHISPER_MODEL ?? "";
+    const s7Ctx = new S7Context(dataRoot, {
+      whisperCliPath,
+      whisperModelPath,
+      whisperAdapter:
+        whisperCliPath && whisperModelPath
+          ? createRealWhisperAdapter({ cliPath: whisperCliPath, modelPath: whisperModelPath })
+          : undefined, // 默认 mock（08-Test §5.4）
+    });
     const ttsCtx = new TtsContext();
     const backupCtx = new BackupContext(dataRoot);
 
