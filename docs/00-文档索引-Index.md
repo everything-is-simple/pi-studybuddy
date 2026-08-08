@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.71
+**版本**：v0.1.76
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -31,11 +31,11 @@
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
 | 00 | 本文档 | ✅ 已创建 | 导航、门禁、参考仓库清单 |
-| 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.2 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.1 交付形态：源码形态不打包 .exe）+ §2.4 会话管理对话默认主入口 |
+| 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.3 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.2 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.65 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明 + §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~008 全 done，M3 收官）+ §7.5 全局执行顺序表（M1/M2/M3 统一排序） + §6.5 M3 退出门槛全勾选 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.68 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨/M4后端断裂修复+业务接线+打包部署）+ 57 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明（v0.2.3 打包能力常态化）+ §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~008 全 done，M3 收官）+ §7.6.1 M4 任务登记表（T-M4-001~021 全 pending，5 个 P0 后端断裂修复 + 3 个 P0 基础 UI + 1 个 P0.5 打包 + 10 个 P1-P3 接线 + 2 个 P4 收尾）+ §7.5 全局执行顺序表（M1/M2/M3/M4 统一排序 39 行，M4 后端断裂修复 19-23 先行）+ §6.5 M3 退出门槛全勾选 + §6.6 M4 退出门槛（后端断裂修复 + 设置页/学期切换 + S1-S7 接线 + 打包冒烟） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.5 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -136,11 +136,18 @@
 - [x] 04-Todo v0.1.55：登记 T-M3-003 完成（学习场景业务化：L3 承载层 bigram/indexer/search + L1 写回 + context-pack 扩展 + 会话级元数据 + sessions.search + 06-API v0.1.4；892 单元/集成测试 + 83 E2E + UUID 泄漏 7/7）—— M3 第 3 任务完成
 - [x] 04-Todo v0.1.57：登记 T-M3-004 完成（AI 自主调用工具 + 跳转结构化 Tab：工具→Tab 映射纯函数 + 触发词 3→10 组 + ChatTab 跳转按钮 + 07-WF v0.1.2 §2.8 映射表条款；925 单元/集成测试 + 83 E2E + UUID 泄漏 7/7）—— M3 第 4 任务完成
 - [x] 04-Todo v0.1.59：登记 T-M3-005 完成（model_select / turn_end 钩子：model-config 模块原子写 + L3 增量索引 assistant+tool + modelsConfig.get/set + ChatTab 落库 + 四文档 supersedes 落点改业务数据根 config/models.json；939 单元/集成测试 + 83 E2E + smoke 6/6 + 安全不变量 6/6 + UUID 泄漏 7/7）—— M3 第 5 任务完成，M3 剩余 pending：T-M3-006~008
+- [x] 01-TRD v0.2.3：§7 决策 6 修订（v0.1 交付形态从"不打包 .exe"改为"源码形态可运行 + 打包能力常态化"，supersedes v0.2.2）。依据：用户 2026-08-08 明确指令"系统不管什么时候，只要功能正常，就要能够被打包"。打包工具链（electron-builder）纳入 M4 里程碑
+- [x] 04-Todo v0.1.66：新增 M4 里程碑（业务接线 + 打包部署）—— §6.6 M4 退出门槛 7 项 + §7.6.1 M4 任务登记表 T-M4-001~018 全 pending（18 任务：P0 设置页/学期切换/AppShell 数据流 + P1 S1-S4 接线 + P2 S5-S7 接线 + P3 TTS/备份 + P4 打包/E2E）+ §7.5 全局执行顺序表追加 M4 行 19-36 + §9 统计加 M4 行（18 pending）+ 合计 54 任务。M3 收官后人工检验发现前端 127 RPC handler 仅接通约 12 个（AI 对话线），S1-S7 业务 Tab "有壳无接线"，设置页/学期切换完全缺失
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.76 | 2026-08-08 | 04-Todo v0.1.70（T-M4-004 + T-M4-005 done，后端断裂修复批次 2 完成，后端 5 处断裂全部修复）。原因：T-M4-004 studybuddy-extension 接入 pi 内核（createStudyBuddySession 动态 import() + 35 studybuddy_* 工具注册验证）+ T-M4-005 agent.send 接真实 pi 内核流式回复（双路径：真实 pi prompt() + 受控夹具 fallback，事件映射 + 脱敏 + UUID 过滤）。关键技术：pi-coding-agent ESM-only 包用 new Function("return import(s)") 阻止 tsc 降级 + VITEST 环境双路径。质量门全通过（type-check + 991 单元/集成 + 110 E2E + build + smoke 6/6 + verify full 全绿）。影响：版本号同步 + 状态登记 + 后端断裂 2/3 修复（无契约方法新增，Api 方法总数仍 127）。M4 done 5/21。依据：AGENTS.md §4.5 + §7 受控收尾流程 + §8.4 完成判据 |
+| v0.1.75 | 2026-08-08 | 04-Todo v0.1.69（T-M4-001/002/003 done，后端断裂修复批次 1 完成）。原因：T-M4-001 main.ts 数据根初始化 + T-M4-002 agent-host 装配 S1-S7/TTS/Backup 9 类 handler + T-M4-003 credentials.*/settings.* handler 实施完成，质量门全通过（type-check + 979 单元/集成测试 + build + smoke 6/6 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记 + 后端断裂 1/4/5 修复，无权威条款变更。M4 done 3/21。依据：AGENTS.md §4.5 + §7 受控收尾流程 |
+| v0.1.74 | 2026-08-08 | 04-Todo v0.1.68（M4 重新规划：后端断裂修复前置）。原因：用户"重新读系统设计重新安排任务力争按系统设计完成系统直到系统如期运行"——重新读 03-Arch/06-API/09-UI 对比代码发现 5 处后端断裂（E2E 全绿但生产不可用）：① agent-host 生产入口只装 6 类 handler（S1-S7/TTS/Backup 9 类未装配）② studybuddy-extension 35 工具 6 钩子无生产调用（extension-loader 不存在）③ agent.send 是受控夹具（假 TOKEN_FRAGMENTS）④ main.ts 未初始化 global.db ⑤ credentials/settings handler 完全不存在。影响：M4 任务 18→21（新增 5 个 P0 后端断裂修复 T-M4-001~005），原 T-M4-001~018 重编号为 T-M4-006~021，§7.5 执行顺序表 M4 行 19-36→19-39 重排（后端修复 19-23 先行），§9 统计 54→57。无权威条款变更（无契约方法新增，Api 方法总数仍 127）。依据：AGENTS.md §4.5 + §11.2 + 03-Arch §6.2 + 用户明确指令 |
+| v0.1.73 | 2026-08-08 | 04-Todo v0.1.67（§7.5 全局执行顺序表 M4 调整：T-M4-016 electron-builder 配置从执行序 34 提前到 22，P0 三任务之后立即验证打包链路；§7.6.1 登记表 T-M4-016 优先级 P4→P0.5；T-M4-017 前置依赖改为 T-M4-016 + T-M4-015）。原因：用户讨论确认业务线优先级——P0 解锁基础能力后立即验证打包链路，业务 Tab 按 S1→S7 依赖顺序接线。影响：仅执行顺序调整，无权威条款变更。依据：AGENTS.md §11.2 修订纪律 + 用户明确批准 |
+| v0.1.72 | 2026-08-08 | 01-TRD v0.2.3（§7 决策 6 修订：v0.1 交付形态从"不打包 .exe"改为"源码形态可运行 + 打包能力常态化"，supersedes v0.2.2）+ 04-Todo v0.1.66（新增 M4 里程碑：业务接线 + 打包部署，§6.6 退出门槛 7 项 + §7.6.1 任务登记表 T-M4-001~018 全 pending + §7.5 全局执行顺序表追加 M4 行 19-36 + §9 统计加 M4 行 18 pending + 合计 54 任务 + §6.0 版本演进同步 v0.2.3）。原因：M3 收官后人工检验发现前端 127 RPC handler 仅接通约 12 个（AI 对话线），S1-S7 业务 Tab "有壳无接线"，设置页/学期切换完全缺失；用户 2026-08-08 明确指令"系统不管什么时候，只要功能正常，就要能够被打包"。影响：01-TRD 决策 6 权威条款修订（打包能力常态化）+ 04-Todo M4 里程碑登记。依据：AGENTS.md §11.2 修订纪律 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.69 | 2026-08-08 | 04-Todo v0.1.63 登记 T-M3-007 完成（§7.4.1 T-M3-007 in_progress→done + §9 统计 M3 in_progress 1→0 + done 6→7）+ AGENTS.md v0.1.49。原因：T-M3-007 E2E-10~13 对话默认主入口/工具调用/@引用/TTS+L3 检索实施完成（test-main.js 装配 createAgentHandlers/createSessionHandlers/createModelHandlers/createFileHandlers + test.turnEndIndex 直调生产 indexTurnEndChunks + eventForwardServer shim + RpcDriver waitForEvent + electron-launcher reuseDataRoot + 4 E2E 文件 + 三处承载层根因修复：global.sql.ts 幂等建表 / indexer.ts 建父目录 / turn-end.ts 幂等计数），质量门全通过（type-check + 966 单元/集成测试 + 110 E2E 测试（+27）+ build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：仅版本号同步 + 状态登记，无权威条款变更（无契约方法新增，Api 方法总数仍 127）。M3 剩余 pending：T-M3-008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.68 | 2026-08-08 | 04-Todo v0.1.61 登记 T-M3-006 完成（§7.4.1 T-M3-006 in_progress→done + §9 统计 M3 in_progress 1→0 + done 5→6）+ AGENTS.md v0.1.48。原因：T-M3-006 09-UI 对话 Tab 业务 UI + 会话管理 UI 实施完成（SessionStore rename/export + SessionSummary.unread? + sessions.rename/export handler 补齐 + SessionSidebar 日期分组/搜索/unread/学科颜色/新建/操作菜单 + AppShell 状态提升 + ChatTab 受控业务态），质量门全通过（type-check + 966 单元/集成测试 + 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：仅版本号同步 + 状态登记，无权威条款变更（无契约方法新增，Api 方法总数仍 127）。M3 剩余 pending：T-M3-007~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.67 | 2026-08-08 | 04-Todo v0.1.60 登记 T-M3-006 开工（§7.4.1 T-M3-006 pending→in_progress + §9 统计 M3 pending 3→2 + in_progress 0→1）+ AGENTS.md v0.1.47。原因：用户批准 T-M3-006 09-UI 对话 Tab 业务 UI + 会话管理 UI 开工（§7.5 全局执行顺序表第 16 行，前置依赖 T-M3-001 + T-M1-009 模式，T-M3-005 已收尾 master a7b5db7 + origin/master 推送）。五裁决：① export 落点=runs 测试隔离目录（不污染业务数据根）② 新建会话=内存仓库空白会话 + 立即当前会话 ③ unread=SessionSummary 可选字段 + fixture 演示值 ④ backup_* 无目标 Tab 确认维持不渲染跳转按钮（留 T-M3-008）⑤ 选中会话状态=AppShell 提升。影响：仅版本号同步 + 状态登记，无权威条款变更。M3 剩余 pending：T-M3-007~008。依据：AGENTS.md §4.4 单一执行任务门禁 + §4.5 任务状态不得只存在于聊天 |
