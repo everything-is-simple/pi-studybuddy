@@ -77,7 +77,7 @@ describe("T-M1-001~004 + T-M2-001~005 studybuddy-extension × pi 底座契约对
     const { calls, pi } = createStubPi();
     await factory(pi);
     expect(calls.registerTool).toBe(35);
-    expect(calls.on).toBe(4); // T-M1-008 注册 before_agent_start/session_start/tool_call/tool_result 4 个钩子
+    expect(calls.on).toBe(6); // T-M1-008 四个 + T-M3-005 model_select/turn_end
     expect(calls.registerProvider).toBe(0);
   });
 

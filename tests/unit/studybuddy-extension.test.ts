@@ -162,11 +162,11 @@ describe("T-M1-001~004 + T-M2-001~005 studybuddy-extension 单件测试（S1+S2+
     );
   });
 
-  it("调用 pi.on 注册 4 个生命周期钩子（T-M1-008 before_agent_start/session_start/tool_call/tool_result）", async () => {
+  it("调用 pi.on 注册 6 个生命周期钩子（T-M1-008 四个 + T-M3-005 model_select/turn_end）", async () => {
     const factory = createStudyBuddyExtension();
     const { calls, pi } = createStubPi();
     await factory(pi);
-    expect(calls.on).toBe(4);
+    expect(calls.on).toBe(6);
   });
 
   it("不调用 registerProvider（M1-001 暂不注入 provider）", async () => {
