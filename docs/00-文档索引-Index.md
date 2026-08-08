@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.59
+**版本**：v0.1.61
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -136,6 +136,8 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.61 | 2026-08-08 | 04-Todo v0.1.55 登记 T-M3-003 完成（§7.4.1 T-M3-003 in_progress→done + §9 统计 M3 in_progress 1→0 + done 2→3）+ 06-API v0.1.4（§3.1 sessions.search 落地注解 + SessionSummary 扩展 subject/goal/mistakeIds + §3.1.1 agent.send sessionMeta 扩展注解）。原因：T-M3-003 学习场景业务化实施完成（L3 承载层/L1 写回/context-pack 扩展/会话元数据/sessions.search handler/ChatTab UI），质量门全通过（type-check + 892 单元/集成测试 + 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：仅版本号同步 + 状态登记 + 06-API 说明性增补，无权威条款变更。M3 剩余 pending：T-M3-004~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
+| v0.1.60 | 2026-08-08 | 04-Todo v0.1.54 登记 T-M3-003 开工（§7.4.1 T-M3-003 pending→in_progress + §9 统计 M3 pending 6→5 + in_progress 0→1）+ 04-Todo 头部版本号滞后修正（v0.1.52→v0.1.54）。原因：用户批准 T-M3-003 学习场景业务化开工（§7.5 全局执行顺序表第 13 行，前置依赖 T-M3-001 + T-M3-002 done）。五裁决：① L3 边界——承载层（bigram 分词/写入/检索/sessions.search handler）归 T-M3-003，turn_end 钩子接线归 T-M3-005 ② sessions.search 落 L3 检索库；rename/export 留 T-M3-006 ③ L1 写回 preferred_subjects/goals 现成字段，version 1.0 不变，原子写 ④ 错题关联会话级元数据，不新增表 ⑤ bigram CJK bigram + ASCII 整词小写，完整 UUID 不索引。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.59 | 2026-08-08 | 04-Todo v0.1.53 登记 T-M3-002 完成（§7.4.1 T-M3-002 in_progress→done + §9 统计 M3 in_progress 1→0 + done 1→2）+ 06-API v0.1.3（§4 AgentEvent payload 结构化 + §3.2 files.read 落地注解 + §3.1.1 agent.send 扩展注解）。原因：T-M3-002 pi 原生能力承载实施完成，质量门全通过（type-check + 856 单元/集成测试 + 83 E2E 测试 + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记 + 06-API 说明性增补，无权威条款变更。M3 剩余 pending：T-M3-003~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
 | v0.1.58 | 2026-08-08 | 04-Todo v0.1.52 登记 T-M3-002 开工（§7.4.1 T-M3-002 pending→in_progress + §9 统计 M3 pending 7→6 + in_progress 0→1）。原因：用户批准 T-M3-002 pi 原生能力承载开工（§7.5 全局执行顺序表第 12 行，前置依赖 T-M3-001 done）。四项设计裁决：AgentEvent payload 结构化子集 + files.read 现成契约 allowed-roots 门禁 + 候选草案确认 + in_progress 登记确认。影响：仅版本号同步 + 状态登记，无权威条款变更。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |
 | v0.1.57 | 2026-08-08 | 04-Todo v0.1.51 登记 T-M3-001 完成（§7.4.1 T-M3-001 in_progress→done + §9 统计 M3 in_progress 1→0 + done 0→1）+ 06-API v0.1.2（§3.1.1 新增 agent.send 契约）。原因：T-M3-001 💬 对话 Tab 默认主入口实施完成，质量门全通过（type-check + 823 单元/集成测试 + 83 E2E 测试 + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：仅版本号同步 + 状态登记 + 06-API 新增 agent.send，无权威条款变更。M3 剩余 pending：T-M3-002~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |（§7.4.1 T-M3-001 pending→in_progress + §9 统计 M3 pending 8→7 + in_progress 0→1）。原因：用户批准 T-M3-001 💬 对话 Tab 默认主入口开工（§7.5 全局执行顺序表第 11 行，M3 起点，前置依赖 M1+M2 E2E 通过）。影响：仅版本号同步 + 状态登记，无权威条款变更。M3 剩余 pending：T-M3-002~008。依据：AGENTS.md §4.4 单一执行任务门禁 + §11.2 修订纪律 |（§7.3.1 T-M2-007 in_progress→done + §9 统计 M2 in_progress 1→0 + done 8→9）。原因：T-M2-007 whisper.cpp 真实 Adapter 替换 mock 实施完成，质量门全通过（type-check + build + 802 单元/集成测试 + 83 E2E 测试 + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6）。影响：M2 全部 9 任务完成。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
