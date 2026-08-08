@@ -53,6 +53,9 @@ export interface ChatSessionSummary {
   preview?: string;
 }
 
+/** 学科选项（09-UI §4.2 学科标签，颜色标识） */
+const SUBJECT_OPTIONS = ["高数", "物理", "化学", "英语", "语文", "其他"];
+
 interface Props {
   /** RPC 客户端（运行时交互用） */
   rpc?: TypedRpcClient;
@@ -70,6 +73,12 @@ interface Props {
   initialPickerOpen?: boolean;
   /** 初始资料列表（T-M3-002 @选择器测试用，数据源 materials.list） */
   initialMaterials?: MaterialRef[];
+  /** 初始学科标签（T-M3-003 学习场景业务化，09-UI §4.2） */
+  initialSubject?: string;
+  /** 初始学习目标（T-M3-003） */
+  initialGoal?: string;
+  /** 初始关联错题 ID 列表（T-M3-003） */
+  initialMistakeIds?: string[];
 }
 
 /** 流式接收状态：idle/streaming/done */
@@ -129,6 +138,9 @@ export function ChatTab({
   initialModelId,
   initialPickerOpen,
   initialMaterials,
+  initialSubject,
+  initialGoal,
+  initialMistakeIds,
 }: Props): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
@@ -142,6 +154,10 @@ export function ChatTab({
   /** T-M3-002：@文件引用选择器（展开状态 + 资料列表） */
   const [pickerOpen, setPickerOpen] = useState<boolean>(initialPickerOpen ?? false);
   const [materials, setMaterials] = useState<MaterialRef[]>(initialMaterials ?? []);
+  /** T-M3-003：学习场景元数据（09-UI §4.2 学科标签/学习目标/错题关联） */
+  const [subject, setSubject] = useState<string>(initialSubject ?? "");
+  const [goal, setGoal] = useState<string>(initialGoal ?? "");
+  const [mistakeIds, setMistakeIds] = useState<string[]>(initialMistakeIds ?? []);
   const subscriptionRef = useRef<(() => void) | null>(null);
 
   // 订阅 agent.events（07-WF §2.8 步骤 2：renderer 看到流式回复 + 工具调用视图）
@@ -264,7 +280,16 @@ export function ChatTab({
     setInput("");
     setPickerOpen(false);
     void rpc
-      .call("agent.send", { sessionId: "sess-001", text })
+      .call("agent.send", {
+        sessionId: "sess-001",
+        text,
+        // T-M3-003：学习场景元数据随发送携带（09-UI §4.2，影响 AI 上下文）
+        sessionMeta: {
+          ...(subject ? { subject } : {}),
+          ...(goal ? { goal } : {}),
+          ...(mistakeIds.length ? { mistakeIds } : {}),
+        },
+      })
       .catch(() => setStatus("done"));
   }
 
@@ -390,6 +415,120 @@ export function ChatTab({
           📄 长对话已自动压缩，AI 保留了关键上下文
         </div>
       )}
+
+      {/* T-M3-003 学习场景元数据条（09-UI §4.2：📐 学科 | 目标：… | 关联错题：#…） */}
+      <div
+        style={{
+          marginBottom: 10,
+          padding: "8px 10px",
+          borderRadius: 6,
+          border: "1px solid var(--border, #e0e0e0)",
+          background: "var(--bg-panel, #f5f5f5)",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          alignItems: "center",
+          fontSize: 12,
+          color: "var(--text, #222)",
+        }}
+      >
+        {/* 学科标签（颜色标识） */}
+        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          📐
+          <select
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            style={{
+              padding: "3px 6px",
+              fontSize: 12,
+              borderRadius: 6,
+              border: "1px solid var(--border, #e0e0e0)",
+              background: subject ? "var(--accent, #e8f0fe)" : "var(--bg, #ffffff)",
+              color: "var(--text, #222)",
+            }}
+            aria-label="学科"
+          >
+            <option value="">选择学科</option>
+            {SUBJECT_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        {/* 学习目标 */}
+        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ color: "var(--text-muted, #888)" }}>目标：</span>
+          <input
+            type="text"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            placeholder="如：极限练习"
+            style={{
+              padding: "3px 6px",
+              fontSize: 12,
+              borderRadius: 6,
+              border: "1px solid var(--border, #e0e0e0)",
+              background: "var(--bg, #ffffff)",
+              color: "var(--text, #222)",
+              width: 130,
+            }}
+          />
+        </label>
+        {/* 关联错题（#id chip，可移除） */}
+        {mistakeIds.length > 0 && (
+          <span style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+            {mistakeIds.map((id) => (
+              <span
+                key={id}
+                style={{
+                  padding: "2px 6px",
+                  borderRadius: 10,
+                  background: "#fde8e8",
+                  border: "1px solid #f5baba",
+                  color: "#8c2f2f",
+                  fontSize: 11,
+                }}
+              >
+                #
+                {id}
+                <button
+                  type="button"
+                  aria-label={`移除错题 ${id}`}
+                  onClick={() => setMistakeIds((prev) => prev.filter((x) => x !== id))}
+                  style={{
+                    marginLeft: 3,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    color: "#8c2f2f",
+                    fontSize: 11,
+                    padding: 0,
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </span>
+        )}
+        {/* 关联错题添加（S4 跳转语义：mistakes.list 数据源） */}
+        <button
+          type="button"
+          onClick={() => setMistakeIds((prev) => (prev.includes("mist-001") ? prev : [...prev, "mist-001"]))}
+          style={{
+            padding: "2px 8px",
+            fontSize: 11,
+            cursor: "pointer",
+            border: "1px dashed var(--border, #e0e0e0)",
+            background: "transparent",
+            borderRadius: 10,
+            color: "var(--text-muted, #888)",
+          }}
+        >
+          + 关联错题
+        </button>
+      </div>
 
       {/* 消息列表 */}
       <div style={{ marginBottom: 10 }}>
