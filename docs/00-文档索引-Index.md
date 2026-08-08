@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.63
+**版本**：v0.1.64
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -136,6 +136,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.64 | 2026-08-08 | 04-Todo v0.1.57 登记 T-M3-004 完成（§7.4.1 T-M3-004 in_progress→done + §9 统计 M3 in_progress 1→0 + done 3→4）+ AGENTS.md v0.1.44。原因：T-M3-004 AI 自主调用工具+跳转结构化 Tab 实施完成，master 280e642 + origin/master 推送成功（§8.4 三者齐全）。质量门全通过：type-check + 925 单元/集成测试（+33）+ 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7。影响：仅版本号同步 + 状态登记，无权威条款变更（07-WF v0.1.2 映射表条款已登记于 v0.1.63）。M3 剩余 pending：T-M3-005~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.63 | 2026-08-08 | 07-Workflow v0.1.1→v0.1.2（§2.8 衔接段扩充工具→目标 Tab 映射表 35 工具全覆盖 + 跳转规则，T-M3-004 裁决 1b 落地）+ AGENTS.md v0.1.43。原因：T-M3-004 实施中裁决 1b 落地——映射表条款归属 07-WF §2.8（衔接语义），实施完成后升格权威条款。影响：07-WF 权威条款增补，原四条衔接 bullet 并入映射表语义，无 supersedes。依据：AGENTS.md §11.2 修订纪律 |
 | v0.1.62 | 2026-08-08 | 04-Todo v0.1.56 登记 T-M3-004 开工（§7.4.1 T-M3-004 pending→in_progress + §9 统计 M3 pending 5→4 + in_progress 0→1）+ AGENTS.md v0.1.42。原因：用户批准 T-M3-004 AI 自主调用工具+跳转结构化 Tab 开工（§7.5 全局执行顺序表第 14 行，前置依赖 T-M3-002 + S1-S7 工具 done）。五裁决：① 工具→Tab 映射表（35 工具全覆盖 + update_learn_status→notes + backup_* 不渲染跳转按钮留 T-M3-006 + 映射表条款补 07-WF §2.8）② 触发词按域分组 ③ 跳转按钮统一 [去<Tab名>] ④ 跳转 context { tabId, sessionId?, courseId? } 脱敏 ⑤ 测试确定性。影响：仅版本号同步 + 状态登记，无权威条款变更。M3 剩余 pending：T-M3-005~008。依据：AGENTS.md §4.4 单一执行任务门禁 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.61 | 2026-08-08 | 04-Todo v0.1.55 登记 T-M3-003 完成（§7.4.1 T-M3-003 in_progress→done + §9 统计 M3 in_progress 1→0 + done 2→3）+ 06-API v0.1.4（§3.1 sessions.search 落地注解 + SessionSummary 扩展 subject/goal/mistakeIds + §3.1.1 agent.send sessionMeta 扩展注解）。原因：T-M3-003 学习场景业务化实施完成（L3 承载层/L1 写回/context-pack 扩展/会话元数据/sessions.search handler/ChatTab UI），质量门全通过（type-check + 892 单元/集成测试 + 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：仅版本号同步 + 状态登记 + 06-API 说明性增补，无权威条款变更。M3 剩余 pending：T-M3-004~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 |
