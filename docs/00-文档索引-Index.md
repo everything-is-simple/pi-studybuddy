@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.67
+**版本**：v0.1.68
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -141,6 +141,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.68 | 2026-08-08 | 04-Todo v0.1.61 登记 T-M3-006 完成（§7.4.1 T-M3-006 in_progress→done + §9 统计 M3 in_progress 1→0 + done 5→6）+ AGENTS.md v0.1.48。原因：T-M3-006 09-UI 对话 Tab 业务 UI + 会话管理 UI 实施完成（SessionStore rename/export + SessionSummary.unread? + sessions.rename/export handler 补齐 + SessionSidebar 日期分组/搜索/unread/学科颜色/新建/操作菜单 + AppShell 状态提升 + ChatTab 受控业务态），质量门全通过（type-check + 966 单元/集成测试 + 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：仅版本号同步 + 状态登记，无权威条款变更（无契约方法新增，Api 方法总数仍 127）。M3 剩余 pending：T-M3-007~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.67 | 2026-08-08 | 04-Todo v0.1.60 登记 T-M3-006 开工（§7.4.1 T-M3-006 pending→in_progress + §9 统计 M3 pending 3→2 + in_progress 0→1）+ AGENTS.md v0.1.47。原因：用户批准 T-M3-006 09-UI 对话 Tab 业务 UI + 会话管理 UI 开工（§7.5 全局执行顺序表第 16 行，前置依赖 T-M3-001 + T-M1-009 模式，T-M3-005 已收尾 master a7b5db7 + origin/master 推送）。五裁决：① export 落点=runs 测试隔离目录（不污染业务数据根）② 新建会话=内存仓库空白会话 + 立即当前会话 ③ unread=SessionSummary 可选字段 + fixture 演示值 ④ backup_* 无目标 Tab 确认维持不渲染跳转按钮（留 T-M3-008）⑤ 选中会话状态=AppShell 提升。影响：仅版本号同步 + 状态登记，无权威条款变更。M3 剩余 pending：T-M3-007~008。依据：AGENTS.md §4.4 单一执行任务门禁 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.66 | 2026-08-08 | 04-Todo v0.1.59 登记 T-M3-005 完成（§7.4.1 T-M3-005 in_progress→done + §9 统计 M3 in_progress 1→0 + done 4→5）+ 四文档 supersedes 落点修订（03-Arch v0.1.2 / 08-Test v0.1.3 / 06-API v0.1.5 / 09-UI v0.1.3：model_select/modelsConfig 落点 `~/.pi/agent/models.json` → `<dataRoot>/config/models.json`，AGENTS.md §9.5 物理隔离）+ 12-目录治理 v0.1.1（models.json 标记改业务数据根）+ AGENTS.md v0.1.46。原因：T-M3-005 model_select / turn_end 钩子实施完成（model-config 模块原子写 + L3 增量索引 assistant+tool + modelsConfig.get/set + ChatTab 落库），质量门全通过（type-check + 939 单元/集成测试 + 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：版本号同步 + 状态登记 + 四文档 supersedes 落点修订（无契约方法新增，Api 方法总数仍 127）。M3 剩余 pending：T-M3-006~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.65 | 2026-08-08 | 04-Todo v0.1.58 登记 T-M3-005 开工（§7.4.1 T-M3-005 pending→in_progress + §9 统计 M3 pending 4→3 + in_progress 0→1）+ AGENTS.md v0.1.45。原因：用户批准 T-M3-005 model_select / turn_end 钩子开工（§7.5 全局执行顺序表第 15 行，前置依赖 T-M3-001 done）。五裁决：① 落点=业务数据根 config/models.json（同步修订 4 文档加 supersedes，解决 ~/.pi vs §9.5 冲突）② turn_end 源=assistant+tool 不读 ~/.pi ③ handler=modelsConfig.get/set ④ 写文件分工=共用 model-config 模块 ⑤ 真实模型配置仅纳别名入 config + key 入 vault（modelProvider:<provider>）。影响：仅版本号同步 + 状态登记，无权威条款变更（4 文档 supersedes 收尾时经批准修订）。M3 剩余 pending：T-M3-006~008。依据：AGENTS.md §4.4 单一执行任务门禁 + §4.5 任务状态不得只存在于聊天 |

@@ -1,6 +1,6 @@
 # T-M3-006 执行计划：09-UI 对话 Tab 业务 UI + 会话管理 UI
 
-**状态**：🔵 执行中（in_progress，用户已批准开工）
+**状态**：✅ 已完成（04-Todo v0.1.61 登记 done，保留为验收证据）
 **日期**：2026-08-08
 **里程碑**：M3 对话与打磨（§7.5 全局执行顺序表第 16 行）
 **任务**：T-M3-006 09-UI 对话 Tab 业务 UI + 会话管理 UI
@@ -126,16 +126,16 @@ node scripts/check-uuid-leak.mjs
 - [x] 步骤 3：编写 .plan/ 计划（本文件定稿）+ 五裁决定案（§5）
 - [ ] 步骤 4：独立审查计划
 - [ ] 步骤 5：用户批准计划（用户已确认开工 Prompt + 五裁决推荐方案）
-- [ ] 步骤 6：拆分任务、逐项实现（session-store → handlers → contract types → SessionSidebar → AppShell/ChatTab）
-- [ ] 步骤 7：编写/更新测试（TDD：RED → GREEN）
-- [ ] 步骤 8：type-check（零错误零警告）
-- [ ] 步骤 9：build（无错误）
-- [ ] 步骤 10：test（全绿无 skip）
-- [ ] 步骤 11：smoke / E2E / 专项脚本全过
-- [ ] 步骤 12：独立审查并修复
-- [ ] 步骤 13：更新 04-Todo（T-M3-006 done）+ 00-索引 + AGENTS.md + 实施记录
-- [ ] 步骤 14：文档治理检查
-- [ ] 步骤 15：diff 检查（git diff --check，无意外文件）
+- [x] 步骤 6：拆分任务、逐项实现（session-store → handlers → contract types → SessionSidebar → AppShell/ChatTab）
+- [x] 步骤 7：编写/更新测试（TDD：RED 12 失败 → GREEN 27 全绿 → REFACTOR makeContext 提取）
+- [x] 步骤 8：type-check（零错误零警告）
+- [x] 步骤 9：build（无错误）
+- [x] 步骤 10：test（966 全绿无 skip）
+- [x] 步骤 11：smoke / E2E / 专项脚本全过（smoke 6/6 + E2E 83 + 文档治理 + 契约覆盖 127 + 安全 6/6 + UUID 7/7）
+- [x] 步骤 12：独立审查并修复（renderer-layout 断言随权威变更更新）
+- [x] 步骤 13：更新 04-Todo（T-M3-006 done v0.1.61）+ 00-索引 v0.1.68 + AGENTS.md v0.1.48 + 实施记录
+- [x] 步骤 14：文档治理检查（通过，1 条既有警告不阻塞）
+- [x] 步骤 15：diff 检查（git diff --check 通过，无意外文件）
 - [ ] 步骤 16：提交交付（★ 待用户授权）
 
 ## 审查记录（步骤 4）
