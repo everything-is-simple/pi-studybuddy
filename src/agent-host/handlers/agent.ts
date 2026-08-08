@@ -1,22 +1,35 @@
 /**
- * T-M3-001/002 agent.send RPC handler（07-WF §2.8 对话路径步骤 2 + 06-API §4）
+ * T-M3-001/002/T-M4-005 agent.send RPC handler（07-WF §2.8 对话路径步骤 2 + 06-API §4）
  *
  * 语义：renderer 发送用户消息 → agent-host 触发 Streams["agent.events"]
- * 受控序列（message_start → token → [tool_call → tool_result] → token → context_compressed），
  * 返回发射事件数。
  *
- * 范围：**受控夹具发射，不连真实 LLM**（08-Test §5.4 全 mock）。
- *   - T-M3-001 基线：message_start → token×6 → context_compressed
- *   - T-M3-002 扩展：输入含触发词（出题/笔记/朗读）→ 插入 studybuddy_* 工具
- *     tool_call/tool_result 事件对（工具调用透明，09-UI §4.2）
+ * 双路径（T-M4-005 断裂 3 修复）：
+ *   - 真实路径：有 StudyBuddySession 且 session.model 存在 → 调用 pi 内核 prompt()，
+ *     subscribe 事件映射为 AgentEvent 实时推送（生产环境用户配 API key 后生效）
+ *   - 受控夹具路径：无 session 或无 model → 固定片段发射（08-Test §5.4 全 mock 测试隔离）
+ *
+ * 事件映射（pi AgentSessionEvent → 应用 AgentEvent）：
+ *   - agent_start            → message_start
+ *   - message_update(text_delta) → token
+ *   - tool_execution_start   → tool_call（脱敏 inputSummary）
+ *   - tool_execution_end     → tool_result（脱敏 resultSummary）
+ *   - compaction_end         → context_compressed
+ *   - agent_end/agent_settled → 不发射（流结束信号）
  *
  * 安全（AGENTS.md §9.3）：事件 payload 不携带完整 UUID/密钥/学生资料原文。
- * tool_call/tool_result 的 inputSummary/resultSummary 为脱敏截断摘要（≤120/≤160 字符），
- * toolCallId 用短 id（call-<n>）非 UUID。
+ * inputSummary/resultSummary 经 sanitizeSummary 脱敏截断（≤120/≤160 字符），
+ * toolCallId 用本地计数器 call-<n> 替换 provider 原始 id（非 UUID）。
  */
 import type { RpcServer } from "../../contract/rpc";
 import type { AgentEvent } from "../../contract/types";
 import type { SessionStore } from "../session-store";
+import type { StudyBuddySession } from "../studybuddy-extension-loader";
+
+/** 可变引用：支持 StudyBuddySession 异步初始化后注入（index.ts fire-and-forget） */
+export interface StudyBuddySessionRef {
+  current: StudyBuddySession | null;
+}
 
 /** 固定回复片段（受控夹具，非真实 LLM 输出） */
 const TOKEN_FRAGMENTS = [
@@ -119,15 +132,49 @@ function matchToolTrigger(text: string): (typeof TOOL_TRIGGERS)[number] | undefi
   return undefined;
 }
 
+/** UUID 正则（AGENTS.md §9.3 永不记录完整 UUID） */
+const UUID_PATTERN = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
+/**
+ * 脱敏摘要：移除 UUID + 截断到 maxLen 字符（AGENTS.md §9.3）。
+ * 用于 tool_execution_start/end 的 inputSummary/resultSummary。
+ */
+function sanitizeSummary(raw: string, maxLen: number): string {
+  const cleaned = raw.replace(UUID_PATTERN, "[id]");
+  if (cleaned.length <= maxLen) return cleaned;
+  return cleaned.slice(0, maxLen - 3) + "...";
+}
+
+/** 构造学习场景上下文前置文本（T-M3-003 sessionMeta → 上下文段） */
+function buildContextPrefix(sessionMeta: {
+  subject?: string;
+  goal?: string;
+  mistakeIds?: string[];
+}): string | null {
+  const parts: string[] = [];
+  if (sessionMeta.subject) parts.push(`【当前学科】${sessionMeta.subject}`);
+  if (sessionMeta.goal) parts.push(`【学习目标】${sessionMeta.goal}`);
+  if (sessionMeta.mistakeIds?.length) {
+    parts.push(`【关联错题】${sessionMeta.mistakeIds.map((id) => `#${id}`).join("、")}`);
+  }
+  if (parts.length === 0) return null;
+  return `[学习上下文] ${parts.join(" ")}`;
+}
+
 /**
  * 构造 agent.* handlers：注入 RpcServer 以发射 agent.events。
- * 受控序列：message_start → token×2 → [tool_call → tool_result] → token×N → context_compressed。
- * T-M3-003 扩展：agent.send 携带 sessionMeta（学科/目标/错题关联，09-UI §4.2）→
- * 经 context-pack 注入上下文段（message_start 前置）→ 会话元数据写回内存仓库。
+ *
+ * 双路径（T-M4-005）：
+ *   - studyBuddySession 存在且 session.model 存在 → 真实 pi 内核 prompt()
+ *   - 否则 → 受控夹具（08-Test §5.4 测试隔离）
  */
-export function createAgentHandlers(server: RpcServer, sessionStore?: SessionStore) {
+export function createAgentHandlers(
+  server: RpcServer,
+  sessionStore?: SessionStore,
+  studyBuddySessionRef?: StudyBuddySessionRef,
+) {
   return {
-    "agent.send": (params: unknown): { eventCount: number } => {
+    "agent.send": async (params: unknown): Promise<{ eventCount: number }> => {
       const { sessionId, text, sessionMeta } = params as {
         sessionId: string;
         text: string;
@@ -140,56 +187,182 @@ export function createAgentHandlers(server: RpcServer, sessionStore?: SessionSto
       if (sessionMeta && sessionStore) {
         sessionStore.updateMeta(sessionId, sessionMeta);
       }
-      let count = 0;
-      const emit = (event: AgentEvent): void => {
-        server.pushEvent("agent.events", event, undefined);
-        count += 1;
-      };
 
-      emit({ kind: "message_start", sessionId, payload: {} });
-      // 学习场景上下文段（sessionMeta → 同步注入，保持受控序列确定性）
-      if (sessionMeta) {
-        const parts: string[] = [];
-        if (sessionMeta.subject) parts.push(`【当前学科】${sessionMeta.subject}`);
-        if (sessionMeta.goal) parts.push(`【学习目标】${sessionMeta.goal}`);
-        if (sessionMeta.mistakeIds?.length) parts.push(`【关联错题】${sessionMeta.mistakeIds.map((id) => `#${id}`).join("、")}`);
-        if (parts.length) {
-          emit({ kind: "token", sessionId, payload: { text: `[学习上下文] ${parts.join(" ")}` } });
+      // ── 双路径选择 ──
+      const piSession = studyBuddySessionRef?.current?.session;
+      if (piSession && piSession.model) {
+        return await runRealPiKernel(server, piSession, sessionId, text, sessionMeta);
+      }
+      return runMockFixture(server, sessionId, text, sessionMeta);
+    },
+  };
+}
+
+/**
+ * 真实 pi 内核路径（T-M4-005 断裂 3 修复）。
+ *
+ * subscribe 事件映射 → pushEvent → renderer 实时收到 agent.events。
+ * await prompt() 完成后返回总 eventCount。
+ *
+ * 安全：toolCallId 用本地计数器 call-<n>（非 provider 原始 id），
+ * inputSummary/resultSummary 经 sanitizeSummary 脱敏。
+ */
+async function runRealPiKernel(
+  server: RpcServer,
+  piSession: import("@earendil-works/pi-coding-agent").AgentSession,
+  sessionId: string,
+  text: string,
+  sessionMeta?: { subject?: string; goal?: string; mistakeIds?: string[] },
+): Promise<{ eventCount: number }> {
+  let count = 0;
+  let callCounter = 0;
+  /** provider toolCallId → 本地短 id（call-<n>）映射，AGENTS.md §9.3 不暴露 provider id */
+  const toolCallIdMap = new Map<string, string>();
+
+  const emit = (event: AgentEvent): void => {
+    server.pushEvent("agent.events", event, undefined);
+    count += 1;
+  };
+
+  const unsubscribe = piSession.subscribe((event) => {
+    switch (event.type) {
+      case "agent_start":
+        emit({ kind: "message_start", sessionId, payload: {} });
+        break;
+
+      case "message_update": {
+        // 只映射 text_delta（流式文本）；thinking_delta 不发射（内部推理不展示）
+        const ame = event.assistantMessageEvent as { type: string; delta?: string };
+        if (ame.type === "text_delta" && typeof ame.delta === "string") {
+          emit({ kind: "token", sessionId, payload: { text: ame.delta } });
         }
+        break;
       }
 
-      const trigger = matchToolTrigger(text);
-      if (trigger) {
-        const toolCallId = `call-${count + 1}`; // 短 id（非 UUID）
-        // 前置 token（简单文本）
-        emit({ kind: "token", sessionId, payload: { text: "好的，我来处理。" } });
-        // 工具调用透明（09-UI §4.2）：先 tool_call 后 tool_result
+      case "tool_execution_start": {
+        callCounter += 1;
+        const localId = `call-${callCounter}`;
+        toolCallIdMap.set(event.toolCallId, localId);
+        const inputSummary = sanitizeSummary(
+          typeof event.args === "string" ? event.args : JSON.stringify(event.args ?? {}),
+          120,
+        );
         emit({
           kind: "tool_call",
           sessionId,
           payload: {
-            toolCallId,
-            toolName: trigger.toolName,
-            inputSummary: trigger.inputSummary,
+            toolCallId: localId,
+            toolName: event.toolName,
+            inputSummary,
           },
         });
+        break;
+      }
+
+      case "tool_execution_end": {
+        const localId = toolCallIdMap.get(event.toolCallId) ?? `call-${callCounter}`;
+        const resultText =
+          typeof event.result === "string"
+            ? event.result
+            : typeof event.result === "object" && event.result !== null
+              ? JSON.stringify(event.result)
+              : String(event.result ?? "");
+        const resultSummary = sanitizeSummary(resultText, 160);
         emit({
           kind: "tool_result",
           sessionId,
           payload: {
-            toolCallId,
-            toolName: trigger.toolName,
-            isError: false,
-            resultSummary: trigger.resultSummary,
+            toolCallId: localId,
+            toolName: event.toolName,
+            isError: event.isError,
+            resultSummary,
           },
         });
+        break;
       }
 
-      for (const fragment of TOKEN_FRAGMENTS) {
-        emit({ kind: "token", sessionId, payload: { text: fragment } });
-      }
-      emit({ kind: "context_compressed", sessionId, payload: { compressed: true } });
-      return { eventCount: count };
-    },
+      case "compaction_end":
+        emit({ kind: "context_compressed", sessionId, payload: { compressed: true } });
+        break;
+
+      // agent_end / agent_settled / turn_start / turn_end / message_start / message_end
+      // → 不映射（应用层只需流式 token + 工具透明 + 压缩信号）
+      default:
+        break;
+    }
+  });
+
+  try {
+    // 学习场景上下文前置注入（T-M3-003：sessionMeta 拼入 prompt 文本）
+    const contextPrefix = sessionMeta ? buildContextPrefix(sessionMeta) : null;
+    const fullPrompt = contextPrefix ? `${contextPrefix}\n\n${text}` : text;
+    await piSession.prompt(fullPrompt);
+  } finally {
+    unsubscribe();
+  }
+
+  return { eventCount: count };
+}
+
+/**
+ * 受控夹具路径（08-Test §5.4 测试隔离 + 生产无 model 时 fallback）。
+ *
+ * 固定序列：message_start → [上下文 token] → [tool_call → tool_result] → token×6 → context_compressed。
+ * T-M3-002 扩展：输入含触发词 → 插入 studybuddy_* 工具事件对。
+ * T-M3-003 扩展：sessionMeta → 前置上下文 token。
+ * T-M3-004 扩展：按域分组覆盖 35 工具全部域。
+ */
+function runMockFixture(
+  server: RpcServer,
+  sessionId: string,
+  text: string,
+  sessionMeta?: { subject?: string; goal?: string; mistakeIds?: string[] },
+): { eventCount: number } {
+  let count = 0;
+  const emit = (event: AgentEvent): void => {
+    server.pushEvent("agent.events", event, undefined);
+    count += 1;
   };
+
+  emit({ kind: "message_start", sessionId, payload: {} });
+  // 学习场景上下文段（sessionMeta → 同步注入，保持受控序列确定性）
+  if (sessionMeta) {
+    const prefix = buildContextPrefix(sessionMeta);
+    if (prefix) {
+      emit({ kind: "token", sessionId, payload: { text: prefix } });
+    }
+  }
+
+  const trigger = matchToolTrigger(text);
+  if (trigger) {
+    const toolCallId = `call-${count + 1}`; // 短 id（非 UUID）
+    // 前置 token（简单文本）
+    emit({ kind: "token", sessionId, payload: { text: "好的，我来处理。" } });
+    // 工具调用透明（09-UI §4.2）：先 tool_call 后 tool_result
+    emit({
+      kind: "tool_call",
+      sessionId,
+      payload: {
+        toolCallId,
+        toolName: trigger.toolName,
+        inputSummary: trigger.inputSummary,
+      },
+    });
+    emit({
+      kind: "tool_result",
+      sessionId,
+      payload: {
+        toolCallId,
+        toolName: trigger.toolName,
+        isError: false,
+        resultSummary: trigger.resultSummary,
+      },
+    });
+  }
+
+  for (const fragment of TOKEN_FRAGMENTS) {
+    emit({ kind: "token", sessionId, payload: { text: fragment } });
+  }
+  emit({ kind: "context_compressed", sessionId, payload: { compressed: true } });
+  return { eventCount: count };
 }
