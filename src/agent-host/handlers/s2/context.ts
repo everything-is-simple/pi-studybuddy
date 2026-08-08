@@ -8,6 +8,8 @@ import { DatabaseSync } from "../../../data/sqlite";
 import { applyPragmas } from "../../../data/db";
 import path from "node:path";
 import type { WpsAdapter } from "./wps-adapter";
+import type { TextExtractor } from "./text-extractor";
+import type { OcrAdapter } from "../s1/ocr-adapter";
 
 export class S2Context {
   private _globalDb: DatabaseSync | null = null;
@@ -16,11 +18,23 @@ export class S2Context {
   constructor(
     private readonly dataRoot: string,
     private readonly wpsAdapter?: WpsAdapter,
+    private readonly textExtractorAdapter?: TextExtractor,
+    private readonly ocrAdapter?: OcrAdapter,
   ) {}
 
   /** WPS 转换 Adapter（可注入，默认未注入则 wps_convert 仅登记 Job，03-Arch §3.3） */
   get wps(): WpsAdapter | undefined {
     return this.wpsAdapter;
+  }
+
+  /** 文档文本提取器（可注入，默认未注入则 convert_* 仅登记 Job，07-WF §2.3） */
+  get textExtractor(): TextExtractor | undefined {
+    return this.textExtractorAdapter;
+  }
+
+  /** OCR Adapter（可注入，默认未注入则 ocr_image 仅登记 Job，复用于图片识别，07-WF §2.3） */
+  get ocr(): OcrAdapter | undefined {
+    return this.ocrAdapter;
   }
 
   /** 打开或复用 global.db（含 PRAGMA） */

@@ -17,6 +17,7 @@ import { randomUUID, createHash } from "node:crypto";
 import path from "node:path";
 import type { Material, Job, JobType, RpcError } from "../../../contract/types";
 import type { S2Context } from "./context";
+import type { TextExtractResult } from "./text-extractor";
 import { mapMaterial, mapJob } from "./dto";
 import { notFound, badRequest } from "./errors";
 import { findSemesterByCourseId, findSemesterByMaterialId } from "./lookup";
@@ -228,6 +229,11 @@ export function createMaterialHandlers(ctx: S2Context) {
       if (jobType === "wps_convert" && ctx.wps) {
         return runWpsConversion(ctx, db, job.id, existing);
       }
+      // 文本提取 job（convert_*/ocr_image）：注入对应 extractor/ocr 时执行真实提取（07-WF §2.3）
+      const extractFn = resolveExtractionFn(ctx, jobType);
+      if (extractFn) {
+        return runTextConversion(ctx, db, job.id, existing, extractFn);
+      }
       return job;
     },
 
@@ -265,6 +271,11 @@ export function createMaterialHandlers(ctx: S2Context) {
       // wps_convert：重试同样执行真实转换（数据从既有 materials 行解析，03-Arch §3.3）
       if (jobType === "wps_convert" && ctx.wps) {
         return runWpsConversion(ctx, db, job.id, existing);
+      }
+      // 文本提取 job：重试同样执行真实提取（07-WF §2.3）
+      const extractFn = resolveExtractionFn(ctx, jobType);
+      if (extractFn) {
+        return runTextConversion(ctx, db, job.id, existing, extractFn);
       }
       return job;
     },
@@ -369,6 +380,9 @@ function createJobAndTransition(
 /** WPS 转换失败固定文案（03-Arch §3.3，不泄漏路径/stdout/stderr） */
 const MSG_WPS_FAILED = "旧版办公文件转换失败，请检查文件是否完整或已损坏";
 
+/** 文本提取失败固定文案（03-Arch §3.3 + 08-Test §3.3.2，不泄漏路径/stdout/stderr） */
+const MSG_EXTRACT_FAILED = "文档文本提取失败，请检查文件是否完整或已损坏";
+
 /** 从异常中提取安全错误消息：仅保留 RpcError 的 message，其余用固定文案（§9.3 日志脱敏） */
 function safeWpsErrorMessage(e: unknown): string {
   if (
@@ -382,6 +396,119 @@ function safeWpsErrorMessage(e: unknown): string {
     return (e as RpcError).message;
   }
   return MSG_WPS_FAILED;
+}
+
+/**
+ * 按 job_type 解析文本提取函数（07-WF §2.3 分派矩阵）。
+ *
+ * 仅当对应 adapter 已注入时才返回函数；未注入返回 undefined（保持"仅登记 Job"语义）。
+ *   convert_pdf/convert_docx/convert_pptx/convert_xlsx → TextExtractor.extract(fileType)
+ *   ocr_image → OcrAdapter.recognize
+ */
+function resolveExtractionFn(
+  ctx: S2Context,
+  jobType: JobType,
+): ((filePath: string) => Promise<TextExtractResult>) | undefined {
+  switch (jobType) {
+    case "convert_pdf":
+    case "convert_docx":
+    case "convert_pptx":
+    case "convert_xlsx": {
+      if (!ctx.textExtractor) return undefined;
+      const fileType = jobType.replace("convert_", "");
+      return (fp) => ctx.textExtractor!.extract(fp, fileType);
+    }
+    case "ocr_image": {
+      if (!ctx.ocr) return undefined;
+      return (fp) => ctx.ocr!.recognize(fp).then((r) => ({ text: r.text }));
+    }
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * 执行文本提取真实转换（07-WF §2.3 + 05-ERD §3.2.2）。
+ *
+ * 流程：Job→running → extractFn(inPath) →
+ *   成功：写 normalized_texts（先删后插，UNIQUE(material_id)）+ Material→converted + Job→completed
+ *   失败：Material→conversion_failed + Job→failed（error_message 固定文案，不泄漏路径）
+ */
+async function runTextConversion(
+  ctx: S2Context,
+  db: import("../../../data/sqlite").DatabaseSync,
+  jobId: string,
+  material: Record<string, unknown>,
+  extractFn: (filePath: string) => Promise<TextExtractResult>,
+  meta?: { source?: string },
+): Promise<Job> {
+  const materialId = material.id as string;
+  const storageKey = material.storage_key as string;
+  const inPath = path.join(ctx.dataRootPath, storageKey);
+
+  const startedAt = now();
+  db.prepare("UPDATE jobs SET status = 'running', started_at = @ts, updated_at = @ts WHERE id = @id").run({
+    id: jobId,
+    ts: startedAt,
+  });
+
+  try {
+    const { text } = await extractFn(inPath);
+    // 成功：写 normalized_texts（先删后插，UNIQUE(material_id)，05-ERD §3.2.2）
+    writeNormalizedText(ctx, db, materialId, text, meta);
+    const ts = now();
+    db.prepare(
+      "UPDATE materials SET status = 'converted', converted_at = @ts, updated_at = @ts WHERE id = @id",
+    ).run({ id: materialId, ts });
+    db.prepare("UPDATE jobs SET status = 'completed', completed_at = @ts, updated_at = @ts WHERE id = @id").run({
+      id: jobId,
+      ts,
+    });
+  } catch (e) {
+    // 失败：Material→conversion_failed + Job→failed（error_message 固定文案，不泄漏路径/stdout/stderr）
+    const ts = now();
+    db.prepare("UPDATE materials SET status = 'conversion_failed', updated_at = @ts WHERE id = @id").run({
+      id: materialId,
+      ts,
+    });
+    db.prepare(
+      `UPDATE jobs SET status = 'failed', error_code = 'INTERNAL_ERROR', error_message = @msg,
+         completed_at = @ts, updated_at = @ts WHERE id = @id`,
+    ).run({ id: jobId, ts, msg: safeWpsErrorMessage(e) });
+  }
+
+  const row = db.prepare("SELECT * FROM jobs WHERE id = @id").get({ id: jobId }) as Record<string, unknown>;
+  return mapJob(row);
+}
+
+/**
+ * 写 normalized_texts（05-ERD §3.2.2）：content_hash + char_count + source_type + extraction_meta_json。
+ * UNIQUE(material_id) 约束：先删后插（ref replaceText 既有语义）。
+ */
+function writeNormalizedText(
+  _ctx: S2Context,
+  db: import("../../../data/sqlite").DatabaseSync,
+  materialId: string,
+  text: string,
+  meta?: { source?: string },
+): void {
+  const ts = now();
+  const contentHash = createHash("sha256").update(text).digest("hex");
+  const extractionMeta = meta?.source ? JSON.stringify({ source: meta.source }) : null;
+  db.prepare("DELETE FROM normalized_texts WHERE material_id = @id").run({ id: materialId });
+  db.prepare(
+    `INSERT INTO normalized_texts (id, material_id, content, content_hash, char_count, source_type, extraction_meta_json, created_at)
+     VALUES (@nid, @id, @content, @hash, @charCount, @sourceType, @meta, @ts)`,
+  ).run({
+    nid: randomUUID(),
+    id: materialId,
+    content: text,
+    hash: contentHash,
+    charCount: text.length,
+    sourceType: "upload",
+    meta: extractionMeta,
+    ts,
+  });
 }
 
 /**
@@ -412,8 +539,14 @@ async function runWpsConversion(
   });
 
   try {
-    await ctx.wps!.convert(inPath, outDir);
-    // 成功：Material→converted + Job→completed（写 converted_at，05-ERD §3.2.1）
+    const result = await ctx.wps!.convert(inPath, outDir);
+    // 成功：写 normalized_texts（中间格式文本提取，07-WF §2.3）+ Material→converted + Job→completed
+    // T-M1-007 补齐：格式转换后对中间格式（docx/pptx/xlsx）提取文本并写 normalized_texts
+    if (ctx.textExtractor) {
+      const intermediateType = intermediateFileType(result.outFileName);
+      const { text } = await ctx.textExtractor.extract(result.outPath, intermediateType);
+      writeNormalizedText(ctx, db, materialId, text, { source: "wps_convert" });
+    }
     const ts = now();
     db.prepare(
       "UPDATE materials SET status = 'converted', converted_at = @ts, updated_at = @ts WHERE id = @id",
@@ -437,4 +570,10 @@ async function runWpsConversion(
 
   const row = db.prepare("SELECT * FROM jobs WHERE id = @id").get({ id: jobId }) as Record<string, unknown>;
   return mapJob(row);
+}
+
+/** 从中间格式文件名推断 file_type（doc→docx / ppt→pptx / xls→xlsx，07-WF §2.3） */
+function intermediateFileType(outFileName: string): string {
+  const ext = outFileName.toLowerCase().split(".").pop() ?? "";
+  return ext === "docx" ? "docx" : ext === "pptx" ? "pptx" : ext === "xlsx" ? "xlsx" : "docx";
 }
