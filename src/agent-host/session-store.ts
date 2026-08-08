@@ -12,6 +12,8 @@ export interface SessionStore {
   get(id: string): Session | undefined;
   delete(id: string): boolean;
   context(id: string): SessionContext | undefined;
+  /** 更新会话级学习场景元数据（09-UI §4.2：学科/目标/错题关联，T-M3-003） */
+  updateMeta(id: string, meta: { subject?: string; goal?: string; mistakeIds?: string[] }): SessionSummary | undefined;
 }
 
 /** 默认 fixture 会话（对话 Tab 承载层可用数据，来源学习场景语义） */
@@ -64,6 +66,19 @@ export function createSessionStore(fixture?: SessionSummary[]): SessionStore {
     },
     context(id) {
       return this.get(id)?.context;
+    },
+    updateMeta(id, meta) {
+      const summary = sessions.get(id);
+      if (!summary) return undefined;
+      const updated: SessionSummary = {
+        ...summary,
+        ...(meta.subject !== undefined ? { subject: meta.subject } : {}),
+        ...(meta.goal !== undefined ? { goal: meta.goal } : {}),
+        ...(meta.mistakeIds !== undefined ? { mistakeIds: meta.mistakeIds } : {}),
+        updatedAt: new Date().toISOString(),
+      };
+      sessions.set(id, updated);
+      return updated;
     },
   };
 }

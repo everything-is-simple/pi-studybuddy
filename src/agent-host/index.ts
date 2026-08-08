@@ -37,8 +37,8 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     ...toolchainHandlers,
     ...createFileHandlers(fileWatch, { dataRoot }),
     ...createModelHandlers(),
-    ...createSessionHandlers(sessionStore),
-    ...createAgentHandlers(server),
+    ...createSessionHandlers({ store: sessionStore, dataRoot }),
+    ...createAgentHandlers(server, sessionStore),
   });
 
   let attached = false;

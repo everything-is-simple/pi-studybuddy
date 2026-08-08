@@ -16,6 +16,7 @@
  */
 import type { RpcServer } from "../../contract/rpc";
 import type { AgentEvent } from "../../contract/types";
+import type { SessionStore } from "../session-store";
 
 /** 固定回复片段（受控夹具，非真实 LLM 输出） */
 const TOKEN_FRAGMENTS = [
@@ -65,13 +66,23 @@ function matchToolTrigger(text: string): (typeof TOOL_TRIGGERS)[number] | undefi
 /**
  * 构造 agent.* handlers：注入 RpcServer 以发射 agent.events。
  * 受控序列：message_start → token×2 → [tool_call → tool_result] → token×N → context_compressed。
+ * T-M3-003 扩展：agent.send 携带 sessionMeta（学科/目标/错题关联，09-UI §4.2）→
+ * 经 context-pack 注入上下文段（message_start 前置）→ 会话元数据写回内存仓库。
  */
-export function createAgentHandlers(server: RpcServer) {
+export function createAgentHandlers(server: RpcServer, sessionStore?: SessionStore) {
   return {
     "agent.send": (params: unknown): { eventCount: number } => {
-      const { sessionId, text } = params as { sessionId: string; text: string };
+      const { sessionId, text, sessionMeta } = params as {
+        sessionId: string;
+        text: string;
+        sessionMeta?: { subject?: string; goal?: string; mistakeIds?: string[] };
+      };
       if (!sessionId || !text) {
         return { eventCount: 0 };
+      }
+      // 会话级学习场景元数据写回内存仓库（09-UI §4.2；裁决：不新增契约方法）
+      if (sessionMeta && sessionStore) {
+        sessionStore.updateMeta(sessionId, sessionMeta);
       }
       let count = 0;
       const emit = (event: AgentEvent): void => {
@@ -80,6 +91,16 @@ export function createAgentHandlers(server: RpcServer) {
       };
 
       emit({ kind: "message_start", sessionId, payload: {} });
+      // 学习场景上下文段（sessionMeta → 同步注入，保持受控序列确定性）
+      if (sessionMeta) {
+        const parts: string[] = [];
+        if (sessionMeta.subject) parts.push(`【当前学科】${sessionMeta.subject}`);
+        if (sessionMeta.goal) parts.push(`【学习目标】${sessionMeta.goal}`);
+        if (sessionMeta.mistakeIds?.length) parts.push(`【关联错题】${sessionMeta.mistakeIds.map((id) => `#${id}`).join("、")}`);
+        if (parts.length) {
+          emit({ kind: "token", sessionId, payload: { text: `[学习上下文] ${parts.join(" ")}` } });
+        }
+      }
 
       const trigger = matchToolTrigger(text);
       if (trigger) {

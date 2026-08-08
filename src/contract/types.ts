@@ -67,6 +67,10 @@ export interface SessionSummary {
   name: string;
   updatedAt: string;
   preview?: string;
+  /** 会话级学习场景元数据（09-UI §4.2：学科标签/学习目标/错题关联，T-M3-003） */
+  subject?: string;
+  goal?: string;
+  mistakeIds?: string[];
 }
 
 export interface Session extends SessionSummary {

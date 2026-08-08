@@ -72,7 +72,7 @@ export interface Api {
   /* ---- §3.1.1 对话发送（agent.*，💬 对话 Tab 承载，T-M3-001） ---- */
   /** 发送用户消息 → agent-host 触发 Streams["agent.events"] 受控序列 */
   "agent.send": {
-    params: { sessionId: string; text: string };
+    params: { sessionId: string; text: string; sessionMeta?: { subject?: string; goal?: string; mistakeIds?: string[] } };
     result: { eventCount: number };
   };
 
