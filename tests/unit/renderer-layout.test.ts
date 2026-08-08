@@ -113,9 +113,12 @@ describe("AppShell 组件（09-UI §2.1 三栏布局）", () => {
     expect(html).toContain("pi-studybuddy");
   });
 
-  it("渲染左侧栏（导航区占位）", () => {
+  it("渲染左侧栏（T-M3-006 会话管理 UI：会话/搜索/新建）", () => {
     const html = renderShell();
-    expect(html).toContain("导航");
+    // 09-UI §3.3 + §7：左侧栏由占位升级为 SessionSidebar
+    expect(html).toContain("会话");
+    expect(html).toContain("搜索会话");
+    expect(html).toContain("新建会话");
   });
 
   it("渲染主内容区（TabBar 所在）", () => {
