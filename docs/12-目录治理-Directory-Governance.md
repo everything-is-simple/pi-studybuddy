@@ -1,6 +1,6 @@
 # 12 目录治理
 
-**版本**：v0.1.0
+**版本**：v0.1.1
 **日期**：2026-08-07
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[AGENTS.md §9.5](../AGENTS.md)、[01-TRD §7 决策 3](./01-TRD-技术需求-Technical-Requirements.md)、[04-Todo §4](./04-任务清单-Todo-List.md)、[11-组件装配 §3](./11-组件装配-Component-Assembly.md)
@@ -254,6 +254,8 @@ H:\pi-studybuddy-tmp\
 │       └── storage\                 ← 资料文件存储
 │           └── semester\<id>\storage\<relative-path>
 ├── reports\                         ← 家长报告（冻结快照）
+├── config\
+│   └── models.json                  ← 默认模型选型（__studybuddy_managed 标记，T-M3-005）
 ├── logs\                            ← 脱敏日志
 └── backups\                         ← 备份 zip（课程独立）
 ```
@@ -287,14 +289,14 @@ pi 会话目录由 **pi 自管**，pi-studybuddy 不侵入（01-TRD §7 决策 3
 ```
 ~/.pi\agent\
 ├── auth.json                        ← pi 认证
-├── models.json                      ← 模型配置（__studybuddy_managed 标记）
+├── models.json                      ← pi 模型配置（pi 自管，studybuddy 默认模型选型在业务数据根 config/models.json）
 ├── settings.json                    ← pi 设置
 └── sessions\                        ← pi 会话（JSONL 格式）
 ```
 
 ### 7.3 pi 会话目录规则
 
-1. **pi 自管**：pi-studybuddy 不修改 `~/.pi` 内文件（除 `models.json` 的 `__studybuddy_managed` 标记，03-Arch §2.3）
+1. **pi 自管**：pi-studybuddy 不修改 `~/.pi` 内文件（默认模型选型走业务数据根 `config/models.json`，不侵入 `~/.pi/agent/models.json`，03-Arch §2.3）
 2. **物理隔离**：业务数据在 `%LOCALAPPDATA%\PiStudyBuddy\`，不在 `~/.pi`
 3. **会话读取**：pi-desktop session-reader 读 `~/.pi/agent/sessions/`（03-Arch §6.7）
 4. **不侵入**：pi-studybuddy 的扩展层 / 业务 Adapter 不写 `~/.pi`
@@ -414,7 +416,7 @@ pi 会话流：
 2. **主仓无 node_modules**：`.gitignore` 排除 `node_modules/`
 3. **主仓无试炼场代码**：`src/` 不 `import` `H:\pi-studybuddy-composer\`
 4. **业务数据根不进 Git**：`%LOCALAPPDATA%\PiStudyBuddy\` 不在 Git 仓库内
-5. **pi 会话目录不侵入**：`~/.pi` 内文件不被 pi-studybuddy 修改（除 `models.json` 标记）
+5. **pi 会话目录不侵入**：`~/.pi` 内文件不被 pi-studybuddy 修改（默认模型选型走业务数据根 `config/models.json`）
 6. **参考仓库只读**：`H:\pi-references\` 内文件无修改
 
 ### 12.2 检查时机
@@ -428,4 +430,5 @@ pi 会话流：
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.1 | 2026-08-08 | §6.2 业务数据根结构补 `config/models.json`（默认模型选型，`__studybuddy_managed` 标记）+ §7.2/§7.3/§12.1 models.json 标记异位修订（T-M3-005 裁决 1：默认模型选型落业务数据根 `<dataRoot>/config/models.json`，`~/.pi/agent/models.json` 归 pi 自管不标记；AGENTS.md §9.5 物理隔离，与 03-Arch v0.1.2 supersedes 同步） |
 | v0.1.0 | 2026-08-07 | 初始草案：目录职责隔离 SoT。13 章：治理原则 + 目录总览（7 个目录）+ 主仓库规则 + .gitignore + 试炼场 + 临时目录 + 业务数据根 + pi 会话目录 + 参考仓库 + 备份目录 + 写权限矩阵 + 数据流矩阵 + 创建时机 + 治理检查。参考 ai-studybuddy docs/06（8 目录隔离）+ ai-malf-riskbench 目录治理.md + AGENTS.md §9.5（数据隔离）+ 01-TRD §7 决策 3（~/.pi 物理隔离）+ docs/11-组件装配 §3（试炼场） |

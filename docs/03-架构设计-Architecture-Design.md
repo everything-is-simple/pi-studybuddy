@@ -1,6 +1,6 @@
 # 03 架构设计
 
-**版本**：v0.1.1
+**版本**：v0.1.2
 **日期**：2026-08-07
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[docs/00 索引](./00-文档索引-Index.md)、[01-TRD v0.2.0](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.2](./02-PRD-产品需求-Product-Requirements.md)、[docs/prep-参考点核对表.md](./prep-参考点核对表.md)
@@ -165,8 +165,10 @@ registerTool<TParams, TDetails, TState>(tool: ToolDefinition<...>): void
 | `session_start` | 初始化学期库连接、加载 L1 画像 | inno-agent session_start |
 | `tool_call` | **workspace-path-guard 拦截**：write/edit 类工具校验路径不逃逸业务数据根 | inno-agent workspace-path-guard |
 | `tool_result` | **集中错误日志**：所有工具失败统一走此钩子记录（observability） | inno-agent tool_result |
-| `model_select` | 持久化学生选择的默认模型到 `~/.pi/agent/models.json`（`__studybuddy_managed` 标记） | inno-agent model_select |
+| `model_select` | 持久化学生选择的默认模型到 `<dataRoot>/config/models.json`（`__studybuddy_managed` 标记） | inno-agent model_select |
 | `turn_end` | L3 会话检索增量索引（基于 last_offset + last_mtime_ms） | inno-agent turn_end |
+
+<!-- supersedes: v0.1.1 原写 "~/.pi/agent/models.json"，T-M3-005 裁决 1 改业务数据根 <dataRoot>/config/models.json（AGENTS.md §9.5 物理隔离，pi-studybuddy 不侵入 ~/.pi） -->
 
 ### 2.4 pi-ai provider 注入
 
@@ -362,7 +364,7 @@ registerTool<TParams, TDetails, TState>(tool: ToolDefinition<...>): void
 ```
 ~/.pi/agent/                          ← pi 自管，pi-studybuddy 不侵入
   ├ auth.json (0600)                  ← providers.md 的 OAuth 凭据
-  ├ models.json                       ← 自定义 provider/model（__studybuddy_managed 标记）
+  ├ models.json                       ← pi 自定义 provider/model（供 pi 底座，pi-studybuddy 不标记）
   ├ settings.json                    ← pi 设置
   ├ extensions/                       ← pi 扩展（studybuddy-extension 在此加载）
   ├ skills/                           ← pi 技能（学习技能包在此）
@@ -378,6 +380,8 @@ registerTool<TParams, TDetails, TState>(tool: ToolDefinition<...>): void
   │  ├ l1/learner-profile.json        ← L1 学习者画像
   │  ├ l2/wiki-index/                 ← L2 知识库索引
   │  └ l3/conversation.sqlite         ← L3 会话检索（FTS5）
+  ├ config/
+  │  └ models.json                    ← 默认模型选择（__studybuddy_managed 标记，T-M3-005）
   └ credential-vault/                 ← DPAPI 加密密钥库
      ├ modelProvider-xxx.enc          ← 模型供应商 API Key
      └ parentContact-xxx.enc          ← 家长联系凭证
@@ -835,5 +839,6 @@ src/
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.2 | 2026-08-08 | §2.3 model_select 行落点修订：`~/.pi/agent/models.json` → `<dataRoot>/config/models.json`（T-M3-005 裁决 1，AGENTS.md §9.5 物理隔离；supersedes 注记见 §2.3 表后） |
 | v0.1.1 | 2026-08-07 | §6.7 会话管理补"pi 原生 AI 对话是默认主入口"——应用启动即默认打开"💬 对话"标签页，会话即对话 Tab 内容，学生零碎问答 AI 自主调用 S1-S7+TTS+备份恢复工具，对话 Tab（自由探索）+ S1-S7 标签页（结构化工具）双层并存（02-PRD §3.11 + 09-UI §4.2 贯通） |
 | v0.1.0 | 2026-08-07 | 初始草案：四层架构总览（桌面壳/pi 扩展/业务 Adapter/数据层）；pi 扩展层（单一 extension factory + registerTool + pi.on 钩子 + pi-ai provider + Simple Mode）；业务 Adapter（S1-S7 + TTS + 备份恢复工具清单 + WPS COM/whisper.cpp/OCR 桥 + workspace-path-guard + observability）；数据层（物理隔离 + 三层记忆 + global.db + semester.db + credential-vault）；技能体系（学习技能包同构 + 引入 pi-skills + content-source + skills.manifest）；桌面壳五件骨架（三进程 + contract + RPC + 安全 + toolchain + file-watch）；调度层（cron-scheduler + 备份恢复 + 学习 taskType）；安全与不变量；装配纪律映射。输入：prep-参考点核对表 + 02-PRD + 01-TRD |

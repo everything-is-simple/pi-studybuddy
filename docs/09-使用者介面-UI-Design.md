@@ -1,6 +1,6 @@
 # 09 使用者介面设计
 
-**版本**：v0.1.2
+**版本**：v0.1.3
 **日期**：2026-08-07
 **状态**：✅ 已审查批准（完整性 + 上游一致性 + 铁律落实 + E2E 覆盖四项通过）
 **上游**：[02-PRD v0.1.3 §2/§3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.1 §6](./03-架构设计-Architecture-Design.md)、[06-API v0.1.1 §3](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.1 §2-§5](./07-工作流-Workflow.md)、[08-Test v0.1.1 §6/§7](./08-测试验收-Test-Plan.md)
@@ -208,7 +208,7 @@ pi-studybuddy 的 UI 是学生每天打开的桌面学习工作台。它必须�
 | **工具调用视图** | pi `countToolCallBlocks` | 直接复用 + 学习工具图标（studybuddy_*） |
 | **上下文压缩** | pi `onContextUsageChange` | 直接复用，长对话自动压缩 |
 | **@文件引用** | pi-desktop `allowed-roots.ts` + `session-file-references.ts` | 限当前课程资料 |
-| **多模型切换** | pi `~/.pi/agent/models.json` | 设置页配置（§9.2） |
+| **多模型切换** | pi `modelsConfig.get/set`（业务数据根 `<dataRoot>/config/models.json`） | 设置页配置（§9.2） |
 | **registerTool 工具** | pi 原生工具调用 | S1-S7 + TTS + 备份恢复全部工具可在对话中由 AI 自主调用 |
 
 **学习场景业务化**（在 pi 原生之上叠加）：
@@ -747,7 +747,9 @@ pi-desktop 的会话是 coding agent 对话，pi-studybuddy 业务化为**学习
 **关键约束**：
 - API key 走 credential-vault（DPAPI 加密，键名 `modelProvider:xxx`）
 - 支持本地推理（Ollama）或学生自配供应商
-- 模型选择持久化到 `~/.pi/agent/models.json`（`__studybuddy_managed` 标记）
+- 模型选择持久化到 `<dataRoot>/config/models.json`（`__studybuddy_managed` 标记）
+
+<!-- supersedes: v0.1.2 原写 "~/.pi/agent/models.json"（§4.2 多模型切换 + §9.2 模型选择持久化），T-M3-005 裁决 1 改业务数据根 <dataRoot>/config/models.json（AGENTS.md §9.5 物理隔离，pi-studybuddy 不侵入 ~/.pi） -->
 
 ---
 
@@ -923,6 +925,7 @@ UI 层**绝不展示**：
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.3 | 2026-08-08 | §4.2 多模型切换 + §9.2 模型选择持久化落点修订：`~/.pi/agent/models.json` → `<dataRoot>/config/models.json`（T-M3-005 裁决 1，AGENTS.md §9.5 物理隔离；supersedes 注记见 §9.2 后）。上游 06-API v0.1.5 同步 |
 | v0.1.2 | 2026-08-07 | 审查定案：§4 子章节编号修正（4.3 重号→4.4-4.10 连续）；§12 Streams 与 06-API §4 对齐（material.status→jobs.progress，context.usage 归入 agent.events，补 toolchains.changed）；§4.4 Stream 引用同步；§14.1 补充 E2E-10~13 对话 Tab UI 断言；上游版本号同步。审查结论：完整性/上游一致性/铁律落实/E2E 覆盖四项通过 |
 | v0.1.1 | 2026-08-07 | 按用户反馈修订：把"💬 对话"提升为默认第一标签页（§4.2 新增），ChatInput 升级为核心组件承载 pi 原生 AI 对话能力（§2.2 修订）；明确 pi 天生自带对话能力是"专属 studybuddy"的根基，不废弃；学生可在对话里零碎问答 + AI 自主调用 S1-S7 工具，避免被迫使用别的 AI；会话管理 §7 明确"会话即对话 Tab 的承载"；标签页结构改为"对话（默认）+ 学习工作台"双层并存 |
 | v0.1.0 | 2026-08-07 | 初始草案：整体布局（三栏 AppShell + 标题栏 + 状态栏）；左侧栏（学期/课程/会话三级导航）；学习工作台 8 标签页（首页/资料/笔记/练习/错题/冲刺/报告/采集，对应 S1-S7）；TTS 跨子系统随时可击发 UI（全局控制条 + 内嵌朗读按钮 + 标记已复习）；备份恢复 UI（手动/定期/恢复/归档触发）；会话管理业务化（学科标签/学习目标/错题关联）；文件体验（FileExplorer + Markdown/KaTeX/Mermaid 预览）；技能与模型管理（学习技能包替换 Skills.sh + 供应商配置）；设置页（通用/安全/开发者）；安全隐私 UI 边界（不展示 UUID/API key/真实地址/错误栈）；Streams 推送与 UI 状态映射（9 主题）；响应式与可访问性（主题/快捷键）；UI 测试断言映射（E2E + 隐私边界）。输入：pi-desktop renderer 目录结构 + 03-Architecture §6 + 07-Workflow §2-§5 + 08-Test §6-§7 |

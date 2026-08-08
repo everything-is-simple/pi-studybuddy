@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
 
-**版本**：v0.1.65
+**版本**：v0.1.66
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,16 +34,16 @@
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.2 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.1 交付形态：源码形态不打包 .exe）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
-| 03 | 架构设计-Architecture-Design.md | ✅ v0.1.1 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.53 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明 + §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~002 done + T-M3-003~008 pending）+ §7.5 全局执行顺序表（M1/M2/M3 统一排序） |
+| 03 | 架构设计-Architecture-Design.md | ✅ v0.1.2 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.59 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨）+ 39 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明 + §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~005 done + T-M3-006~008 pending）+ §7.5 全局执行顺序表（M1/M2/M3 统一排序） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
-| 06 | API契约-API-Contracts.md | ✅ v0.1.3 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
+| 06 | API契约-API-Contracts.md | ✅ v0.1.5 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
-| 08 | 测试验收-Test-Plan.md | ✅ v0.1.1 已审查批准 | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E |
-| 09 | 使用者介面-UI-Design.md | ✅ v0.1.2 已审查批准 | 三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话）** + 8 学习标签页（S1-S7）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 |
+| 08 | 测试验收-Test-Plan.md | ✅ v0.1.3 已审查批准 | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E + §4.2 model_select 断言落点业务数据根 |
+| 09 | 使用者介面-UI-Design.md | ✅ v0.1.3 已审查批准 | 三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话）** + 8 学习标签页（S1-S7）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 + 模型选择持久化业务数据根 |
 | 10 | 开发规范-Dev-Rules.md | ✅ v0.1.0 已审查批准 | 16 步开发流程（准备/执行/收尾三阶段）+ TDD 纪律 + 单一执行任务门禁 + 文档治理检查 + diff 检查 + 用户授权门 |
 | 11 | 组件装配-Component-Assembly.md | ✅ v0.1.0 已审查批准 | "先分解再组合" SoT + 6 步装配流程 + 能力卡规范 + 试炼场边界 + 装配门禁四项（测试全绿/工作区干净/API 有文档/无越权） |
-| 12 | 目录治理-Directory-Governance.md | ✅ v0.1.0 已审查批准 | 目录职责速查 + 物理隔离（主仓/试炼场/临时/数据根/pi 会话/参考仓/备份）+ Git 纪律 + 不提交清单 + 数据流图 |
+| 12 | 目录治理-Directory-Governance.md | ✅ v0.1.1 已审查批准 | 目录职责速查 + 物理隔离（主仓/试炼场/临时/数据根/pi 会话/参考仓/备份）+ Git 纪律 + 不提交清单 + 数据流图 + 默认模型选型落业务数据根 config/models.json |
 | subsystems/ | 业务子系统文档（S1-S7 收编） | 📝 待创建 | 学习节奏/资料笔记/限时练习/错题/冲刺/家长报告/课堂采集 |
 
 ## 四、组件治理流程（强制）
@@ -131,11 +131,17 @@
 - [x] 04-Todo v0.1.46：登记 T-M2-006 开工（§7.3.1 T-M2-006 pending→in_progress + §9 统计 M2 pending 2→1 + in_progress 0→1）。用户批准 T-M2-006 S6 assertNoSensitiveLeak UUID 泄漏检测独立校验脚本开工（§7.5 全局执行顺序表第 10 行，前置依赖 T-M2-002 done，leak-detector.ts 已实现，本任务固化独立静态审计脚本 scripts/check-uuid-leak.mjs）—— M2 第 6 个任务开工
 - [x] 04-Todo v0.1.47：登记 T-M2-006 完成（S6 assertNoSensitiveLeak UUID 泄漏检测独立校验脚本 scripts/check-uuid-leak.mjs：7 条硬断言 UUID-01~07 静态审计 leak-detector/reports/errors/types 布线，仿 check-desktop-security.mjs 范式；--src 覆盖源根 + readSource 优雅降级；新增 tests/e2e/check-uuid-leak.script.test.ts 脚本冒烟 3 用例；799 单元/集成测试 + 83 E2E 测试全绿，type-check + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6 全通过；§9 统计 M2 in_progress 1→0 + done 7→8）—— M2 第 6 个任务完成，M2 剩余 pending：T-M2-007 whisper.cpp Adapter
 - [x] 04-Todo v0.1.49：登记 T-M2-007 完成（whisper.cpp 真实 Adapter：createStudyBuddyExtension 增加可选 whisper 配置 StudyBuddyExtensionOptions.whisperCliPath/whisperModelPath，优先级调用参数 > 环境变量 PI_STUDYBUDDY_WHISPER_CLI/MODEL > 空默认 mock；有 cliPath+modelPath 装配 createRealWhisperAdapter 接入 S7Context；whisper-adapter.ts 头注释更新为真实已接入；真实转写单件测试——合成 3s 正弦波 PCM WAV + 真实 whisper-cli -nt（stdout 即纯文本），探测 whisper-cli+ggml-base.bin 存在才跑，只断言 text 非空+无泄漏字段；装配测试——带 whisper 路径 setup 不抛错+工具数仍 35；集成/E2E 保持 mock 08-Test §9.3；802 单元/集成测试 + 83 E2E 测试全绿，type-check + build + smoke 6/6 + 文档治理 + 契约覆盖 + 安全不变量 6/6 全通过；§9 统计 M2 in_progress 1→0 + done 8→9）—— M2 最后一个任务完成，M2 全部 9 任务 done
+- [x] 04-Todo v0.1.51：登记 T-M3-001 完成（💬 对话 Tab 默认主入口：pi 原生 AI 对话承载 + agent.send 契约 06-API v0.1.2；823 单元/集成测试 + 83 E2E + smoke 6/6）—— M3 首任务完成
+- [x] 04-Todo v0.1.53：登记 T-M3-002 完成（pi 原生能力承载：流式回复/工具调用视图/上下文压缩/@文件引用/多模型切换 + AgentEvent payload 结构化 06-API v0.1.3；856 单元/集成测试 + 83 E2E）—— M3 第 2 任务完成
+- [x] 04-Todo v0.1.55：登记 T-M3-003 完成（学习场景业务化：L3 承载层 bigram/indexer/search + L1 写回 + context-pack 扩展 + 会话级元数据 + sessions.search + 06-API v0.1.4；892 单元/集成测试 + 83 E2E + UUID 泄漏 7/7）—— M3 第 3 任务完成
+- [x] 04-Todo v0.1.57：登记 T-M3-004 完成（AI 自主调用工具 + 跳转结构化 Tab：工具→Tab 映射纯函数 + 触发词 3→10 组 + ChatTab 跳转按钮 + 07-WF v0.1.2 §2.8 映射表条款；925 单元/集成测试 + 83 E2E + UUID 泄漏 7/7）—— M3 第 4 任务完成
+- [x] 04-Todo v0.1.59：登记 T-M3-005 完成（model_select / turn_end 钩子：model-config 模块原子写 + L3 增量索引 assistant+tool + modelsConfig.get/set + ChatTab 落库 + 四文档 supersedes 落点改业务数据根 config/models.json；939 单元/集成测试 + 83 E2E + smoke 6/6 + 安全不变量 6/6 + UUID 泄漏 7/7）—— M3 第 5 任务完成，M3 剩余 pending：T-M3-006~008
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.66 | 2026-08-08 | 04-Todo v0.1.59 登记 T-M3-005 完成（§7.4.1 T-M3-005 in_progress→done + §9 统计 M3 in_progress 1→0 + done 4→5）+ 四文档 supersedes 落点修订（03-Arch v0.1.2 / 08-Test v0.1.3 / 06-API v0.1.5 / 09-UI v0.1.3：model_select/modelsConfig 落点 `~/.pi/agent/models.json` → `<dataRoot>/config/models.json`，AGENTS.md §9.5 物理隔离）+ 12-目录治理 v0.1.1（models.json 标记改业务数据根）+ AGENTS.md v0.1.46。原因：T-M3-005 model_select / turn_end 钩子实施完成（model-config 模块原子写 + L3 增量索引 assistant+tool + modelsConfig.get/set + ChatTab 落库），质量门全通过（type-check + 939 单元/集成测试 + 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7）。影响：版本号同步 + 状态登记 + 四文档 supersedes 落点修订（无契约方法新增，Api 方法总数仍 127）。M3 剩余 pending：T-M3-006~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.65 | 2026-08-08 | 04-Todo v0.1.58 登记 T-M3-005 开工（§7.4.1 T-M3-005 pending→in_progress + §9 统计 M3 pending 4→3 + in_progress 0→1）+ AGENTS.md v0.1.45。原因：用户批准 T-M3-005 model_select / turn_end 钩子开工（§7.5 全局执行顺序表第 15 行，前置依赖 T-M3-001 done）。五裁决：① 落点=业务数据根 config/models.json（同步修订 4 文档加 supersedes，解决 ~/.pi vs §9.5 冲突）② turn_end 源=assistant+tool 不读 ~/.pi ③ handler=modelsConfig.get/set ④ 写文件分工=共用 model-config 模块 ⑤ 真实模型配置仅纳别名入 config + key 入 vault（modelProvider:<provider>）。影响：仅版本号同步 + 状态登记，无权威条款变更（4 文档 supersedes 收尾时经批准修订）。M3 剩余 pending：T-M3-006~008。依据：AGENTS.md §4.4 单一执行任务门禁 + §4.5 任务状态不得只存在于聊天 |
 | v0.1.64 | 2026-08-08 | 04-Todo v0.1.57 登记 T-M3-004 完成（§7.4.1 T-M3-004 in_progress→done + §9 统计 M3 in_progress 1→0 + done 3→4）+ AGENTS.md v0.1.44。原因：T-M3-004 AI 自主调用工具+跳转结构化 Tab 实施完成，master 280e642 + origin/master 推送成功（§8.4 三者齐全）。质量门全通过：type-check + 925 单元/集成测试（+33）+ 83 E2E + build + smoke 6/6 + verify 全绿 + 文档治理 + 契约覆盖 + 安全不变量 6/6 + UUID 泄漏 7/7。影响：仅版本号同步 + 状态登记，无权威条款变更（07-WF v0.1.2 映射表条款已登记于 v0.1.63）。M3 剩余 pending：T-M3-005~008。依据：AGENTS.md §4.5 任务状态不得只存在于聊天 + §7 受控收尾流程 + §8.4 完成判据 |
 | v0.1.63 | 2026-08-08 | 07-Workflow v0.1.1→v0.1.2（§2.8 衔接段扩充工具→目标 Tab 映射表 35 工具全覆盖 + 跳转规则，T-M3-004 裁决 1b 落地）+ AGENTS.md v0.1.43。原因：T-M3-004 实施中裁决 1b 落地——映射表条款归属 07-WF §2.8（衔接语义），实施完成后升格权威条款。影响：07-WF 权威条款增补，原四条衔接 bullet 并入映射表语义，无 supersedes。依据：AGENTS.md §11.2 修订纪律 |

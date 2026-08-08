@@ -1,6 +1,6 @@
 # 06 API 契约
 
-**版本**：v0.1.4
+**版本**：v0.1.5
 **日期**：2026-08-07
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.2 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.0](./05-数据模型-ERD-Data-Model.md)
@@ -421,12 +421,14 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
-| `models.list` | `{}` | `ModelProvider[]` | 从 ~/.pi/agent/models.json |
-| `modelsConfig.get` | `{}` | `ModelConfig` | 默认 provider/model |
-| `modelsConfig.set` | `{ provider, model }` | `ModelConfig` | 持久化（__studybuddy_managed 标记） |
+| `models.list` | `{}` | `ModelProvider[]` | 受控 fixture（不读 ~/.pi；T-M3-002 裁决） |
+| `modelsConfig.get` | `{}` | `ModelConfig` | 读 `<dataRoot>/config/models.json`（存在则返回默认 provider/model） |
+| `modelsConfig.set` | `{ provider, model }` | `ModelConfig` | 持久化到 `<dataRoot>/config/models.json`（__studybuddy_managed 标记） |
 | `modelsConfig.test` | `{ provider, model, apiKey? }` | `{ ok: boolean, latencyMs: number, error? }` | 一键测试连通性 |
 | `models.addProvider` | `{ providerConfig }` | `ModelProvider` | 添加自定义 provider |
 | `models.probe` | `{ baseUrl, apiKey, providerType }` | `ModelInfo[]` | model-probe 探测模型列表（03-Architecture §2.4） |
+
+<!-- supersedes: v0.1.4 原写 models.list"从 ~/.pi/agent/models.json"、modelsConfig.set 未标落点；T-M3-005 裁决 1 改业务数据根 <dataRoot>/config/models.json（AGENTS.md §9.5 物理隔离，pi-studybuddy 不侵入 ~/.pi） -->
 
 ### 3.14 设置（settings.*）
 
@@ -567,6 +569,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.5 | 2026-08-08 | §3.13 模型配置落点修订（T-M3-005 裁决 1）：models.list 约束列"从 ~/.pi/agent/models.json" → "受控 fixture（不读 ~/.pi；T-M3-002 裁决）"；modelsConfig.get/set 约束列标清落点 `<dataRoot>/config/models.json`（__studybuddy_managed 标记）。原因：AGENTS.md §9.5 物理隔离（pi-studybuddy 不侵入 ~/.pi）。影响：仅约束列文字修订 + supersedes 注记，无契约方法新增/变更（Api 方法总数仍 127）。依据：AGENTS.md §11.1 + T-M3-005 裁决 1 |
 | v0.1.4 | 2026-08-08 | §3.1 落地注解：sessions.search（T-M3-003 实现，L3 bigram OR-combined MATCH + session_id 聚合映射）+ SessionSummary 扩展学习场景元数据（subject/goal/mistakeIds 可选字段）+ §3.1.1 agent.send T-M3-003 扩展注解（sessionMeta 参数 + [学习上下文] token 同步注入 + 元数据写回）。原因：T-M3-003 学习场景业务化实施（学科标签/学习目标/错题关联/L1 注入/L3 检索承载层）。影响：§3.1/§3.1.1 说明性增补 + SessionSummary 类型扩展（可选字段向后兼容），无契约方法新增（Api 方法总数仍 127）。依据：AGENTS.md §11.1 治理基线修改规则 + T-M3-003 计划 |
 | v0.1.3 | 2026-08-08 | §4 增补 AgentEvent payload 结构化说明（tool_call/tool_result 脱敏载荷字段子集对齐 pi 底座 ToolCallEvent/ToolResultEvent + 脱敏铁律）+ §3.2 files.read 落地注解（T-M3-002 实现：allowed-roots 白名单门禁 + 相对 storageKey 解析 + 1MB 截断）+ §3.1.1 agent.send T-M3-002 扩展注解（tool_call/tool_result 事件对）。原因：T-M3-002 pi 原生能力承载实施（用户批准 payload 结构化 + files.read 现成契约方案）。影响：§4 AgentEvent 说明性增补 + §3.2/§3.1.1 注解，无契约方法新增/变更（Api 方法总数仍 127）。依据：AGENTS.md §11.1 治理基线修改规则 + T-M3-002 计划 |
 | v0.1.2 | 2026-08-08 | §3.1.1 新增 `agent.send` RPC 契约（params: `{ sessionId, text }`，result: `{ eventCount }`）：对话 Tab 发送通道，renderer 发送用户消息 → agent-host 触发 Streams["agent.events"] 受控序列（message_start → token×N → context_compressed）。范围注解：T-M3-001 受控夹具发射（08-Test §5.4 全 mock，不连真实 LLM），完整流式/工具视图/上下文压缩属 T-M3-002。原因：07-WF §2.8 对话路径步骤 2 需要 renderer→agent-host 的发送通道，现有 RPC 方法表无 agent.* 方法。影响：契约新增 1 方法（Api 方法总数 127），无既有方法变更。依据：AGENTS.md §11.2 修订纪律 + T-M3-001 计划 |——sessions.* 是"💬 对话"标签页（默认主入口）的会话管理基础，会话即对话 Tab 内容，承载 pi 原生 AI 对话能力（02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2 贯通） |

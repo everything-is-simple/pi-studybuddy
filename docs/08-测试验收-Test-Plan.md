@@ -1,6 +1,6 @@
 # 08 测试验收计划
 
-**版本**：v0.1.2
+**版本**：v0.1.3
 **日期**：2026-08-08
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.2 §7](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §3/§8/§9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.0 §6](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.0](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.0 §8/§9](./07-工作流-Workflow.md)
@@ -279,7 +279,7 @@ it("pi.registerProvider() 注入学习场景 provider，不重写 provider", () 
 | `session_start` | 初始化学期库连接 + 加载 L1 画像 |
 | `tool_call` | write/edit 工具尝试逃逸业务数据根 → block:true |
 | `tool_result` | 工具失败统一走此钩子记录（observability） |
-| `model_select` | 持久化到 `~/.pi/agent/models.json`（`__studybuddy_managed` 标记） |
+| `model_select` | 持久化到 `<dataRoot>/config/models.json`（`__studybuddy_managed` 标记） |
 | `turn_end` | L3 增量索引（last_offset + last_mtime_ms） |
 
 ```typescript
@@ -703,6 +703,7 @@ pytest scripts/wps-bridge/   # Python 桥单件
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.3 | 2026-08-08 | §4.2 model_select 断言落点修订：`~/.pi/agent/models.json` → `<dataRoot>/config/models.json`（T-M3-005 裁决 1，AGENTS.md §9.5 物理隔离；与 03-Arch §2.3 supersedes 同步） |
 | v0.1.2 | 2026-08-08 | §6 E2E 框架由 Playwright 改为 vitest + Electron 启动。原因：pi-studybuddy 是 Electron 单体（无独立后端），ai-studybuddy 的 Playwright webServer 模式不适用；参考 pi-desktop `scripts/test-browser-agent-e2e.mjs` 范式，采用 vitest + `_electron.launch()` 直接启动，通过 `webContents.executeJavaScript` 驱动 UI 交互。依据：AGENTS.md §6.4 禁止过度工程化 + 用户批准 T-M1-010 方案 A。影响：§1.2 测试金字塔 + §2 分层总览 + §6 标题与说明 + §10.2 目录结构 + §10.3 运行命令，无 E2E 用例设计变更 |
 | v0.1.1 | 2026-08-07 | 按用户反馈增强：§6.5 新增 E2E-10~13 通用 AI 对话 E2E（默认主入口 + AI 自主调用工具 + @文件引用 + TTS 朗读 + L3 会话检索）；§7.1 闭环完整性表补"通用 AI 对话默认主入口"行；响应用户反馈"pi 天生自带对话，不能废弃 ai 输入" |
 | v0.1.0 | 2026-08-07 | 初始草案：测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）对应五阶段；单件测试（registerTool 契约断言 + 数据层触发器/约束/状态机 + 外部桥 WPS COM/whisper.cpp/OCR + 技能夹具 + TTS skill）；集成测试（extension×pi 底座 + pi.on 钩子 + createAgentSession）；系统冒烟（S1-S7 主路径 + TTS + 备份恢复 + 家长报告脱敏 + 路径守卫 + credential-vault + 安全不变量六条）；系统 E2E（Playwright 学生主路径/家长报告/TTS/备份恢复）；关键断言矩阵对应 02-PRD §7 六类成功标准；11 状态机测试矩阵；夹具与运行数据隔离（H:\pi-studybuddy-tmp\runs）；命名与目录组织；合并门禁。输入：02-PRD §7 + 03-Architecture §3/§8/§9 + 05-ERD §6 + 06-API + 07-Workflow §8/§9 |
