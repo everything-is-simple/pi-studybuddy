@@ -16,6 +16,7 @@ import { Type } from "typebox";
 import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import type { S2Context } from "../../../agent-host/handlers/s2/context";
 import { createS2Handlers } from "../../../agent-host/handlers/s2";
+import type { Job } from "../../../contract/types";
 
 /** 工具 execute 返回的 content 文本块 */
 function textContent(text: string): { type: "text"; text: string } {
@@ -73,7 +74,7 @@ export function createS2Tools(ctx: S2Context): ToolDefinition[] {
         id: Type.String({ description: "资料 ID" }),
       }),
       async execute(_toolCallId, params) {
-        const result = handlers["materials.convert"](params);
+        const result = (await handlers["materials.convert"](params)) as Job;
         return {
           content: [
             textContent(`转换作业已登记：${result.jobType}，状态 ${result.status}，重试 ${result.retryCount}/${result.maxRetries}`),

@@ -7,12 +7,21 @@
 import { DatabaseSync } from "../../../data/sqlite";
 import { applyPragmas } from "../../../data/db";
 import path from "node:path";
+import type { WpsAdapter } from "./wps-adapter";
 
 export class S2Context {
   private _globalDb: DatabaseSync | null = null;
   private _semesterDbs = new Map<string, DatabaseSync>();
 
-  constructor(private readonly dataRoot: string) {}
+  constructor(
+    private readonly dataRoot: string,
+    private readonly wpsAdapter?: WpsAdapter,
+  ) {}
+
+  /** WPS 转换 Adapter（可注入，默认未注入则 wps_convert 仅登记 Job，03-Arch §3.3） */
+  get wps(): WpsAdapter | undefined {
+    return this.wpsAdapter;
+  }
 
   /** 打开或复用 global.db（含 PRAGMA） */
   get globalDb(): DatabaseSync {

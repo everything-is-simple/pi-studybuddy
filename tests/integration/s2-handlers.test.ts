@@ -173,8 +173,8 @@ describe("T-M1-002 S2 handler 集成测试", () => {
       expect(() => call("materials.get", { id: "nonexistent-id" })).toThrowError(/未找到|不存在/);
     });
 
-    it("MAT-09 convert：登记 Job(pending, job_type=convert_pdf) + Material→converting", () => {
-      const job = call("materials.convert", { id: materialId }) as Job;
+    it("MAT-09 convert：登记 Job(pending, job_type=convert_pdf) + Material→converting", async () => {
+      const job = (await call("materials.convert", { id: materialId })) as Job;
       expect(job.materialId).toBe(materialId);
       expect(job.jobType).toBe("convert_pdf");
       expect(job.status).toBe("pending");
@@ -185,13 +185,13 @@ describe("T-M1-002 S2 handler 集成测试", () => {
       expect(m.status).toBe("converting");
     });
 
-    it("MAT-10 retryConversion：conversion_failed→converting + retry_count++", () => {
+    it("MAT-10 retryConversion：conversion_failed→converting + retry_count++", async () => {
       // 模拟转换失败
       const db = ctx.semesterDb(semesterId);
       db.prepare("UPDATE materials SET status = 'conversion_failed' WHERE id = @id").run({ id: materialId });
       db.prepare("UPDATE jobs SET status = 'failed' WHERE material_id = @id").run({ id: materialId });
 
-      const job = call("materials.retryConversion", { id: materialId }) as Job;
+      const job = (await call("materials.retryConversion", { id: materialId })) as Job;
       expect(job.retryCount).toBe(1);
       expect(job.status).toBe("pending");
 
@@ -199,12 +199,12 @@ describe("T-M1-002 S2 handler 集成测试", () => {
       expect(m.status).toBe("converting");
     });
 
-    it("MAT-11 retryConversion：retry_count >= max_retries 拒绝", () => {
+    it("MAT-11 retryConversion：retry_count >= max_retries 拒绝", async () => {
       const db = ctx.semesterDb(semesterId);
       db.prepare("UPDATE materials SET status = 'conversion_failed' WHERE id = @id").run({ id: materialId });
       db.prepare("UPDATE jobs SET retry_count = 3, status = 'failed' WHERE material_id = @id").run({ id: materialId });
 
-      expect(() => call("materials.retryConversion", { id: materialId })).toThrowError(/重试|上限|max|超过/);
+      await expect(call("materials.retryConversion", { id: materialId })).rejects.toThrowError(/重试|上限|max|超过/);
     });
 
     it("MAT-12 replaceText：跳过转换直写 normalized_texts + status→converted", () => {
@@ -254,9 +254,9 @@ describe("T-M1-002 S2 handler 集成测试", () => {
       expect(() => call("materials.retryAiGeneration", { id: materialId })).toThrowError(/重试|上限|max|超过/);
     });
 
-    it("MAT-16 状态机：convert 非 pending/conversion_failed 拒绝", () => {
+    it("MAT-16 状态机：convert 非 pending/conversion_failed 拒绝", async () => {
       // material 当前 note_generating，convert 应拒绝
-      expect(() => call("materials.convert", { id: materialId })).toThrowError(/状态|迁移|不允许/);
+      await expect(call("materials.convert", { id: materialId })).rejects.toThrowError(/状态|迁移|不允许/);
     });
 
     it("MAT-17 delete：软删除（deleted_at 不为空，list 不返回）", () => {
@@ -378,7 +378,7 @@ describe("T-M1-002 S2 handler 集成测试", () => {
   });
 
   describe("jobs.* — 作业查询", () => {
-    it("JOB-01 jobs.list：按 materialId 返回", () => {
+    it("JOB-01 jobs.list：按 materialId 返回", async () => {
       // 先上传一个新资料触发 convert
       const filePath = `${STORAGE_DIR}\\job-test.pdf`;
       writeFileSync(filePath, "job test");
@@ -386,7 +386,7 @@ describe("T-M1-002 S2 handler 集成测试", () => {
         courseId,
         file: { name: "job-test.pdf", size: 100, mime: "application/pdf" },
       }) as Material;
-      call("materials.convert", { id: m.id });
+      await call("materials.convert", { id: m.id });
       const jobs = call("jobs.list", { materialId: m.id }) as Job[];
       expect(jobs.length).toBeGreaterThanOrEqual(1);
       expect(jobs.every((j) => j.materialId === m.id)).toBe(true);
@@ -415,7 +415,7 @@ describe("T-M1-002 S2 handler 集成测试", () => {
   });
 
   describe("状态机边界", () => {
-    it("STM-01 convert 在 completed 状态拒绝", () => {
+    it("STM-01 convert 在 completed 状态拒绝", async () => {
       const filePath = `${STORAGE_DIR}\\stm-test.pdf`;
       writeFileSync(filePath, "stm test");
       const m = call("materials.upload", {
@@ -424,7 +424,7 @@ describe("T-M1-002 S2 handler 集成测试", () => {
       }) as Material;
       const db = ctx.semesterDb(semesterId);
       db.prepare("UPDATE materials SET status = 'completed' WHERE id = @id").run({ id: m.id });
-      expect(() => call("materials.convert", { id: m.id })).toThrowError(/状态|迁移|不允许/);
+      await expect(call("materials.convert", { id: m.id })).rejects.toThrowError(/状态|迁移|不允许/);
     });
 
     it("STM-02 generateNote 在 pending 状态拒绝（必须先 converted）", () => {

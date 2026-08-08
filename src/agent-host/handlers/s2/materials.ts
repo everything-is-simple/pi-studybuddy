@@ -13,9 +13,9 @@
  * 路径安全（05-ERD §3.2.1 触发器约定）：storage_key 拒绝 ../:\:/ 路径逃逸
  * MIME 服务端验证（不信浏览器）
  */
-import { randomUUID } from "node:crypto";
-import { createHash } from "node:crypto";
-import type { Material, Job, JobType } from "../../../contract/types";
+import { randomUUID, createHash } from "node:crypto";
+import path from "node:path";
+import type { Material, Job, JobType, RpcError } from "../../../contract/types";
 import type { S2Context } from "./context";
 import { mapMaterial, mapJob } from "./dto";
 import { notFound, badRequest } from "./errors";
@@ -210,7 +210,7 @@ export function createMaterialHandlers(ctx: S2Context) {
       return mapMaterial(row);
     },
 
-    "materials.convert": (params: unknown): Job => {
+    "materials.convert": async (params: unknown): Promise<Job> => {
       const { id } = params as { id: string };
       const { db, semesterId } = findSemesterByMaterialId(ctx, id);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
@@ -222,10 +222,16 @@ export function createMaterialHandlers(ctx: S2Context) {
       assertCanConvert(existing.status as string);
       const jobType = inferConvertJobType(existing.file_type as string);
 
-      return createJobAndTransition(ctx, db, semesterId, id, jobType, "converting");
+      const job = createJobAndTransition(ctx, db, semesterId, id, jobType, "converting");
+
+      // wps_convert：注入 WpsAdapter 时执行真实转换（03-Arch §3.3，旧格式→新格式中间格式）
+      if (jobType === "wps_convert" && ctx.wps) {
+        return runWpsConversion(ctx, db, job.id, existing);
+      }
+      return job;
     },
 
-    "materials.retryConversion": (params: unknown): Job => {
+    "materials.retryConversion": async (params: unknown): Promise<Job> => {
       const { id } = params as { id: string };
       const { db, semesterId } = findSemesterByMaterialId(ctx, id);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
@@ -254,7 +260,13 @@ export function createMaterialHandlers(ctx: S2Context) {
 
       const jobType = lastJob.job_type as JobType;
       // 新建 retry Job，retry_count = 上一条 + 1
-      return createJobAndTransition(ctx, db, semesterId, id, jobType, "converting", retryCount + 1);
+      const job = createJobAndTransition(ctx, db, semesterId, id, jobType, "converting", retryCount + 1);
+
+      // wps_convert：重试同样执行真实转换（数据从既有 materials 行解析，03-Arch §3.3）
+      if (jobType === "wps_convert" && ctx.wps) {
+        return runWpsConversion(ctx, db, job.id, existing);
+      }
+      return job;
     },
 
     "materials.generateNote": (params: unknown): Job => {
@@ -349,6 +361,79 @@ function createJobAndTransition(
     status: newStatus,
     ts,
   });
+
+  const row = db.prepare("SELECT * FROM jobs WHERE id = @id").get({ id: jobId }) as Record<string, unknown>;
+  return mapJob(row);
+}
+
+/** WPS 转换失败固定文案（03-Arch §3.3，不泄漏路径/stdout/stderr） */
+const MSG_WPS_FAILED = "旧版办公文件转换失败，请检查文件是否完整或已损坏";
+
+/** 从异常中提取安全错误消息：仅保留 RpcError 的 message，其余用固定文案（§9.3 日志脱敏） */
+function safeWpsErrorMessage(e: unknown): string {
+  if (
+    e &&
+    typeof e === "object" &&
+    "code" in e &&
+    typeof (e as { code: unknown }).code === "string" &&
+    "message" in e &&
+    typeof (e as { message: unknown }).message === "string"
+  ) {
+    return (e as RpcError).message;
+  }
+  return MSG_WPS_FAILED;
+}
+
+/**
+ * 执行 WPS 真实转换（03-Arch §3.3 旧格式→新格式中间格式）。
+ *
+ * 流程：Job→running → adapter.convert(inPath, outDir) →
+ *   成功：Material→converted + Job→completed
+ *   失败：Material→conversion_failed + Job→failed（error_message 固定文案，不泄漏路径）
+ *
+ * 边界（T-M1-006 §2 非目标）：本桥只做格式转换，**不写 normalized_texts**（文本提取属 T-M1-007）。
+ */
+async function runWpsConversion(
+  ctx: S2Context,
+  db: import("../../../data/sqlite").DatabaseSync,
+  jobId: string,
+  material: Record<string, unknown>,
+): Promise<Job> {
+  const materialId = material.id as string;
+  const storageKey = material.storage_key as string;
+  // storage_key 形如 semester/<id>/storage/<file>（materials.upload 写入），解析真实路径
+  const inPath = path.join(ctx.dataRootPath, storageKey);
+  const outDir = path.dirname(inPath);
+
+  const startedAt = now();
+  db.prepare("UPDATE jobs SET status = 'running', started_at = @ts, updated_at = @ts WHERE id = @id").run({
+    id: jobId,
+    ts: startedAt,
+  });
+
+  try {
+    await ctx.wps!.convert(inPath, outDir);
+    // 成功：Material→converted + Job→completed（写 converted_at，05-ERD §3.2.1）
+    const ts = now();
+    db.prepare(
+      "UPDATE materials SET status = 'converted', converted_at = @ts, updated_at = @ts WHERE id = @id",
+    ).run({ id: materialId, ts });
+    db.prepare("UPDATE jobs SET status = 'completed', completed_at = @ts, updated_at = @ts WHERE id = @id").run({
+      id: jobId,
+      ts,
+    });
+  } catch (e) {
+    // 失败：Material→conversion_failed + Job→failed（error_message 固定文案，不泄漏路径/stdout/stderr）
+    const ts = now();
+    db.prepare("UPDATE materials SET status = 'conversion_failed', updated_at = @ts WHERE id = @id").run({
+      id: materialId,
+      ts,
+    });
+    db.prepare(
+      `UPDATE jobs SET status = 'failed', error_code = 'INTERNAL_ERROR', error_message = @msg,
+         completed_at = @ts, updated_at = @ts WHERE id = @id`,
+    ).run({ id: jobId, ts, msg: safeWpsErrorMessage(e) });
+  }
 
   const row = db.prepare("SELECT * FROM jobs WHERE id = @id").get({ id: jobId }) as Record<string, unknown>;
   return mapJob(row);
