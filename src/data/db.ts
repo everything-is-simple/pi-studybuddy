@@ -14,6 +14,15 @@ export function openDatabase(path: string): DatabaseSync {
   return new DatabaseSync(path);
 }
 
+/** 关闭数据库连接（测试隔离中用于释放文件锁，避免 EBUSY） */
+export function closeDatabase(db: DataDb): void {
+  try {
+    db.db.close();
+  } catch {
+    // 已关闭则忽略
+  }
+}
+
 /** 应用 05-ERD §9 统一 PRAGMA 配置 */
 export function applyPragmas(db: DatabaseSync): void {
   db.exec("PRAGMA journal_mode = WAL");

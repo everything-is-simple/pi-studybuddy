@@ -36,7 +36,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     "system.ping": (...args: unknown[]) => ping(args[0] as Api["system.ping"]["params"]),
     ...toolchainHandlers,
     ...createFileHandlers(fileWatch, { dataRoot }),
-    ...createModelHandlers(),
+    ...createModelHandlers(dataRoot),
     ...createSessionHandlers({ store: sessionStore, dataRoot }),
     ...createAgentHandlers(server, sessionStore),
   });

@@ -255,6 +255,22 @@ export function ChatTab({
       });
   }, [rpc, initialModels]);
 
+  // T-M3-005：挂载时回填默认模型（modelsConfig.get → provider:model 组合 id）
+  useEffect(() => {
+    if (!rpc || initialModelId) return;
+    void rpc
+      .call("modelsConfig.get", {})
+      .then((cfg) => {
+        const c = cfg as { provider?: string; model?: string };
+        if (c && c.provider && c.model) {
+          setSelectedModel(`${c.provider}:${c.model}`);
+        }
+      })
+      .catch(() => {
+        /* 静默失败：模型配置可空 */
+      });
+  }, [rpc, initialModelId]);
+
   // T-M3-002：@选择器展开时加载当前课程资料（materials.list）
   useEffect(() => {
     if (!rpc || !pickerOpen || initialMaterials) return;
@@ -382,7 +398,19 @@ export function ChatTab({
           <span style={{ color: "var(--text-muted, #888)" }}>模型</span>
           <select
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+            onChange={(e) => {
+              const combo = e.target.value;
+              setSelectedModel(combo);
+              // T-M3-005：切换落库（modelsConfig.set，provider:model 组合 id 拆分）
+              const idx = combo.indexOf(":");
+              if (idx > 0 && rpc) {
+                const provider = combo.slice(0, idx);
+                const model = combo.slice(idx + 1);
+                void rpc.call("modelsConfig.set", { provider, model }).catch(() => {
+                  /* 静默失败：落库失败不阻塞 UI */
+                });
+              }
+            }}
             style={{
               padding: "4px 6px",
               fontSize: 12,

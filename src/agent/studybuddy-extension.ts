@@ -53,6 +53,8 @@ import { checkWorkspaceMutationPath } from "./workspace-path-guard";
 import { buildStudyContextSections } from "./context-pack";
 import { createObservability, registerToolResultLogging } from "./observability";
 import { initMemoryL1 } from "../data/memory";
+import { writeModelConfig } from "./model-config";
+import { indexTurnEndChunks } from "./turn-end";
 
 /** 扩展标识（03-Arch §2.1 name 字段，pi 启动 Extensions 列表显示名） */
 export const STUDYBUDDY_EXTENSION_NAME = "pi-studybuddy";
@@ -214,5 +216,40 @@ export function createStudyBuddyExtension(
     // tool_result：集中错误日志（observability，AGENTS.md §9.3 脱敏）
     const observability = createObservability();
     registerToolResultLogging(pi, observability);
+
+    // ── T-M3-005 多模型持久化 + L3 增量索引（03-Arch §2.3 + 05-ERD §4.3）──
+    // model_select：持久化默认模型到业务数据根 config/models.json（裁决 1）
+    // 仅纳 provider/model 别名（02-PRD §5.2 密钥边界），key 在 credential-vault
+    pi.on("model_select", async (event) => {
+      const model = (event as { model?: { provider?: string; id?: string } }).model;
+      const provider = model?.provider;
+      const id = model?.id;
+      if (!provider || !id) return undefined;
+      writeModelConfig(dataRoot, { provider, model: id });
+      return undefined;
+    });
+
+    // turn_end：L3 会话检索增量索引（裁决 2）
+    // 数据源仅事件携带内容（assistant message + toolResults），不读 ~/.pi 会话文件。
+    // 当前会话 id：单用户单会话（defaultSessionFixture 的 sess-001），从事件无法直接
+    // 获得，故用扩展上下文默认会话 id（03-Arch §6.7 会话管理，多会话留后续）。
+    pi.on("turn_end", async (event) => {
+      const e = event as {
+        turnIndex: number;
+        message?: { role?: string; content?: unknown };
+        toolResults?: Array<{ toolName?: string; toolCallId?: string; content?: Array<{ type?: string; text?: string }> | string }>;
+      };
+      indexTurnEndChunks({
+        dataRoot,
+        sessionId: DEFAULT_SESSION_ID,
+        turnIndex: e.turnIndex,
+        message: e.message,
+        toolResults: e.toolResults,
+      });
+      return undefined;
+    });
   };
 }
+
+/** 默认会话 id（单用户单会话，defaultSessionFixture 的 sess-001；03-Arch §6.7） */
+const DEFAULT_SESSION_ID = "sess-001";
