@@ -48,6 +48,10 @@ import { createS6Tools } from "./tools/s6/tools";
 import { createS7Tools } from "./tools/s7/tools";
 import { createTtsTools } from "./tools/tts/tools";
 import { createBackupTools } from "./tools/backup/tools";
+import { checkWorkspaceMutationPath } from "./workspace-path-guard";
+import { buildStudyContextSections } from "./context-pack";
+import { createObservability, registerToolResultLogging } from "./observability";
+import { initMemoryL1 } from "../data/memory";
 
 /** 扩展标识（03-Arch §2.1 name 字段，pi 启动 Extensions 列表显示名） */
 export const STUDYBUDDY_EXTENSION_NAME = "pi-studybuddy";
@@ -150,5 +154,34 @@ export function createStudyBuddyExtension(): ExtensionFactory {
     for (const tool of backupTools) {
       pi.registerTool(tool);
     }
+
+    // ── T-M1-008 跨切钩子注册（03-Arch §2.3）────────────────────────────
+    // before_agent_start：多源上下文注入（L1 画像 + 激活学期/课程 + 最近事件）
+    pi.on("before_agent_start", async (event) => {
+      const { sections } = await buildStudyContextSections({ dataRoot });
+      if (sections.length === 0) return undefined;
+      return { systemPrompt: [event.systemPrompt, ...sections].join("\n\n") };
+    });
+
+    // session_start：确保 L1 画像目录存在（初始化学期库连接由 S*Context 惰性打开）
+    pi.on("session_start", async () => {
+      initMemoryL1(dataRoot);
+    });
+
+    // tool_call：workspace-path-guard 拦截 write/edit 逃逸业务数据根的路径
+    pi.on("tool_call", async (event) => {
+      if (event.toolName !== "write" && event.toolName !== "edit") return undefined;
+      const requestedPath = (event.input as { path?: unknown }).path;
+      if (typeof requestedPath !== "string") {
+        return { block: true, reason: "文件路径无效，请使用业务数据根内的相对路径。" };
+      }
+      const decision = checkWorkspaceMutationPath(dataRoot, requestedPath);
+      if (decision.block) return { block: true, reason: decision.reason };
+      return undefined;
+    });
+
+    // tool_result：集中错误日志（observability，AGENTS.md §9.3 脱敏）
+    const observability = createObservability();
+    registerToolResultLogging(pi, observability);
   };
 }
