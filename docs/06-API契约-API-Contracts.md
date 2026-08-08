@@ -1,6 +1,6 @@
 # 06 API 契约
 
-**版本**：v0.1.1
+**版本**：v0.1.2
 **日期**：2026-08-07
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.2 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.0](./05-数据模型-ERD-Data-Model.md)
@@ -119,6 +119,8 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | `sessions.delete` | `{ id: string }` | `void` | 删除 |
 | `sessions.export` | `{ id: string, format: 'md'\|'json' }` | `{ path: string }` | 导出 |
 | `sessions.search` | `{ query: string }` | `SessionSummary[]` | 模糊搜索 |
+
+> **agent.send（T-M3-001 新增）**：对话发送通道——renderer 发送用户消息 → agent-host 触发 `Streams["agent.events"]` 受控序列（message_start → token×N → context_compressed）。T-M3-001 范围为**受控夹具发射**（08-Test §5.4 不连真实 LLM，事件 payload 不携带完整 UUID/密钥）；完整流式增量渲染/工具调用视图/上下文压缩承载属 T-M3-002。
 
 ### 3.2 文件体验（files.*，借鉴 pi-desktop）
 
@@ -543,5 +545,5 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
-| v0.1.1 | 2026-08-07 | §3.1 sessions 方法表补"对话 Tab 承载"注解——sessions.* 是"💬 对话"标签页（默认主入口）的会话管理基础，会话即对话 Tab 内容，承载 pi 原生 AI 对话能力（02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2 贯通） |
+| v0.1.2 | 2026-08-08 | §3.1.1 新增 `agent.send` RPC 契约（params: `{ sessionId, text }`，result: `{ eventCount }`）：对话 Tab 发送通道，renderer 发送用户消息 → agent-host 触发 Streams["agent.events"] 受控序列（message_start → token×N → context_compressed）。范围注解：T-M3-001 受控夹具发射（08-Test §5.4 全 mock，不连真实 LLM），完整流式/工具视图/上下文压缩属 T-M3-002。原因：07-WF §2.8 对话路径步骤 2 需要 renderer→agent-host 的发送通道，现有 RPC 方法表无 agent.* 方法。影响：契约新增 1 方法（Api 方法总数 127），无既有方法变更。依据：AGENTS.md §11.2 修订纪律 + T-M3-001 计划 |——sessions.* 是"💬 对话"标签页（默认主入口）的会话管理基础，会话即对话 Tab 内容，承载 pi 原生 AI 对话能力（02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2 贯通） |
 | v0.1.0 | 2026-08-07 | 初始草案：API 总览（RPC 架构非 REST）；API 信封（{success,data,error} + 5 错误码）；RPC 方法表（sessions/files/S1-S7/TTS/备份恢复/skills/models/settings/credentials/toolchains 共 100+ 方法）；Streams（9 个推送主题）；DTO 规范（防泄露/脱敏/分页/时间戳）；路由分组与权限。输入：03-Architecture §3/§6 + 02-PRD §5 + 05-ERD |
