@@ -39,6 +39,7 @@ Thumbs.db
 
 # IDE/工具产物
 .workbuddy/
+.pi-subagents/
 
 # 参考仓库（只读，不进入本仓）
 H:/pi-references/
