@@ -19,6 +19,7 @@ import { resolveDataRoot } from "./allowed-roots";
 import { createSessionStore, defaultSessionFixture } from "./session-store";
 import { createSessionHandlers } from "./handlers/sessions";
 import { createAgentHandlers } from "./handlers/agent";
+import path from "node:path";
 
 export interface AgentHost {
   dispose(): void;
@@ -37,7 +38,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     ...toolchainHandlers,
     ...createFileHandlers(fileWatch, { dataRoot }),
     ...createModelHandlers(dataRoot),
-    ...createSessionHandlers({ store: sessionStore, dataRoot }),
+    ...createSessionHandlers({ store: sessionStore, dataRoot, exportDir: path.join(dataRoot, "exports") }),
     ...createAgentHandlers(server, sessionStore),
   });
 

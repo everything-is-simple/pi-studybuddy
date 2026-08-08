@@ -71,6 +71,8 @@ export interface SessionSummary {
   subject?: string;
   goal?: string;
   mistakeIds?: string[];
+  /** 未读消息计数（09-UI §3.3 SessionSidebar unread 徽标，T-M3-006；无后台事件源时仅展示） */
+  unread?: number;
 }
 
 export interface Session extends SessionSummary {

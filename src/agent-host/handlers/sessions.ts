@@ -19,9 +19,11 @@ export interface SessionHandlerOptions {
   store: SessionStore;
   /** 业务数据根（L3 检索库 %LOCALAPPDATA%\PiStudyBuddy\memory\l3\conversation.sqlite） */
   dataRoot: string;
+  /** 导出目录（T-M3-006 sessions.export 落点；裁决 1：测试隔离 runs 目录，生产业务数据根 exports/） */
+  exportDir: string;
 }
 
-export function createSessionHandlers({ store, dataRoot }: SessionHandlerOptions) {
+export function createSessionHandlers({ store, dataRoot, exportDir }: SessionHandlerOptions) {
   return {
     "sessions.list": (params: unknown): SessionSummary[] => {
       const { limit, cursor } = (params ?? {}) as { limit?: number; cursor?: string };
@@ -38,6 +40,16 @@ export function createSessionHandlers({ store, dataRoot }: SessionHandlerOptions
     "sessions.delete": (params: unknown): void => {
       const { id } = params as { id: string };
       store.delete(id);
+    },
+    "sessions.rename": (params: unknown): ReturnType<SessionStore["rename"]> => {
+      const { id, name } = params as { id: string; name: string };
+      const renamed = store.rename(id, name);
+      if (!renamed) throw new Error(`会话不存在或名称无效: ${id}`);
+      return renamed;
+    },
+    "sessions.export": (params: unknown): { path: string } => {
+      const { id, format } = params as { id: string; format: "md" | "json" };
+      return store.export(id, format, exportDir);
     },
     "sessions.search": (params: unknown): SessionSummary[] => {
       const { query } = params as { query: string };

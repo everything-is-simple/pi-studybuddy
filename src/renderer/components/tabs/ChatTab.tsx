@@ -52,6 +52,9 @@ export interface ChatSessionSummary {
   name: string;
   updatedAt: string;
   preview?: string;
+  subject?: string;
+  goal?: string;
+  unread?: number;
 }
 
 /** 学科选项（09-UI §4.2 学科标签，颜色标识） */
@@ -82,6 +85,10 @@ interface Props {
   initialMistakeIds?: string[];
   /** T-M3-004：工具卡片跳转回调（09-UI §4.2 + 07-WF §2.8 步骤 3，AppShell 注入 setActiveTabId） */
   onNavigateTab?: (tabId: string, context?: { sessionId?: string; courseId?: string }) => void;
+  /** T-M3-006：受控选中会话 id（裁决 5：AppShell 提升；会话即对话 Tab 内容，09-UI §7） */
+  activeSessionId?: string;
+  /** T-M3-006：会话加载错误（AppShell 注入；错误态可重试语义） */
+  sessionLoadError?: string;
 }
 
 /** 流式接收状态：idle/streaming/done */
@@ -145,6 +152,8 @@ export function ChatTab({
   initialGoal,
   initialMistakeIds,
   onNavigateTab,
+  activeSessionId,
+  sessionLoadError,
 }: Props): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
@@ -353,6 +362,81 @@ export function ChatTab({
 
   return (
     <TabContainer>
+      {/* T-M3-006 受控会话标题栏（裁决 5：会话即对话 Tab 内容，09-UI §7） */}
+      {activeSessionId && !sessionLoadError ? (
+        sessions.find((s) => s.id === activeSessionId) ? (
+          <div
+            style={{
+              marginBottom: 10,
+              padding: "6px 10px",
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              background: "var(--accent, #e8f0fe)",
+              border: "1px solid var(--accent-strong, #1a5fb4)",
+              color: "var(--text, #222)",
+            }}
+          >
+            💬 {sessions.find((s) => s.id === activeSessionId)?.name}
+          </div>
+        ) : (
+          <div
+            style={{
+              marginBottom: 10,
+              padding: "6px 10px",
+              borderRadius: 6,
+              fontSize: 12,
+              color: "var(--text-muted, #888)",
+              background: "var(--bg-panel, #f5f5f5)",
+            }}
+          >
+            请选择会话（当前无匹配会话）
+          </div>
+        )
+      ) : null}
+
+      {/* T-M3-006 会话加载错误态（可重试语义） */}
+      {sessionLoadError ? (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: "8px 10px",
+            borderRadius: 6,
+            fontSize: 12,
+            background: "#fde8e8",
+            border: "1px solid #f5baba",
+            color: "#8c2f2f",
+          }}
+        >
+          ⚠️ {sessionLoadError}
+          <button
+            type="button"
+            onClick={() => {
+              /* 重试：重新拉取会话列表（AppShell 持有状态，通过 rpc 刷新） */
+              if (!rpc) return;
+              void rpc
+                .call("sessions.list", {})
+                .then((list) => setSessions(list as unknown as ChatSessionSummary[]))
+                .catch(() => {
+                  /* 静默失败：保持错误态 */
+                });
+            }}
+            style={{
+              marginLeft: 8,
+              padding: "1px 8px",
+              fontSize: 11,
+              cursor: "pointer",
+              border: "1px solid #f5baba",
+              background: "transparent",
+              borderRadius: 4,
+              color: "#8c2f2f",
+            }}
+          >
+            重试
+          </button>
+        </div>
+      ) : null}
+
       {/* 会话列表 */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 6, color: "var(--text, #222)" }}>会话</div>

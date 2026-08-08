@@ -28,6 +28,7 @@ import { CramTab } from "./tabs/CramTab";
 import { ReportTab } from "./tabs/ReportTab";
 import { CaptureTab } from "./tabs/CaptureTab";
 import { ChatTab } from "./tabs/ChatTab";
+import { SessionSidebar, type SessionSidebarItem } from "./SessionSidebar";
 import { TtsControlBar } from "./TtsControlBar";
 import { BackupPanel } from "./BackupPanel";
 import { TabContainer } from "./common/TabContainer";
@@ -56,6 +57,7 @@ function renderTab(
   semesterId: string | undefined,
   courseId: string | undefined,
   onNavigateTab: (tabId: string) => void,
+  activeSessionId: string | undefined,
 ): React.JSX.Element {
   switch (activeTabId) {
     case "home":
@@ -79,7 +81,8 @@ function renderTab(
     case "chat":
       // T-M3-004：工具卡片跳转接线（09-UI §4.2 + 07-WF §2.8 步骤 3 + E2E-11）
       // AppShell 是 tab 状态持有者，setActiveTabId 注入 ChatTab onNavigateTab
-      return <ChatTab rpc={rpc} onNavigateTab={onNavigateTab} />;
+      // T-M3-006：受控 activeSessionId 注入（裁决 5：会话即对话 Tab 内容）
+      return <ChatTab rpc={rpc} onNavigateTab={onNavigateTab} activeSessionId={activeSessionId} />;
     default:
       return (
         <TabContainer>
@@ -98,6 +101,90 @@ export function AppShell({
   courseId,
 }: Props): React.JSX.Element {
   const [activeTabId, setActiveTabId] = useState(DEFAULT_TAB_ID);
+  // T-M3-006：选中会话状态 AppShell 提升（裁决 5：会话即对话 Tab 内容，09-UI §7）
+  const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
+  const [sidebarSessions, setSidebarSessions] = useState<SessionSidebarItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // T-M3-006：左侧栏会话列表数据源（sessions.list；搜索时走 sessions.search，
+  // L3 未建库降级为内存过滤——search handler 返回空数组时不覆盖当前列表）
+  React.useEffect(() => {
+    if (!rpc) return;
+    const method = searchQuery.trim() ? "sessions.search" : "sessions.list";
+    void rpc
+      .call(method, searchQuery.trim() ? { query: searchQuery.trim() } : {})
+      .then((list) => {
+        const items = list as SessionSidebarItem[];
+        if (method === "sessions.search" && items.length === 0 && searchQuery.trim()) {
+          // L3 未建库：降级为内存过滤（sessions.list 全量）
+          void rpc
+            .call("sessions.list", {})
+            .then((all) => {
+              const keyword = searchQuery.trim().toLowerCase();
+              const filtered = (all as SessionSidebarItem[]).filter(
+                (s) =>
+                  s.name.toLowerCase().includes(keyword) ||
+                  (s.subject ?? "").toLowerCase().includes(keyword) ||
+                  (s.goal ?? "").toLowerCase().includes(keyword) ||
+                  (s.preview ?? "").toLowerCase().includes(keyword),
+              );
+              setSidebarSessions(filtered);
+            })
+            .catch(() => {
+              /* 静默失败：保持原列表 */
+            });
+          return;
+        }
+        setSidebarSessions(items);
+      })
+      .catch(() => {
+        /* 静默失败：会话列表可空 */
+      });
+  }, [rpc, searchQuery]);
+
+  function handleNewSession(): void {
+    // 裁决 2：新建会话=内存仓库空白会话 + 立即成为当前会话
+    // （当前承载层无 create 契约，先置空选中态，发送首条消息时 agent.send 携带新会话）
+    setActiveSessionId("sess-new");
+  }
+
+  function handleRename(id: string, name: string): void {
+    if (!rpc) return;
+    void rpc
+      .call("sessions.rename", { id, name })
+      .then(() => {
+        if (!rpc) return;
+        void rpc.call("sessions.list", {}).then((list) => {
+          setSidebarSessions(list as SessionSidebarItem[]);
+        });
+      })
+      .catch(() => {
+        /* 静默失败 */
+      });
+  }
+
+  function handleDelete(id: string): void {
+    if (!rpc) return;
+    void rpc
+      .call("sessions.delete", { id })
+      .then(() => {
+        if (activeSessionId === id) setActiveSessionId(undefined);
+        if (!rpc) return;
+        void rpc.call("sessions.list", {}).then((list) => {
+          setSidebarSessions(list as SessionSidebarItem[]);
+        });
+      })
+      .catch(() => {
+        /* 静默失败 */
+      });
+  }
+
+  function handleExport(id: string, format: "md" | "json"): void {
+    if (!rpc) return;
+    void rpc.call("sessions.export", { id, format }).catch(() => {
+      /* 静默失败：导出失败不阻塞 UI */
+    });
+  }
 
   return (
     <div
@@ -133,7 +220,7 @@ export function AppShell({
 
       {/* 主布局：三栏 */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* 左侧栏 — 导航区占位 */}
+        {/* 左侧栏 — T-M3-006 会话管理 UI（09-UI §3.3 + §7，替换 M0 占位） */}
         <aside
           style={{
             width: 220,
@@ -146,8 +233,18 @@ export function AppShell({
             overflowY: "auto",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--text, #222)" }}>导航</div>
-          <div style={{ lineHeight: 2 }}>学期 / 课程 / 会话</div>
+          <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--text, #222)" }}>会话</div>
+          <SessionSidebar
+            sessions={sidebarSessions}
+            query={searchQuery}
+            activeId={activeSessionId}
+            onNewSession={handleNewSession}
+            onSelect={setActiveSessionId}
+            onQueryChange={setSearchQuery}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            onExport={handleExport}
+          />
         </aside>
 
         {/* 主内容区 */}
@@ -167,7 +264,7 @@ export function AppShell({
           <TtsControlBar rpc={rpc} />
 
           {/* Tab 内容：根据 activeTabId 渲染对应业务组件（T-M1-009） */}
-          {renderTab(activeTabId, rpc, semesterId, courseId, setActiveTabId)}
+          {renderTab(activeTabId, rpc, semesterId, courseId, setActiveTabId, activeSessionId)}
 
           {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
           {rpcStatus && activeTabId === DEFAULT_TAB_ID && (
