@@ -24,9 +24,21 @@ interface PendingEntry {
   timer: NodeJS.Timeout;
 }
 
+/** 事件推送消息（test-main.js shim server 转发，T-M3-007） */
+interface EventPushMessage {
+  type: "event";
+  topic: string;
+  key?: string;
+  payload: unknown;
+}
+
 export class RpcDriver {
   private nextId = 0;
   private readonly pending = new Map<string, PendingEntry>();
+  /** 按 topic 缓存已到达事件（供 waitForEvent 回溯匹配） */
+  private readonly eventBuffer = new Map<string, unknown[]>();
+  /** 等待事件的条件回调（topic → 回调集合） */
+  private readonly eventWaiters = new Map<string, Set<(payload: unknown) => boolean>>();
 
   constructor(private readonly channel: E2EChannel) {
     // 监听所有消息，按 id 分发 RPC 响应
@@ -41,7 +53,66 @@ export class RpcDriver {
         } else {
           entry.resolve(resp.result);
         }
+        return;
       }
+      // 事件推送分发（T-M3-007：agent.events 等 Streams 主题）
+      const event = msg as EventPushMessage;
+      if (event?.type === "event" && typeof event.topic === "string") {
+        this.dispatchEvent(event.topic, event.payload);
+      }
+    });
+  }
+
+  /** 分发到达事件：响应 waitForEvent 的等待者 + 缓存进 buffer */
+  private dispatchEvent(topic: string, payload: unknown): void {
+    const waiters = this.eventWaiters.get(topic);
+    if (waiters) {
+      for (const predicate of [...waiters]) {
+        if (predicate(payload)) {
+          waiters.delete(predicate);
+        }
+      }
+    }
+    const buf = this.eventBuffer.get(topic) ?? [];
+    buf.push(payload);
+    this.eventBuffer.set(topic, buf);
+  }
+
+  /**
+   * 等待某 topic 上满足 predicate 的事件（T-M3-007：agent.events 流式事件订阅）。
+   * 先查已缓存事件（dispatch 时序竞态兜底），再等新到达。
+   * @param topic     事件主题（如 "agent.events"）
+   * @param predicate 匹配条件（默认任意事件）
+   * @param timeoutMs 超时（默认 15s）
+   */
+  async waitForEvent<T = unknown>(
+    topic: string,
+    predicate: (payload: unknown) => boolean = () => true,
+    timeoutMs = 15_000,
+  ): Promise<T> {
+    // 回溯已缓存事件
+    const buf = this.eventBuffer.get(topic);
+    if (buf) {
+      const hit = buf.find(predicate);
+      if (hit !== undefined) return hit as T;
+    }
+    // 等待新到达
+    return new Promise<T>((resolve, reject) => {
+      const predicateWrap = (payload: unknown): boolean => {
+        if (predicate(payload)) {
+          clearTimeout(timer);
+          resolve(payload as T);
+          return true;
+        }
+        return false;
+      };
+      const waiters = this.eventWaiters.get(topic) ?? new Set();
+      waiters.add(predicateWrap);
+      this.eventWaiters.set(topic, waiters);
+      const timer = setTimeout(() => {
+        waiters.delete(predicateWrap);
+        reject(new Error(`等待事件超时: ${topic} (${timeoutMs}ms)`));
+      }, timeoutMs);
     });
   }
 

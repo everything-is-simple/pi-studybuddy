@@ -36,6 +36,16 @@ const {
   createMockDeliveryChannels,
   createFailingDeliveryChannel,
 } = require("../../dist/agent-host/handlers/s6/delivery-channels");
+// ── T-M3-007：对话承载层 handler（agent/sessions/modelsConfig）────────────────
+const {
+  createSessionStore,
+  defaultSessionFixture,
+} = require("../../dist/agent-host/session-store");
+const { createSessionHandlers } = require("../../dist/agent-host/handlers/sessions");
+const { createAgentHandlers } = require("../../dist/agent-host/handlers/agent");
+const { createModelHandlers } = require("../../dist/agent-host/handlers/models");
+const { createFileHandlers } = require("../../dist/agent-host/handlers/files");
+const { indexTurnEndChunks } = require("../../dist/agent/turn-end");
 
 /** 业务数据根（运行数据隔离） */
 const dataRoot = process.env.PI_STUDYBUDDY_DATA_ROOT;
@@ -63,6 +73,22 @@ const s7Ctx = new S7Context(dataRoot);
 const ttsCtx = new TtsContext();
 const backupCtx = new BackupContext(dataRoot);
 
+// ── T-M3-007：对话承载层（会话仓库 + 事件推送 shim）────────────────────────
+// files.watch/unwatch 最小 mock（E2E 不监听真实 fs 变更；files.read 不依赖 service）
+const noopFileWatch = {
+  start: async () => {},
+  stop: () => {},
+};
+// 会话内存仓库（复用生产 factory，06-API §3.1 会话骨架）
+const sessionStore = createSessionStore(defaultSessionFixture());
+// agent.send 经 server.pushEvent 发射 agent.events；子进程无 RpcServer，
+// 用 shim server 将事件转发父进程 {"type":"event","topic","payload"} 供 RpcDriver 订阅。
+const eventForwardServer = {
+  pushEvent: (topic, payload, key) => {
+    send({ type: "event", topic, key, payload });
+  },
+};
+
 // 装配全部 handler（与生产 RpcServer.handle 相同的调用约定）
 const allHandlers = {
   "system.ping": (...args) => ping(args[0]),
@@ -75,6 +101,16 @@ const allHandlers = {
   ...createS7Handlers(s7Ctx),
   ...createTtsHandlers(ttsCtx),
   ...createBackupHandlers(backupCtx),
+  // ── T-M3-007：对话承载层 handler 装配（复用生产 create*Handlers factory）──
+  ...createSessionHandlers({
+    store: sessionStore,
+    dataRoot,
+    exportDir: path.join(dataRoot, "exports"),
+  }),
+  ...createAgentHandlers(eventForwardServer, sessionStore),
+  ...createModelHandlers(dataRoot),
+  // T-M3-002：files.read @引用白名单门禁（E2E-12 前置，AGENTS.md §9.4）
+  ...createFileHandlers(noopFileWatch, { dataRoot }),
 };
 
 /**
@@ -112,6 +148,24 @@ allHandlers["test.seedModule"] = (params) => {
     return { id: moduleId, courseInstanceId, moduleName };
   }
   throw { code: "BAD_REQUEST", message: "未找到该课程，无法种入知识模块" };
+};
+
+/**
+ * 测试专用 turn_end 增量索引（E2E-13 前置，模拟 pi 扩展 turn_end 钩子）。
+ *
+ * 生产在 pi 扩展层 pi.on("turn_end") 调用 indexTurnEndChunks（studybuddy-extension.ts）。
+ * E2E 子进程不跑 pi 内核，故用 test.turnEndIndex 直调生产 indexTurnEndChunks 纯函数，
+ * 验证 L3 增量索引 + 跨进程持久化（二次 launch 后 sessions.search 命中）。
+ */
+allHandlers["test.turnEndIndex"] = (params) => {
+  const { sessionId, turnIndex, message, toolResults } = params;
+  return indexTurnEndChunks({
+    dataRoot,
+    sessionId,
+    turnIndex,
+    message,
+    toolResults,
+  });
 };
 
 /** 发送消息到父进程 */

@@ -5,6 +5,7 @@
  * 本层为承载能力（无钩子依赖），turn_end 增量索引接线归 T-M3-005。
  */
 import path from "node:path";
+import { mkdirSync } from "node:fs";
 import { openDatabase, applyPragmas, type DataDb } from "../db";
 import { CONVERSATION_SCHEMA_SQL } from "../schema/conversation.sql";
 import { tokenizeBigram } from "./bigram";
@@ -26,6 +27,8 @@ export interface ChunkInput {
  * 建表幂等：chunks 已存在则跳过 DDL（CREATE 非幂等，重复 exec 抛 "table already exists"）。
  */
 export function openConversationDb(dbPath: string): DataDb {
+  // 父目录不存在时 SQLite 报 "unable to open database file"，先建目录（数据根隔离场景）
+  mkdirSync(path.dirname(dbPath), { recursive: true });
   const raw = openDatabase(dbPath);
   applyPragmas(raw);
   const exists = raw

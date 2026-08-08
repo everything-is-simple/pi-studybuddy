@@ -8,7 +8,8 @@
 /** global.db 4 表 DDL + 索引（05-ERD §2） */
 export const GLOBAL_SCHEMA_SQL = `
 -- 2.1 semesters（学期索引）
-CREATE TABLE semesters (
+-- 幂等（IF NOT EXISTS）：复用 dataRoot 二次启动（E2E-13 跨进程持久化）不报 already exists
+CREATE TABLE IF NOT EXISTS semesters (
   id TEXT PRIMARY KEY,
   student_name TEXT NOT NULL,
   semester_label TEXT NOT NULL,
@@ -26,11 +27,11 @@ CREATE TABLE semesters (
   CHECK (end_date > start_date)
 );
 
-CREATE INDEX idx_semesters_status ON semesters(status) WHERE deleted_at IS NULL;
-CREATE INDEX idx_semesters_label ON semesters(semester_label);
+CREATE INDEX IF NOT EXISTS idx_semesters_status ON semesters(status) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_semesters_label ON semesters(semester_label);
 
 -- 2.2 parent_report_targets（家长报告目标配置）
-CREATE TABLE parent_report_targets (
+CREATE TABLE IF NOT EXISTS parent_report_targets (
   id TEXT PRIMARY KEY,
   semester_id TEXT NOT NULL REFERENCES semesters(id),
   target_name TEXT NOT NULL,
@@ -44,10 +45,10 @@ CREATE TABLE parent_report_targets (
   deleted_at TEXT
 );
 
-CREATE INDEX idx_report_targets_semester ON parent_report_targets(semester_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_report_targets_semester ON parent_report_targets(semester_id) WHERE deleted_at IS NULL;
 
 -- 2.3 backup_records（备份历史）
-CREATE TABLE backup_records (
+CREATE TABLE IF NOT EXISTS backup_records (
   id TEXT PRIMARY KEY,
   semester_id TEXT NOT NULL REFERENCES semesters(id),
   course_instance_id TEXT NOT NULL,
@@ -66,13 +67,13 @@ CREATE TABLE backup_records (
   created_at TEXT NOT NULL
 );
 
-CREATE INDEX idx_backup_semester ON backup_records(semester_id);
-CREATE INDEX idx_backup_course ON backup_records(course_instance_id);
-CREATE INDEX idx_backup_type ON backup_records(backup_type);
-CREATE INDEX idx_backup_created ON backup_records(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backup_semester ON backup_records(semester_id);
+CREATE INDEX IF NOT EXISTS idx_backup_course ON backup_records(course_instance_id);
+CREATE INDEX IF NOT EXISTS idx_backup_type ON backup_records(backup_type);
+CREATE INDEX IF NOT EXISTS idx_backup_created ON backup_records(created_at DESC);
 
 -- 2.4 backup_schedules（备份调度配置）
-CREATE TABLE backup_schedules (
+CREATE TABLE IF NOT EXISTS backup_schedules (
   id TEXT PRIMARY KEY,
   semester_id TEXT NOT NULL REFERENCES semesters(id),
   course_instance_id TEXT,
@@ -85,7 +86,7 @@ CREATE TABLE backup_schedules (
   updated_at TEXT NOT NULL
 );
 
-CREATE INDEX idx_backup_sched_enabled ON backup_schedules(enabled) WHERE enabled = 1;
+CREATE INDEX IF NOT EXISTS idx_backup_sched_enabled ON backup_schedules(enabled) WHERE enabled = 1;
 `;
 
 /** global.db 表名清单（供测试断言） */

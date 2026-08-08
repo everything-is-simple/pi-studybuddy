@@ -17,7 +17,7 @@ import { fork, type ChildProcess } from "node:child_process";
 import { once, EventEmitter } from "node:events";
 
 /** E2E 运行数据隔离根（AGENTS.md §5.3） */
-export const E2E_RUN_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M2-009\\e2e";
+export const E2E_RUN_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M3-007\\e2e";
 
 /** 测试主入口绝对路径 */
 const TEST_MAIN = path.resolve(__dirname, "..", "test-main.js");
@@ -65,11 +65,18 @@ function createChannel(child: ChildProcess): E2EChannel {
  * 前置：pnpm build 已完成（dist/ 产物齐全）。
  *
  * @param suffix 数据根子目录后缀（多测试用例隔离）
+ * @param options.reuseDataRoot 复用同一 dataRoot 不清理（E2E-13 二次 launch 重启语义，
+ *   验证 L3 检索跨进程持久化；默认 false 每次清理）
  */
-export async function launchElectron(suffix = "default"): Promise<LaunchedApp> {
+export async function launchElectron(
+  suffix = "default",
+  options: { reuseDataRoot?: boolean } = {},
+): Promise<LaunchedApp> {
   const dataRoot = path.join(E2E_RUN_DIR, suffix);
-  // 清理旧数据
-  fs.rmSync(dataRoot, { recursive: true, force: true });
+  if (!options.reuseDataRoot) {
+    // 清理旧数据
+    fs.rmSync(dataRoot, { recursive: true, force: true });
+  }
   fs.mkdirSync(dataRoot, { recursive: true });
 
   const child = fork(TEST_MAIN, [], {

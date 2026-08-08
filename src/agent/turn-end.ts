@@ -89,24 +89,29 @@ export function indexTurnEndChunks(input: TurnEndIndexInput): number {
 
   const insert = (content: string, role: ChunkInput["role"], sourceType: string): void => {
     const id = `${sessionId}:${turnIndex}:${role}:${seq}`;
-    try {
-      db.db
-        .prepare(
-          `INSERT INTO chunks (id, session_id, content, role, source_type, created_at, last_offset, last_mtime_ms)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-           ON CONFLICT(id) DO NOTHING`,
-        )
-        .run(
-          id,
-          sessionId,
-          content,
-          role,
-          sourceType,
-          new Date().toISOString(),
-          offsetBase + seq,
-          Date.now(),
-        );
-      // chunks_fts：仅当 chunks 行确实新增（非幂等跳过）时写入索引，避免重复
+    // 每次调用推进 seq：同 turn 重复触发时，同 role 后续消息仍定位到历史 id（幂等），
+    // 避免 seq 停在冲突处导致 seq0 重复 chunk。
+    seq += 1;
+    // ON CONFLICT DO NOTHING + RETURNING id：有返回行 = 实际新增；无返回行 = PK 冲突幂等跳过
+    const inserted = db.db
+      .prepare(
+        `INSERT INTO chunks (id, session_id, content, role, source_type, created_at, last_offset, last_mtime_ms)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO NOTHING
+         RETURNING id`,
+      )
+      .get(
+        id,
+        sessionId,
+        content,
+        role,
+        sourceType,
+        new Date().toISOString(),
+        offsetBase + seq - 1,
+        Date.now(),
+      );
+    // 仅实际新增才写 chunks_fts 并计数（幂等跳过不计）
+    if (inserted) {
       const row = db.db.prepare("SELECT rowid FROM chunks WHERE id = ?").get(id) as { rowid: number } | undefined;
       if (row) {
         const tokens = tokenizeBigram(content);
@@ -116,10 +121,7 @@ export function indexTurnEndChunks(input: TurnEndIndexInput): number {
             .run(row.rowid, tokens.join(" "));
         }
       }
-      seq += 1;
       written += 1;
-    } catch {
-      // PK 冲突（幂等跳过）
     }
   };
 
