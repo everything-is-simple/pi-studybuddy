@@ -120,7 +120,9 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | `sessions.export` | `{ id: string, format: 'md'\|'json' }` | `{ path: string }` | 导出 |
 | `sessions.search` | `{ query: string }` | `SessionSummary[]` | 模糊搜索 |
 
-> **agent.send（T-M3-001 新增）**：对话发送通道——renderer 发送用户消息 → agent-host 触发 `Streams["agent.events"]` 受控序列（message_start → token×N → context_compressed）。T-M3-001 范围为**受控夹具发射**（08-Test §5.4 不连真实 LLM，事件 payload 不携带完整 UUID/密钥）；完整流式增量渲染/工具调用视图/上下文压缩承载属 T-M3-002。
+> **agent.send（T-M3-001 新增）**：对话发送通道——renderer 发送用户消息 → agent-host 触发 `Streams["agent.events"]` 受控序列（message_start → token×N → context_compressed）。T-M3-001 范围为**受控夹具发射**（08-Test §5.4 不连真实 LLM，事件 payload 不携带完整 UUID/密钥）。
+>
+> **agent.send（T-M3-002 扩展）**：受控序列扩展 tool_call/tool_result 事件对（输入含触发词「出题/笔记/朗读」→ 模拟 studybuddy_* 工具调用，工具调用透明 09-UI §4.2）；事件 payload 结构化（见 §4 AgentEvent payload 说明）。
 
 ### 3.2 文件体验（files.*，借鉴 pi-desktop）
 
@@ -128,11 +130,13 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 |---|---|---|---|
 | `files.selectDirectory` | `{}` | `{ path: string }` | dialog.showOpenDialog，记录 recentCwds（最多 12） |
 | `files.list` | `{ dir: string }` | `FileEntry[]` | lazy 加载 |
-| `files.read` | `{ path: string }` | `{ content: string, encoding: string }` | 受 allowed-roots 校验 |
+| `files.read` | `{ path: string }` | `{ content: string, encoding: string }` | 受 allowed-roots 校验（T-M3-002 实现：白名单门禁 + 相对 storageKey 解析 + 1MB 截断） |
 | `files.previewMarkdown` | `{ path: string }` | `{ html: string }` | react-markdown + KaTeX + Mermaid |
 | `files.previewDocx` | `{ path: string }` | `{ html: string }` | mammoth，DOCX_PREVIEW_MAX_BYTES 限制 |
 | `files.watch` | `{ path: string }` | `subscribe` | fs.watch recursive，100ms 防抖→Streams["files.changed"] |
 | `files.unwatch` | `{ path: string }` | `void` | 取消监听 |
+
+> **§3.2 落地注解（T-M3-002）**：`files.read` 已由 T-M3-002 实现——路径必须经 allowed-roots 白名单校验（AGENTS.md §9.4 符号链接逃逸防护，realpath 归一化），相对路径（materials.storageKey）先相对业务数据根解析，内容 ≤1MB 截断；越权路径 → BAD_REQUEST（不泄漏真实路径细节），不存在 → NOT_FOUND。
 
 ### 3.3 S1 学习节奏
 
@@ -453,6 +457,18 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | Stream 主题 | 触发条件 | 推送数据 | 说明 |
 |---|---|---|---|
 | `agent.events` | pi agent 事件 | `AgentEvent` | 流式回复、工具调用视图、上下文压缩状态 |
+
+> **AgentEvent payload 结构化说明（T-M3-002 增补，用户 2026-08-08 批准）**：payload 按 kind 区分为结构化联合（`src/contract/types.ts`）：
+>
+> | kind | payload | 说明 |
+> |---|---|---|
+> | `message_start` | `{}` | 消息开始 |
+> | `token` | `{ text }` | 流式文本增量 |
+> | `tool_call` | `{ toolCallId, toolName, inputSummary }` | 工具调用开始（字段子集对齐 pi 底座 ToolCallEvent） |
+> | `tool_result` | `{ toolCallId, toolName, isError, resultSummary }` | 工具调用结果（字段子集对齐 pi 底座 ToolResultEvent） |
+> | `context_compressed` | `{ compressed: true }` | 长对话上下文压缩 |
+>
+> **脱敏铁律（AGENTS.md §9.3）**：tool_call/tool_result 的 inputSummary（≤120 字符）/resultSummary（≤160 字符）为脱敏截断摘要，不含完整输入/输出/密钥/完整 UUID/文件路径；toolCallId 用短 id（call-<n>）非 UUID。renderer 渲染前二次脱敏（UUID 正则过滤）。
 | `files.changed` | file-watch 检测 | `{ path: string, changeType: 'add'\|'change'\|'unlink' }` | 100ms 防抖 |
 | `jobs.progress` | Job 状态变更 | `Job` | 转换/生成进度 |
 | `practice.timer` | 练习计时 | `{ sessionId, elapsedMs, remainingMs? }` | 前端计时，限时可超时标记 |
@@ -545,5 +561,6 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.3 | 2026-08-08 | §4 增补 AgentEvent payload 结构化说明（tool_call/tool_result 脱敏载荷字段子集对齐 pi 底座 ToolCallEvent/ToolResultEvent + 脱敏铁律）+ §3.2 files.read 落地注解（T-M3-002 实现：allowed-roots 白名单门禁 + 相对 storageKey 解析 + 1MB 截断）+ §3.1.1 agent.send T-M3-002 扩展注解（tool_call/tool_result 事件对）。原因：T-M3-002 pi 原生能力承载实施（用户批准 payload 结构化 + files.read 现成契约方案）。影响：§4 AgentEvent 说明性增补 + §3.2/§3.1.1 注解，无契约方法新增/变更（Api 方法总数仍 127）。依据：AGENTS.md §11.1 治理基线修改规则 + T-M3-002 计划 |
 | v0.1.2 | 2026-08-08 | §3.1.1 新增 `agent.send` RPC 契约（params: `{ sessionId, text }`，result: `{ eventCount }`）：对话 Tab 发送通道，renderer 发送用户消息 → agent-host 触发 Streams["agent.events"] 受控序列（message_start → token×N → context_compressed）。范围注解：T-M3-001 受控夹具发射（08-Test §5.4 全 mock，不连真实 LLM），完整流式/工具视图/上下文压缩属 T-M3-002。原因：07-WF §2.8 对话路径步骤 2 需要 renderer→agent-host 的发送通道，现有 RPC 方法表无 agent.* 方法。影响：契约新增 1 方法（Api 方法总数 127），无既有方法变更。依据：AGENTS.md §11.2 修订纪律 + T-M3-001 计划 |——sessions.* 是"💬 对话"标签页（默认主入口）的会话管理基础，会话即对话 Tab 内容，承载 pi 原生 AI 对话能力（02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2 贯通） |
 | v0.1.0 | 2026-08-07 | 初始草案：API 总览（RPC 架构非 REST）；API 信封（{success,data,error} + 5 错误码）；RPC 方法表（sessions/files/S1-S7/TTS/备份恢复/skills/models/settings/credentials/toolchains 共 100+ 方法）；Streams（9 个推送主题）；DTO 规范（防泄露/脱敏/分页/时间戳）；路由分组与权限。输入：03-Architecture §3/§6 + 02-PRD §5 + 05-ERD |
