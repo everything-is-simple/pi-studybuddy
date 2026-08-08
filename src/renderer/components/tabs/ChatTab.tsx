@@ -20,6 +20,7 @@ import type { AgentEvent, ModelProvider } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
 import type { TypedRpcClient } from "../../rpc-client";
+import { jumpButtonLabel, toolJumpTarget } from "../../tool-tab-map";
 
 /** 工具调用视图条目（T-M3-002：tool_call → running / tool_result → done|error） */
 export interface ToolCallView {
@@ -79,6 +80,8 @@ interface Props {
   initialGoal?: string;
   /** 初始关联错题 ID 列表（T-M3-003） */
   initialMistakeIds?: string[];
+  /** T-M3-004：工具卡片跳转回调（09-UI §4.2 + 07-WF §2.8 步骤 3，AppShell 注入 setActiveTabId） */
+  onNavigateTab?: (tabId: string, context?: { sessionId?: string; courseId?: string }) => void;
 }
 
 /** 流式接收状态：idle/streaming/done */
@@ -141,6 +144,7 @@ export function ChatTab({
   initialSubject,
   initialGoal,
   initialMistakeIds,
+  onNavigateTab,
 }: Props): React.JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
@@ -574,6 +578,33 @@ export function ChatTab({
                         输入：{sanitizeSummary(tc.inputSummary, 120)}
                         {tc.resultSummary ? ` ｜ 结果：${sanitizeSummary(tc.resultSummary, 160)}` : ""}
                       </div>
+                      {/* T-M3-004 工具调用可跳转（09-UI §4.2 + 07-WF §2.8 步骤 3 + E2E-11）：
+                          仅 done 状态且有目标 Tab 的工具渲染 [去目标 Tab 名] 按钮（裁决 3）
+                          tts/backup 域无目标 Tab 不渲染（裁决 1/1a） */}
+                      {tc.status === "done" && (() => {
+                        const target = toolJumpTarget(tc.toolName);
+                        const label = jumpButtonLabel(tc.toolName);
+                        if (!target || !label) return null;
+                        return (
+                          <button
+                            type="button"
+                            data-tab={target.tabId}
+                            onClick={() => onNavigateTab?.(target.tabId, { sessionId: "sess-001" })}
+                            style={{
+                              marginTop: 4,
+                              padding: "2px 10px",
+                              fontSize: 12,
+                              cursor: "pointer",
+                              border: "1px solid var(--border, #e0e0e0)",
+                              background: "var(--bg, #ffffff)",
+                              borderRadius: 6,
+                              color: "var(--accent-strong, #1a5fb4)",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>

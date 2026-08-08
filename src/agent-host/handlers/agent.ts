@@ -28,30 +28,86 @@ const TOKEN_FRAGMENTS = [
   "存在 δ>0…",
 ];
 
-/** 触发词 → 模拟工具（09-UI §4.2 学习工具图标风格 studybuddy_*） */
+/** 触发词 → 模拟工具（09-UI §4.2 学习工具图标风格 studybuddy_*）
+ * T-M3-004 扩展：按域分组覆盖 35 工具全部域（裁决 2，每域 1-2 触发词），
+ * 既有 3 触发词（出题/笔记/朗读）保持兼容无回归。
+ * 受控夹具语义：不真实执行业务 handler，仅发 tool_call/tool_result 事件对。
+ */
 const TOOL_TRIGGERS: Array<{
   keywords: string[];
   toolName: string;
   inputSummary: string;
   resultSummary: string;
 }> = [
+  // S3 练习域（07-WF §2.8 出题→跳练习 Tab）
   {
     keywords: ["出题", "生成题目", "练习题", "出 5 道", "练习题目"],
     toolName: "studybuddy_generate_questions",
     inputSummary: "按当前课程生成练习题",
     resultSummary: "已生成 5 道练习题",
   },
+  // S2 笔记域（09-UI §4.2 "查看"跳笔记 Tab）
   {
     keywords: ["笔记"],
     toolName: "studybuddy_generate_note",
     inputSummary: "根据资料生成结构化笔记",
     resultSummary: "已生成结构化笔记",
   },
+  // TTS 域（朗读控制条全局，不跳转）
   {
     keywords: ["朗读", "读一读", "TTS"],
     toolName: "studybuddy_tts_speak",
     inputSummary: "朗读当前 AI 回复",
     resultSummary: "已开始朗读",
+  },
+  // S5 冲刺域（T-M3-004 裁决 2）
+  {
+    keywords: ["速背卡", "模拟卷", "冲刺", "考前模拟"],
+    toolName: "studybuddy_generate_mock_exam",
+    inputSummary: "按考试目标生成模拟卷",
+    resultSummary: "已生成模拟卷",
+  },
+  // S7 采集域（T-M3-004 裁决 2）
+  {
+    keywords: ["转写", "课堂录音", "转录"],
+    toolName: "studybuddy_transcribe_class",
+    inputSummary: "转写课堂录音",
+    resultSummary: "已转写课堂内容",
+  },
+  // 备份域（T-M3-004 裁决 2 + 裁决 1a：不渲染跳转按钮）
+  {
+    keywords: ["备份"],
+    toolName: "studybuddy_backup_course",
+    inputSummary: "备份当前课程数据",
+    resultSummary: "已备份课程数据",
+  },
+  // S4 错题域（T-M3-004 裁决 2）
+  {
+    keywords: ["错题", "薄弱点", "错因"],
+    toolName: "studybuddy_aggregate_weak_point",
+    inputSummary: "分析错题薄弱点",
+    resultSummary: "已汇总薄弱点",
+  },
+  // S6 报告域（T-M3-004 裁决 2）
+  {
+    keywords: ["家长报告", "报告给家长", "生成报告"],
+    toolName: "studybuddy_generate_parent_report",
+    inputSummary: "生成家长报告",
+    resultSummary: "已生成家长报告",
+  },
+  // S2 资料域（T-M3-004 裁决 2）
+  {
+    keywords: ["上传资料", "导入资料", "上传文件"],
+    toolName: "studybuddy_upload_material",
+    inputSummary: "上传课程资料",
+    resultSummary: "已上传资料",
+  },
+  // S1 首页域（T-M3-004 裁决 2）
+  {
+    keywords: ["初始化学期", "新建学期", "开学"],
+    toolName: "studybuddy_init_semester",
+    inputSummary: "初始化学习学期",
+    resultSummary: "已初始化学期",
   },
 ];
 

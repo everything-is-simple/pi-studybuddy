@@ -55,6 +55,7 @@ function renderTab(
   rpc: TypedRpcClient | undefined,
   semesterId: string | undefined,
   courseId: string | undefined,
+  onNavigateTab: (tabId: string) => void,
 ): React.JSX.Element {
   switch (activeTabId) {
     case "home":
@@ -76,7 +77,9 @@ function renderTab(
     case "backup":
       return <BackupPanel rpc={rpc} />;
     case "chat":
-      return <ChatTab rpc={rpc} />;
+      // T-M3-004：工具卡片跳转接线（09-UI §4.2 + 07-WF §2.8 步骤 3 + E2E-11）
+      // AppShell 是 tab 状态持有者，setActiveTabId 注入 ChatTab onNavigateTab
+      return <ChatTab rpc={rpc} onNavigateTab={onNavigateTab} />;
     default:
       return (
         <TabContainer>
@@ -164,7 +167,7 @@ export function AppShell({
           <TtsControlBar rpc={rpc} />
 
           {/* Tab 内容：根据 activeTabId 渲染对应业务组件（T-M1-009） */}
-          {renderTab(activeTabId, rpc, semesterId, courseId)}
+          {renderTab(activeTabId, rpc, semesterId, courseId, setActiveTabId)}
 
           {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
           {rpcStatus && activeTabId === DEFAULT_TAB_ID && (
