@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.102
+**版本**：v0.1.103
 **日期**：2026-08-09
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.98 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-023 交叉审查修订进行中，T-M4-001~010/T-M4-022 done，T-M4-011~021 仍 pending；不改变既有 40 行业务执行顺序，也不自动启动后续任务。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.99 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-023 交叉审查修订已完成，T-M4-001~010/T-M4-022/T-M4-023 done，T-M4-011~021 仍 pending；不改变既有 40 行业务执行顺序，也不自动启动后续任务。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.6 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -47,6 +47,7 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.103 Git 收口同步：T-M4-023 功能提交 `92e0bcb` 已进入 master，完整质量门与远端 ref 核验通过；任务登记为 done，T-M4-011~021 仍 pending。
 > v0.1.101 交叉审查同步：01-09 版本、credential-vault 实际拓扑、默认对话入口、生产模型配置边界与 T-M4-023 任务证据已对齐。
 
 > 用户定义的五阶段组件治理，是本项目的铁律：
@@ -153,6 +154,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.103 | 2026-08-09 | T-M4-023 Git 收口同步：功能提交 `92e0bcb` 已快进进入 master；Node 24.14.0 master 完整质量门通过（unit/integration 104 files/1028 tests、真实 Electron E2E 16 files/118 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、文档治理与 diff check）；治理同步已推送并核验 `master=origin/master`，任务登记为 done。 |
 | v0.1.102 | 2026-08-09 | T-M4-023 本地修订与 Node 24.14.0 完整质量门验收同步：unit/integration 104 files/1028 tests、真实 Electron E2E 16 files/118 tests、contract 127/127、security 6/6、smoke 6/6、UUID 7/7、文档治理与 diff check 通过；任务保持 in_progress，Git 收口待授权，T-M4-011~021 未启动。 |
 | v0.1.101 | 2026-08-09 | 登记 T-M4-023 交叉审查问题修订并同步 01-09 文档元数据：生产 `agent.send` 无模型配置返回固定 `MODEL_NOT_CONFIGURED`、credential-vault 实际拓扑为 `config/credentials.json`、默认入口为“💬 对话”。任务仍 in_progress，Git 收口未授权，T-M4-011~021 未启动。 |
 |---|---|---|

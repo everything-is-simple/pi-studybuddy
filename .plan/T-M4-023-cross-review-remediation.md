@@ -2,7 +2,7 @@
 
 **任务 ID**：T-M4-023
 **计划文件**：`.plan/T-M4-023-cross-review-remediation.md`
-**状态**：🔄 本地实施与验证完成；Git 收口待单独授权
+**状态**：✅ done（本地实施、master 复验与 origin/master 推送均完成）
 **日期**：2026-08-09
 **里程碑**：M4 业务接线 + 打包部署
 **标题**：独立交叉审查问题修订（审查者 A：架构/契约；审查者 B：治理/任务）
@@ -61,4 +61,4 @@
 - unit/integration：104 files / 1028 tests；真实 Electron E2E：16 files / 118 tests。
 - contract coverage：127/127 API handlers、35 registerTool tools、8 IPC channels。
 - desktop security：6/6；smoke：6/6；UUID：7/7；文档治理：13 design docs + 2 Skills + 2 prompts；`git diff --check` 通过。
-- Git 尚未执行 commit/merge/push；T-M4-023 保持 `in_progress`，不启动 T-M4-011~021。
+- 功能提交 `92e0bcb` 已创建并快进合并进入 `master`；master 完整复验通过；治理同步已推送并核验 `master=origin/master`。T-M4-023 已登记为 `done`，不启动 T-M4-011~021。
