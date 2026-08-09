@@ -1,9 +1,9 @@
 # 任务计划：T-M4-006 设置页 UI
 
-**任务 ID**：T-M4-006  
-**日期**：2026-08-09  
-**状态**：🚧 执行中（用户于 2026-08-09 已批准）  
-**关联文档**：09-UI §3.1 / §9.2 / §10 / §11 / §12 / §13.3 / §14.2；03-Arch §2.5 / §4.5 / §6.4 / §6.5；06-API §3.13-§3.16 / §4；AGENTS.md §4.4 / §5 / §7  
+**任务 ID**：T-M4-006
+**日期**：2026-08-09
+**状态**：✅ 已完成（2026-08-09 Git 收口、master 复验及 origin/master 推送完成）
+**关联文档**：09-UI §3.1 / §9.2 / §10 / §11 / §12 / §13.3 / §14.2；03-Arch §2.5 / §4.5 / §6.4 / §6.5；06-API §3.13-§3.16 / §4；AGENTS.md §4.4 / §5 / §7
 **里程碑**：M4 业务接线 + 打包部署（阶段 4：系统组装）
 
 ---
@@ -235,15 +235,16 @@ rpc.subscribe("toolchains.changed", undefined, onStatuses)
 - [x] 步骤 13：更新 04-Todo + 文档 + 实施记录（任务仍 in_progress：Git 收口未获授权）
 - [x] 步骤 14：文档治理检查（通过；仅既有 01-TRD 状态字段格式非阻塞警告）
 - [x] 步骤 15：diff 检查（2026-08-09：删除 `AppShell.tsx` EOF 空白行后，`git diff --check` 通过）
-- [ ] 步骤 16：提交交付（★ 用户授权；本 Prompt 未授权，默认不执行）
+- [x] 步骤 16：提交交付（用户明确授权；功能提交 `0e378c0` 已快进合并到 master、复验并推送 origin/master）
 
 ---
 
 ## 10. 证据登记
 
 - 测试日志路径：`H:\pi-studybuddy-tmp\runs\T-M4-006\`
-- 提交哈希：待用户明确授权
-- 推送状态：待用户明确授权
+- 功能提交哈希：`0e378c0`（`agent/T-M4-006-settings-ui`）
+- 集成状态：已 `git merge --ff-only` 至 `master`，master 完整质量门复验通过
+- 推送状态：`origin/master` 推送成功
 - 实施记录路径：`.record/T-M4-006-实施记录.md`
 
 ---
@@ -260,6 +261,6 @@ rpc.subscribe("toolchains.changed", undefined, onStatuses)
 
 - 2026-08-09：复验时发现以 Node 24.14.0 启动的 `scripts/verify.mjs` 会让 shell/npm 子进程重新从全局 PATH 解析到 Node 25.4.0；这使既有 `js.node` 健康断言误报为 `unverified`。按 RED→GREEN 最小修复质量门：把 `process.execPath` 目录前置传给各检查子进程，不放宽探测或测试断言；随后 Node 24.14.0 `verify --stage=full` 全绿。该治理基线变更的原因、影响与依据已同步至 AGENTS.md §12、00-索引和 04-Todo。
 
-- 2026-08-09：实现、完整质量门、两名独立审查最终 PASS 与最终 `git diff --check` 已完成；Node 24.14.0 `scripts/verify.mjs --stage=full` 通过（含 type-check、docs、全量 unit/integration、contract/security、build、smoke 6/6、真实 Electron E2E 16 files/117 tests）。任务依 AGENTS.md §4.5/§8.4 保持 in_progress，等待用户明确授权 Git 提交/推送；未预选下一任务。
+- 2026-08-09：实现、完整质量门、两名独立审查最终 PASS 与最终 `git diff --check` 已完成；Node 24.14.0 `scripts/verify.mjs --stage=full` 通过（含 type-check、docs、全量 unit/integration、contract/security、build、smoke 6/6、真实 Electron E2E 16 files/117 tests）。随后用户明确授权 Git 收口，功能提交 `0e378c0` 已快进合并至 master、完成复验并推送 origin/master；任务登记为 done，未预选下一任务。
 
 
