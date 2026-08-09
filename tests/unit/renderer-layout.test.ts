@@ -14,6 +14,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { TABS, DEFAULT_TAB_ID, type TabDef } from "../../src/renderer/tabs";
 import { TabBar } from "../../src/renderer/components/TabBar";
 import { AppShell, appShellViewReducer, initialAppShellViewState } from "../../src/renderer/components/AppShell";
+import { createInitialSemesterCourseState, semesterCourseReducer } from "../../src/renderer/semester-course-state";
 
 // ---------- Tab 定义（09-UI §4.1） ----------
 
@@ -113,6 +114,28 @@ describe("AppShell 设置导航状态（09-UI §3.1 / §13.3）", () => {
     state = appShellViewReducer(state, { type: "closeSettings" });
     expect(state).toEqual({ activeTabId: "notes", settingsOpen: false });
   });
+
+  it("打开设置或切换工作台 Tab 不会覆盖 AppShell 的学期/课程上下文", () => {
+    let academicState = createInitialSemesterCourseState();
+    academicState = semesterCourseReducer(academicState, { type: "toggleSemester", semesterId: "semester-1" });
+    academicState = semesterCourseReducer(academicState, {
+      type: "selectCourse",
+      semesterId: "semester-1",
+      courseId: "course-1",
+    });
+
+    let viewState = initialAppShellViewState();
+    viewState = appShellViewReducer(viewState, { type: "selectTab", tabId: "notes" });
+    viewState = appShellViewReducer(viewState, { type: "openSettings" });
+    viewState = appShellViewReducer(viewState, { type: "closeSettings" });
+    viewState = appShellViewReducer(viewState, { type: "selectTab", tabId: "practice" });
+
+    expect(viewState).toEqual({ activeTabId: "practice", settingsOpen: false });
+    expect(academicState).toEqual({
+      context: { semesterId: "semester-1", courseId: "course-1" },
+      expandedSemesterIds: ["semester-1"],
+    });
+  });
 });
 
 describe("AppShell 组件（09-UI §2.1 三栏布局）", () => {
@@ -155,5 +178,12 @@ describe("AppShell 组件（09-UI §2.1 三栏布局）", () => {
   it("渲染朗读控制条占位区", () => {
     const html = renderShell();
     expect(html).toContain("TTS");
+  });
+  it("在左侧树位置渲染学期导航，并以安全的未选择上下文替换旧标题占位", () => {
+    const html = renderShell();
+    expect(html).toContain('aria-label="学期和课程"');
+    expect(html).toContain("正在等待本机学习数据连接…");
+    expect(html).toContain("未选择学期 / 未选择课程");
+    expect(html).not.toContain("学期名 / 课程名");
   });
 });

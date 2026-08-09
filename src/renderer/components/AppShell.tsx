@@ -34,7 +34,22 @@ import { BackupPanel } from "./BackupPanel";
 import { SettingsPage, isSettingsShortcut } from "./SettingsPage";
 import { TabContainer } from "./common/TabContainer";
 import { EmptyState } from "./common/EmptyState";
+import type { CourseInstance, Semester } from "../../contract/types";
 import type { TypedRpcClient } from "../rpc-client";
+import { SemesterCourseTree } from "./SemesterCourseTree";
+import {
+  SemesterCourseRequestGate,
+  applyCourseLoadResult,
+  createInitialSemesterCourseState,
+  deriveAcademicContext,
+  formatAcademicTitle,
+  loadCoursesForSemester,
+  loadSemesters,
+  semesterCourseReducer,
+  type CourseLoadState,
+  type SemesterCourseContext,
+  type SemesterLoadState,
+} from "../semester-course-state";
 
 export interface AppShellViewState {
   activeTabId: string;
@@ -62,6 +77,20 @@ export function appShellViewReducer(state: AppShellViewState, action: AppShellVi
   }
 }
 
+/**
+ * T-M4-007 只负责把归档学期明确呈现为只读浏览。
+ * 现有工作台尚未接线学期业务写 RPC；对应写入口将在后续业务接线任务中按所在组件的真实写操作逐一禁用，
+ * 避免在本任务对无关的会话、设置或占位控件实行错误拦截。
+ */
+function AcademicReadOnlyNotice({ context }: { context: SemesterCourseContext }): React.JSX.Element | null {
+  if (!context.isReadOnly) return null;
+  return (
+    <div role="status" style={{ padding: "8px 16px 0", color: "var(--text-muted, #667085)", fontSize: 12 }}>
+      当前学期已归档，工作台仅支持浏览。
+    </div>
+  );
+}
+
 interface Props {
   /** RPC 通道状态文本（由 App.tsx 传入，骨架阶段用于显示连通性） */
   rpcStatus?: string;
@@ -71,10 +100,6 @@ interface Props {
   onVerifyRpc?: () => void;
   /** 类型化 RPC 客户端（注入各 Tab 组件） */
   rpc?: TypedRpcClient;
-  /** 当前学期 ID */
-  semesterId?: string;
-  /** 当前课程 ID */
-  courseId?: string;
 }
 
 /** 根据 activeTabId 渲染对应 Tab 组件 */
@@ -124,8 +149,6 @@ export function AppShell({
   rpcResult,
   onVerifyRpc,
   rpc,
-  semesterId,
-  courseId,
 }: Props): React.JSX.Element {
   const [viewState, dispatchView] = useReducer(appShellViewReducer, undefined, initialAppShellViewState);
   const { activeTabId, settingsOpen } = viewState;
@@ -133,6 +156,20 @@ export function AppShell({
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
   const [sidebarSessions, setSidebarSessions] = useState<SessionSidebarItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  // T-M4-007：AppShell 持有唯一学期/课程上下文；不向各 Tab 分散复制选择状态。
+  const [semesterCourseState, dispatchSemesterCourse] = useReducer(
+    semesterCourseReducer,
+    undefined,
+    createInitialSemesterCourseState,
+  );
+  const [semesters, setSemesters] = useState<Semester[]>([]);
+  const [semesterLoadState, setSemesterLoadState] = useState<SemesterLoadState>("idle");
+  const [courseStates, setCourseStates] = useState<Record<string, CourseLoadState>>({});
+  // 归档只读状态始终从当前学期列表派生，保持学期/课程选择只有一个状态源。
+  const academicContext = deriveAcademicContext(semesterCourseState.context, semesters);
+  // 请求门闩与 mounted 标记共同阻止快速切换或卸载后的异步结果污染最新 UI。
+  const courseRequestGateRef = React.useRef(new SemesterCourseRequestGate());
+  const mountedRef = React.useRef(true);
   // 09-UI §13.3：Ctrl+, 从任意学习工作台打开设置；activeTabId 保持不变，返回时自然恢复。
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -179,6 +216,76 @@ export function AppShell({
         /* 静默失败：会话列表可空 */
       });
   }, [rpc, searchQuery]);
+
+  // T-M4-007：卸载后统一使课程请求令牌过期，异步回调不会写入已销毁组件。
+  React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      courseRequestGateRef.current.invalidate();
+    };
+  }, []);
+
+  // T-M4-007：仅使用既有 semesters.list；错误消息在树组件中固定中文展示，不传递原始异常。
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!rpc) {
+      setSemesters([]);
+      setSemesterLoadState("idle");
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setSemesterLoadState("loading");
+    void loadSemesters(rpc)
+      .then((items) => {
+        if (cancelled || !mountedRef.current) return;
+        setSemesters(items);
+        setSemesterLoadState("ready");
+      })
+      .catch(() => {
+        if (cancelled || !mountedRef.current) return;
+        setSemesters([]);
+        setSemesterLoadState("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rpc]);
+
+  /** 展开学期时绑定 semesterId 调用既有 courses.list，并拒绝过期响应。 */
+  function handleToggleSemester(semesterId: string): void {
+    const wasExpanded = semesterCourseState.expandedSemesterIds.includes(semesterId);
+    dispatchSemesterCourse({ type: "toggleSemester", semesterId });
+    if (wasExpanded || courseStates[semesterId]?.status === "ready") return;
+
+    if (!rpc) {
+      setCourseStates((current) => ({ ...current, [semesterId]: { status: "error", courses: [] } }));
+      return;
+    }
+
+    const request = courseRequestGateRef.current.begin(semesterId);
+    setCourseStates((current) => ({ ...current, [semesterId]: { status: "loading", courses: [] } }));
+    void loadCoursesForSemester(rpc, semesterId)
+      .then((courses) => {
+        if (!mountedRef.current || !courseRequestGateRef.current.isCurrent(request)) return;
+        setCourseStates((current) =>
+          applyCourseLoadResult(current, courseRequestGateRef.current, request, { status: "ready", courses }),
+        );
+      })
+      .catch(() => {
+        if (!mountedRef.current || !courseRequestGateRef.current.isCurrent(request)) return;
+        setCourseStates((current) =>
+          applyCourseLoadResult(current, courseRequestGateRef.current, request, { status: "error", courses: [] }),
+        );
+      });
+  }
+
+  /** 课程选择只更新 AppShell 唯一上下文，既有工作台 Tab 通过 renderTab 接收该值。 */
+  function handleSelectCourse(semesterId: string, courseId: string): void {
+    dispatchSemesterCourse({ type: "selectCourse", semesterId, courseId });
+  }
 
   function handleNewSession(): void {
     // 裁决 2：新建会话=内存仓库空白会话 + 立即成为当前会话
@@ -253,7 +360,14 @@ export function AppShell({
       >
         <span>📚 pi-studybuddy</span>
         <span style={{ color: "var(--text-muted, #888)", fontWeight: 400 }}>|</span>
-        <span style={{ color: "var(--text-muted, #888)", fontWeight: 400 }}>学期名 / 课程名</span>
+        {/* T-M4-007：标题从 AppShell 唯一选择上下文解析，绝不显示内部 ID 或路径。 */}
+        <span style={{ color: "var(--text-muted, #888)", fontWeight: 400 }}>
+          {formatAcademicTitle(
+            semesterCourseState.context,
+            semesters,
+            Object.fromEntries(Object.entries(courseStates).map(([id, state]) => [id, state.courses])) as Record<string, CourseInstance[]>,
+          )}
+        </span>
       </header>
 
       {/* 主布局：三栏 */}
@@ -271,7 +385,17 @@ export function AppShell({
             overflowY: "auto",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--text, #222)" }}>会话</div>
+          {/* T-M4-007：学期树位于会话之前，组成“学期 / 会话 / 设置”三级左侧导航。 */}
+          <SemesterCourseTree
+            semesters={semesters}
+            semesterLoadState={semesterLoadState}
+            expandedSemesterIds={semesterCourseState.expandedSemesterIds}
+            courseStates={courseStates}
+            context={academicContext}
+            onToggleSemester={handleToggleSemester}
+            onSelectCourse={handleSelectCourse}
+          />
+          <div style={{ fontWeight: 600, margin: "14px 0 8px", color: "var(--text, #222)" }}>会话</div>
           <SessionSidebar
             sessions={sidebarSessions}
             query={searchQuery}
@@ -324,8 +448,16 @@ export function AppShell({
               {/* TTS 全局控制条（T-M2-008，09-UI §5.1-§5.5） */}
               <TtsControlBar rpc={rpc} />
 
-              {/* Tab 内容：根据 activeTabId 渲染对应业务组件（T-M1-009） */}
-              {renderTab(activeTabId, rpc, semesterId, courseId, (tabId) => dispatchView({ type: "selectTab", tabId }), activeSessionId)}
+              {/* T-M4-007：归档上下文只读提示；具体业务写入口尚属后续 S1-S7 接线任务。 */}
+              <AcademicReadOnlyNotice context={academicContext} />
+              {renderTab(
+                activeTabId,
+                rpc,
+                academicContext.semesterId,
+                academicContext.courseId,
+                (tabId) => dispatchView({ type: "selectTab", tabId }),
+                activeSessionId,
+              )}
 
               {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
               {rpcStatus && activeTabId === DEFAULT_TAB_ID && (
