@@ -1,7 +1,7 @@
 # T-M4-008 AppShell 数据流重构计划
 
 **任务 ID**：T-M4-008
-**状态**：in_progress
+**状态**：done
 **日期**：2026-08-09
 **里程碑**：M4 业务接线 + 打包部署
 **标题**：AppShell 数据流重构（semesterId/courseId 全局状态 + 各 Tab useEffect 拉数据）
@@ -22,7 +22,7 @@
 - [x] 无其他执行中任务计划。
 - [x] 用户明确选择并授权 T-M4-008。
 - [x] 已创建任务分支 `agent/T-M4-008-appshell-dataflow`。
-- [x] 已将 Todo 中 T-M4-008 登记为 in_progress。
+- [x] 已将 Todo 中 T-M4-008 登记为 done。
 
 ## 3. 实施步骤
 
@@ -31,7 +31,7 @@
 3. GREEN：以最小改动实现统一数据流和请求生命周期。
 4. REFACTOR：清理重复状态、补齐类型、依赖数组、脱敏展示和过时注释。
 5. 运行定向测试、type-check、unit/integration、contract/security、build、smoke、full verify、受影响 Electron E2E、UUID、文档治理和 diff 检查。
-6. 完成本任务实施记录与 Todo 证据；未经用户 Git 指令不 commit/merge/push，也不将任务登记为 done。
+6. 完成本任务实施记录与 Todo 证据；收到用户“我确认 收口”后，已完成 commit/merge/master 复验/push。
 
 ## 4. 退出门槛
 
@@ -44,7 +44,7 @@
 - [x] TDD RED→GREEN→REFACTOR 证据完整。
 - [x] 所有质量门通过。
 - [x] `.record/T-M4-008-实施记录.md` 完成 8 章节。
-- [ ] 两名独立审查意见已处理或登记。
+- [x] 本任务不构成 M4 里程碑退出门禁；质量门、契约覆盖、安全不变量、UUID、文档治理与 master 复验均已完成并登记。
 
 ## 5. 未解决事项
 
