@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.79
+**版本**：v0.1.80
 **日期**：2026-08-08
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -137,12 +137,13 @@
 - [x] 04-Todo v0.1.59：登记 T-M3-005 完成（model_select / turn_end 钩子：model-config 模块原子写 + L3 增量索引 assistant+tool + modelsConfig.get/set + ChatTab 落库 + 四文档 supersedes 落点改业务数据根 config/models.json；939 单元/集成测试 + 83 E2E + smoke 6/6 + 安全不变量 6/6 + UUID 泄漏 7/7）—— M3 第 5 任务完成，M3 剩余 pending：T-M3-006~008
 - [x] 01-TRD v0.2.3：§7 决策 6 修订（v0.1 交付形态从"不打包 .exe"改为"源码形态可运行 + 打包能力常态化"，supersedes v0.2.2）。依据：用户 2026-08-08 明确指令"系统不管什么时候，只要功能正常，就要能够被打包"。打包工具链（electron-builder）纳入 M4 里程碑
 - [x] 04-Todo v0.1.66：新增 M4 里程碑（业务接线 + 打包部署）—— §6.6 M4 退出门槛 7 项 + §7.6.1 M4 任务登记表 T-M4-001~018 全 pending（18 任务：P0 设置页/学期切换/AppShell 数据流 + P1 S1-S4 接线 + P2 S5-S7 接线 + P3 TTS/备份 + P4 打包/E2E）+ §7.5 全局执行顺序表追加 M4 行 19-36 + §9 统计加 M4 行（18 pending）+ 合计 54 任务。M3 收官后人工检验发现前端 127 RPC handler 仅接通约 12 个（AI 对话线），S1-S7 业务 Tab "有壳无接线"，设置页/学期切换完全缺失
-- [x] 04-Todo v0.1.73：T-M4-022 实施与质量门已通过（Electron 36.9.5 / Node 22.19.0 / node:sqlite + 真实 Electron 桌面双启动）；两名独立审查完成；文档事实已登记；Git commit/push 收口待用户明确授权，任务按 AGENTS.md §8.4 保持 in_progress
+- [x] 04-Todo v0.1.74：T-M4-022 已完成（Electron 36.9.5 / Node 22.19.0 / node:sqlite + 真实 Electron 桌面双启动）；两名独立审查最终 PASS；commit 0ec4163 已推送 origin/master，任务按 AGENTS.md §8.4 登记 done
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.80 | 2026-08-09 | 04-Todo v0.1.74：T-M4-022 已完成 master 复验、commit `0ec4163` 与 origin/master 推送；真实 Electron 16 files/117 tests 与 Node 24.14.0 `pnpm verify` 全通过。T-M4-006~021 仍 pending，未自动启动。依据：AGENTS.md §4.5/§7/§8.4 + 用户明确授权 |
 | v0.1.79 | 2026-08-08 | 04-Todo v0.1.73：T-M4-022 业务 E2E 已从 Node fork 迁移为真实 Electron 36.9.5 + 127.0.0.1 TCP JSON-lines，runtime sentinel 与全量 16 files/117 tests 通过；stdin pipe 根因与回环边界记录于实施记录。Git 收口仍待用户授权，任务保持 in_progress。依据：AGENTS.md §4.5/§5.3/§9.1/§11.2 + 用户 T-M4-022 Prompt + `.record/T-M4-022-实施记录.md` |
 | v0.1.78 | 2026-08-08 | 04-Todo v0.1.72：T-M4-022 实施与质量门完成（Electron 36.9.5 / 内嵌 Node 22.19.0 / `node:sqlite`，真实 Electron 6/6 与同一数据根双启动 smoke，完整 E2E 15 files/116 tests，Node24.14.0 单元/集成与 Node22 verify 全通过）。两名独立审查完成；因尚未获 Git 收口授权，未 commit/push，任务继续 in_progress。依据：AGENTS.md §4.5/§7/§8.4/§11.4 + `.record/T-M4-022-实施记录.md` |
 | v0.1.77 | 2026-08-08 | 04-Todo v0.1.71：登记 T-M4-022 in_progress（Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证）。T-M4-022 前置于 T-M4-006，M4 任务 21→22，执行顺序 39→40 行，M4 统计为 16 pending + 1 in_progress + 5 done；当前仅完成治理登记与唯一计划，待用户批准计划后实施。依据：AGENTS.md §4.4/§4.5 + 用户提供的 T-M4-022 Prompt |
