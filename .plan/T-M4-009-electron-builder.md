@@ -2,7 +2,7 @@
 
 **任务 ID**：T-M4-009
 **计划文件**：`.plan/T-M4-009-electron-builder.md`
-**状态**：✅ 已完成并推送 `origin/master`（2026-08-09）  
+**状态**：✅ 已完成并推送 `origin/master`（2026-08-09）
 **日期**：2026-08-09
 **里程碑**：M4 业务接线 + 打包部署
 **标题**：electron-builder 配置 + x64 setup 首次验证
