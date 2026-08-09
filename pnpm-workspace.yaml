@@ -4,6 +4,7 @@ packages:
 allowBuilds:
   '@google/genai': false
   electron: true
+  electron-winstaller: true
   esbuild: true
   protobufjs: false
 

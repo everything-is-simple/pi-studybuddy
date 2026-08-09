@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "smoke": "node scripts/smoke.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "package:win": "pnpm build && electron-builder --win nsis --x64 --publish never",
+    "package:smoke": "node scripts/package-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -22,12 +24,41 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "36.9.5",
+    "electron-builder": "26.15.3",
     "happy-dom": "^20.11.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
     "vitest": "^2.1.8"
+  },
+  "build": {
+    "appId": "com.pi.studybuddy",
+    "productName": "Pi StudyBuddy",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json",
+      "!src{,/**/*}",
+      "!tests{,/**/*}",
+      "!docs{,/**/*}",
+      "!scripts{,/**/*}"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "dependencies": {
