@@ -1,6 +1,6 @@
 # T-M4-007：学期/课程切换 UI
 
-**状态**：in_progress（用户已授权 Git 收口；功能已合并 master，首次推送待执行）
+**状态**：done（Git 收口完成，功能与 master 复验证据已推送 origin/master）
 **日期**：2026-08-09
 **里程碑**：M4 业务接线 + 打包部署
 **优先级**：P0
@@ -10,7 +10,7 @@
 
 ### 用户授权
 
-用户明确批准“批准 T-M4-007 计划并开始实施”，并在本次会话明确授权 Git 收口。本计划是唯一执行计划；仅实施学期/课程切换 UI、相关测试、治理文档与实施记录。功能提交 `9e5116f` 已创建、快进合并至 master 并完成 master 质量门复验；首次 `origin/master` 推送待执行。
+用户明确批准“批准 T-M4-007 计划并开始实施”，并在本次会话明确授权 Git 收口。本计划是唯一执行计划；仅实施学期/课程切换 UI、相关测试、治理文档与实施记录。功能提交 `9e5116f` 已创建、快进合并至 master 并完成 master 质量门复验；与治理提交 `9493f99` 均已推送 `origin/master`。
 
 ### 权威依据
 
@@ -98,10 +98,10 @@
 9. [x] 更新实施记录、治理 SoT 和审查结论。
 10. [x] 以 Node 24.14.0 完成完整质量门复验（101 files/1015 tests + 真实 Electron E2E 16 files/117 tests）、UUID 7/7、文档治理与 `git diff --check`；日志留存于 `H:\pi-studybuddy-tmp\runs\T-M4-007\verify-full-rerun.log`。
 11. [x] Mill、Erdos 两名独立审查最终 PASS；已按审查意见回填实施记录测试证据并收敛 archived 写操作边界。
-12. [x] 已获用户 Git 收口授权；功能提交 `9e5116f` 已快进进入 master 并完成质量门复验，首次 `origin/master` 推送待执行。
+12. [x] Git 收口已完成：功能提交 `9e5116f` 已快进进入 master，master 质量门复验通过，功能与治理提交 `9493f99` 已推送 `origin/master`。
 
 ## 8. 审查记录
 
 - Erdos 第二轮提出治理版本漂移、实际 AppShell 交互测试和实施记录三个阻塞项；前两项分别通过治理同步与新增 happy-dom 实挂载测试处理，实施记录在本计划收尾中创建；第三轮确认测试证据回填后最终 PASS。
 - Mill 审查确认归档状态、请求 gate 与安全展示；其对“无真实写入口的泛化守卫”的意见已按用户附件“本任务不接线 S1-S7 业务 Tab 具体 RPC”重新裁定：保留只读浏览语义，不对会话、设置或占位控件进行错误阻断，最终 PASS。
-- 最终 PASS/FAIL、质量门命令结果以及已合并 master、首次推送待执行的 Git 收口状态已如实登记至 `.record/T-M4-007-实施记录.md`、`docs/04-任务清单-Todo-List.md` 与 `.plan/00-当前任务.md`。
+- 最终 PASS/FAIL、质量门命令结果以及已合并 master、已推送 `origin/master` 的 Git 收口事实已如实登记至 `.record/T-M4-007-实施记录.md`、`docs/04-任务清单-Todo-List.md` 与 `.plan/00-当前任务.md`。
