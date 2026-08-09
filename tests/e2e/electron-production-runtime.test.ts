@@ -34,6 +34,8 @@ interface ElectronProbe {
     preloadBridgeReady: boolean;
     preloadBridgeMethods: string[];
     systemPing?: { pong?: string; timestamp?: number };
+    semestersList?: unknown;
+    agentNoConfig?: { code?: string; message?: string; unexpectedSuccess?: boolean };
     error?: string;
   };
 }
@@ -42,28 +44,37 @@ const RENDERER_PROBE = `(
   async () => {
     const bridge = window.piBridge;
     const methods = bridge ? Object.keys(bridge).sort() : [];
+    const rpc = (port, id, method, args) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(method + " timeout")), 5000);
+      const onMessage = (event) => {
+        const msg = event.data;
+        if (msg?.kind === "response" && msg.id === id) {
+          clearTimeout(timer);
+          if (msg.error) reject(msg.error); else resolve(msg.result);
+        }
+      };
+      if (typeof port.addEventListener === "function") port.addEventListener("message", onMessage);
+      else port.onmessage = onMessage;
+      port.postMessage({ kind: "request", id, method, args });
+    });
     let systemPing;
+    let semestersList;
+    let agentNoConfig;
     try {
       const port = await bridge.connectHost();
       port.start?.();
-      systemPing = await new Promise((resolve, reject) => {
-        const id = "real-electron-ping";
-        const timer = setTimeout(() => reject(new Error("system.ping timeout")), 5000);
-        const onMessage = (event) => {
-          const msg = event.data;
-          if (msg?.kind === "response" && msg.id === id) {
-            clearTimeout(timer);
-            if (msg.error) reject(msg.error); else resolve(msg.result);
-          }
-        };
-        if (typeof port.addEventListener === "function") port.addEventListener("message", onMessage);
-        else port.onmessage = onMessage;
-        port.postMessage({ kind: "request", id, method: "system.ping", args: [{ message: "T-M4-022" }] });
-      });
+      systemPing = await rpc(port, "real-electron-ping", "system.ping", [{ message: "T-M4-022" }]);
+      semestersList = await rpc(port, "real-electron-semesters", "semesters.list", [{}]);
+      try {
+        await rpc(port, "real-electron-agent", "agent.send", [{ sessionId: "e2e-session", text: "hello" }]);
+        agentNoConfig = { unexpectedSuccess: true };
+      } catch (error) {
+        agentNoConfig = { code: error?.code, message: error?.message };
+      }
     } catch (error) {
       systemPing = { error: String(error?.message || error) };
     }
-    return { bridge: Boolean(bridge), methods, systemPing };
+    return { bridge: Boolean(bridge), methods, systemPing, semestersList, agentNoConfig };
   }
 )()`;
 
@@ -122,7 +133,8 @@ app.whenReady().then(async () => {
     emit({ phase: "ready", electron: process.versions.electron, node: process.versions.node,
       nodeSqliteAvailable, sqliteAdapterReady, windowCount: windows.length,
       browserWindowReady: true, preloadBridgeReady: Boolean(inspected.bridge),
-      preloadBridgeMethods: inspected.methods, systemPing: inspected.systemPing });
+      preloadBridgeMethods: inspected.methods, systemPing: inspected.systemPing,
+      semestersList: inspected.semestersList, agentNoConfig: inspected.agentNoConfig });
   } catch (error) {
     fail("renderer-inspection", error, { nodeSqliteAvailable, sqliteAdapterReady, windowCount: windows.length, browserWindowReady: true });
   }
@@ -142,7 +154,11 @@ async function probe(root: string, suffix: string, reuseDataRoot = false): Promi
     // 无头 Windows 验收需要绕过 Chromium sandbox 启动限制；生产 BrowserWindow 仍由安全门禁断言 sandbox:true。
     const { stdout, stderr } = await execFileAsync(ELECTRON, ["--no-sandbox", runner], {
       cwd: PROJECT_ROOT,
-      env: { ...process.env, PI_STUDYBUDDY_DATA_ROOT: dataRoot },
+      env: (() => {
+        const env = { ...process.env, PI_STUDYBUDDY_DATA_ROOT: dataRoot };
+        delete env.VITEST; // 子进程必须走 production host，不能继承 vitest fixture 开关。
+        return env;
+      })(),
       windowsHide: true,
       timeout: 25_000,
       maxBuffer: 2 * 1024 * 1024,
@@ -185,6 +201,17 @@ describe("T-M4-022 真实 Electron 生产运行时", () => {
       "closeWindow", "connectHost", "getWindowState", "maximizeWindow", "minimizeWindow",
       "queryToolchains", "selectDirectory", "showDialog",
     ]);
+  });
+
+  it("T-M4-023-E2E-01：真实 Electron 走代表性业务 RPC，且未配置模型不产生 fixture 回复", async () => {
+    const probeResult = await probe(RUN_ROOT, "t-m4-023-business-agent");
+    const evidence = JSON.stringify(probeResult, null, 2);
+    expect(probeResult.result?.phase, evidence).toBe("ready");
+    expect(probeResult.result?.semestersList, evidence).toEqual([]);
+    expect(probeResult.result?.agentNoConfig, evidence).toEqual({
+      code: "MODEL_NOT_CONFIGURED",
+      message: "尚未配置可用 AI 模型，请先在设置中完成模型配置",
+    });
   });
 
   it("T-M4-022-RED-07：真实 renderer→system.ping 往返", async () => {

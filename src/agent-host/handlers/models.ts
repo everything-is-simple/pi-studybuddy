@@ -50,15 +50,32 @@ const MODEL_FIXTURE: ModelProvider[] = [
  * 构造 models.* handlers。
  * models.list：受控 fixture（不读真实 ~/.pi/agent）。
  * modelsConfig.get/set：读写业务数据根 config/models.json（T-M3-005 裁决 1/3）。
- * models.addProvider/probe/modelsConfig.test：留后续任务，此处不注册（契约校验 WARN）。
+ * models.addProvider/probe/modelsConfig.test：保留完整 RPC 面；v0.1 不在 host 中探测外网，
+ * 以明确的受控结果/错误取代“契约存在但生产未注册”。
  */
 export function createModelHandlers(dataRoot?: string) {
   return {
     "models.list": (_params: unknown): ModelProvider[] => MODEL_FIXTURE,
+    "models.addProvider": (params: unknown): ModelProvider => {
+      const { providerConfig } = params as { providerConfig?: Omit<ModelProvider, "models"> };
+      if (!providerConfig?.id || !providerConfig.name || !providerConfig.providerType) {
+        throw { code: "BAD_REQUEST", message: "模型提供方配置无效" };
+      }
+      // 仅返回受控描述；不持久化 baseUrl，不触发网络访问。
+      return { ...providerConfig, models: [] };
+    },
+    "models.probe": (_params: unknown): import("../../contract/types").ModelInfo[] => {
+      throw { code: "BAD_REQUEST", message: "模型探测需要受控的提供方接入，当前版本未启用" };
+    },
     "modelsConfig.get": (_params: unknown): ModelConfig => {
       const cfg = dataRoot ? readModelConfig(dataRoot) : null;
       return cfg ? { provider: cfg.provider, model: cfg.model, managed: cfg.managed } : { provider: "", model: "" };
     },
+    "modelsConfig.test": (_params: unknown): { ok: boolean; latencyMs: number; error?: string } => ({
+      ok: false,
+      latencyMs: 0,
+      error: "模型连通性测试需要受控的提供方接入，当前版本未启用",
+    }),
     "modelsConfig.set": (params: unknown): ModelConfig => {
       const { provider, model } = params as { provider: string; model: string };
       if (!dataRoot) return { provider, model };

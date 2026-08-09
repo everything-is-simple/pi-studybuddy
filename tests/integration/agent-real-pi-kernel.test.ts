@@ -239,17 +239,15 @@ describe("T-M4-005 agent.send 真实 pi 内核路径（事件映射 + 脱敏）"
     expect((tokens[0].payload as { text: string }).text).toBe("回复");
   });
 
-  it("无 session 或无 model 时走受控夹具 fallback", async () => {
+  it("生产路径无 session 或无 model 时返回固定安全配置错误，绝不静默走夹具", async () => {
     const { server, events } = createMockServer();
-    // ref.current = null → 走受控夹具
     const ref: StudyBuddySessionRef = { current: null };
     const handlers = createAgentHandlers(server, undefined, ref);
 
-    const result = (await handlers["agent.send"]({ sessionId: "test-008", text: "hello" })) as { eventCount: number };
-
-    // 受控夹具：message_start + 6 token + context_compressed = 8
-    expect(result.eventCount).toBeGreaterThanOrEqual(3);
-    expect(events[0].kind).toBe("message_start");
-    expect(events[events.length - 1].kind).toBe("context_compressed");
+    await expect(handlers["agent.send"]({ sessionId: "test-008", text: "hello" })).rejects.toMatchObject({
+      code: "MODEL_NOT_CONFIGURED",
+      message: "尚未配置可用 AI 模型，请先在设置中完成模型配置",
+    });
+    expect(events).toEqual([]);
   });
 });

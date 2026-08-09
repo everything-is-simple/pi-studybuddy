@@ -1,9 +1,9 @@
 # 08 测试验收计划
 
-**版本**：v0.1.3
-**日期**：2026-08-08
+**版本**：v0.1.4
+**日期**：2026-08-09
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
-**上游**：[02-PRD v0.1.2 §7](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §3/§8/§9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.0 §6](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.0](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.0 §8/§9](./07-工作流-Workflow.md)
+**上游**：[02-PRD v0.1.4 §7](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§8/§9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2 §6](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.6](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.3 §8/§9](./07-工作流-Workflow.md)
 **下游**：04-Todo、09-UI
 **血统**：ai-studybuddy 已验证测试纪律迁移（342 后端 + 149 前端 + 24 E2E + 真实冒烟，不复制实现）
 
@@ -506,7 +506,7 @@ E2E-13 对话 L3 会话检索
 | assertNoSensitiveLeak UUID 检测 | 冒烟 §5.4 + 单件 | 注入完整 UUID 到报告 → 抛 PARENT_REPORT_PRIVACY_VIOLATION |
 | AI 日志 allowlist | 单件 + 冒烟 | 非 allowlist 字段抛错；字符串值 ≤128 字符 |
 | 家长报告不含原文/题干/答案/作答/错因/UUID | 冒烟 §5.4 | 报告序列化正则扫描禁用词 |
-| API 信封统一 5 错误码 | 单件（每个 RPC 方法） | 失败返回 `{success:false, error:{code,message}}` |
+| API 信封统一 6 错误码 | 单件（每个 RPC 方法） | 失败返回 `{success:false, error:{code,message}}` |
 | 仅 127.0.0.1 | 安全不变量脚本 | 无公网监听断言 |
 
 ### 7.3 证据驱动（02-PRD §7.3）
@@ -600,7 +600,7 @@ E2E-13 对话 L3 会话检索
 | WPS COM | 单件需真实 WPS；集成/E2E 可 mock 子进程返回 |
 | OCR venv | 单件真实；集成/E2E 可 mock |
 
-> 仅"系统冒烟"允许少量真实组件（Electron/SQLite/credential-vault/safeStorage），外部服务一律 mock。
+> 仅"系统冒烟"允许少量真实组件（Electron/SQLite/credential-vault/safeStorage），外部服务一律 mock。`runMockFixture` 只能由 VITEST 测试注入；生产 agent.send 没有可用模型配置时必须返回固定 `MODEL_NOT_CONFIGURED`，不得静默回退夹具。
 
 ---
 
@@ -702,7 +702,7 @@ pytest scripts/wps-bridge/   # Python 桥单件
 ## 12. 版本历史
 
 | 版本 | 日期 | 变更 |
-|---|---|---|
+| v0.1.4 | 2026-08-09 | 交叉审查修订：增加真实 Electron 代表性 business RPC（`semesters.list`）与无模型 `agent.send` 生产路由断言；强化契约覆盖为遇到未解析 spread/缺失 handler 直接失败；测试夹具仅限显式 VITEST 注入。 |
 | v0.1.3 | 2026-08-08 | §4.2 model_select 断言落点修订：`~/.pi/agent/models.json` → `<dataRoot>/config/models.json`（T-M3-005 裁决 1，AGENTS.md §9.5 物理隔离；与 03-Arch §2.3 supersedes 同步） |
 | v0.1.2 | 2026-08-08 | §6 E2E 框架由 Playwright 改为 vitest + Electron 启动。原因：pi-studybuddy 是 Electron 单体（无独立后端），ai-studybuddy 的 Playwright webServer 模式不适用；参考 pi-desktop `scripts/test-browser-agent-e2e.mjs` 范式，采用 vitest + `_electron.launch()` 直接启动，通过 `webContents.executeJavaScript` 驱动 UI 交互。依据：AGENTS.md §6.4 禁止过度工程化 + 用户批准 T-M1-010 方案 A。影响：§1.2 测试金字塔 + §2 分层总览 + §6 标题与说明 + §10.2 目录结构 + §10.3 运行命令，无 E2E 用例设计变更 |
 | v0.1.1 | 2026-08-07 | 按用户反馈增强：§6.5 新增 E2E-10~13 通用 AI 对话 E2E（默认主入口 + AI 自主调用工具 + @文件引用 + TTS 朗读 + L3 会话检索）；§7.1 闭环完整性表补"通用 AI 对话默认主入口"行；响应用户反馈"pi 天生自带对话，不能废弃 ai 输入" |

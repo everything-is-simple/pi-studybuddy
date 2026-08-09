@@ -78,18 +78,63 @@ if (!desktopTs) fail("src/contract/desktop.ts 不存在（PiBridge 桥接契约�
 if (!preloadTs) fail("src/preload/preload.ts 不存在（PiBridge preload 桥）");
 if (!ipcTs) fail("src/main/ipc.ts 不存在（IPC handler 注册）");
 
-// ---- 读取 agent-host 目录全部 .ts 源码（含 handlers/ 子目录），供扫描 server.handle 注册 ----
-function collectTsSource(dir) {
-  let out = "";
-  if (!fs.existsSync(dir)) return out;
+// ---- 解析 production agent-host 入口的 server.handle({ ... }) ----
+// 不能只看直接属性：生产入口通过 ...create*Handlers() 与 ...toolchainHandlers
+// 组合。这里以 AST 递归展开返回对象，无法解析的 spread 一律失败，避免“127/127”假绿。
+function collectTsFiles(dir) {
+  const files = [];
+  if (!fs.existsSync(dir)) return files;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out += collectTsSource(full);
-    else if (entry.name.endsWith(".ts")) out += fs.readFileSync(full, "utf8") + "\n";
+    if (entry.isDirectory()) files.push(...collectTsFiles(full));
+    else if (entry.name.endsWith(".ts")) files.push(full);
   }
-  return out;
+  return files;
 }
-const handlersTs = collectTsSource(agentHostDir);
+
+const agentHostFiles = collectTsFiles(agentHostDir);
+const agentHostSources = agentHostFiles.map((file) => ({
+  file,
+  source: ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS),
+}));
+
+function findObjectReturn(fn) {
+  if (!fn.body) return undefined;
+  let result;
+  const visit = (node) => {
+    if (result) return;
+    if (ts.isReturnStatement(node) && node.expression && ts.isObjectLiteralExpression(node.expression)) {
+      result = node.expression;
+      return;
+    }
+    // 不进入内嵌函数，避免取到局部回调的 return。
+    if (node !== fn.body && (ts.isFunctionLike(node) || ts.isClassLike(node))) return;
+    ts.forEachChild(node, visit);
+  };
+  ts.forEachChild(fn.body, visit);
+  return result;
+}
+
+const functionReturns = new Map();
+const variableObjects = new Map();
+for (const { source } of agentHostSources) {
+  const visit = (node) => {
+    if (ts.isFunctionDeclaration(node) && node.name) {
+      const objectReturn = findObjectReturn(node);
+      if (objectReturn) functionReturns.set(node.name.text, objectReturn);
+    }
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isObjectLiteralExpression(node.initializer)
+    ) {
+      variableObjects.set(node.name.text, node.initializer);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+}
 
 // ---- 解析 Api 接口方法名 ----
 const apiSource = ts.createSourceFile("api.ts", apiTs, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
@@ -106,33 +151,73 @@ const apiMethods = apiInterface.members.flatMap((member) => {
   return [];
 });
 
-// ---- 解析 handlers 中的 server.handle({ ... }) 注册 ----
-const handlersSource = ts.createSourceFile("handlers.ts", handlersTs, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+function propertyName(property) {
+  if (!property.name) return undefined;
+  if (ts.isStringLiteral(property.name) || ts.isIdentifier(property.name)) return property.name.text;
+  return undefined;
+}
 
-const registered = [];
-function visit(node) {
+const unresolvedSpreads = [];
+function resolveSpread(expression, seen) {
+  let target = expression;
+  while (ts.isParenthesizedExpression(target)) target = target.expression;
+  if (ts.isCallExpression(target) && ts.isIdentifier(target.expression)) {
+    const name = target.expression.text;
+    if (seen.has(`fn:${name}`)) return [];
+    const objectReturn = functionReturns.get(name);
+    if (objectReturn) return collectObjectMethods(objectReturn, new Set([...seen, `fn:${name}`]));
+    unresolvedSpreads.push(`${name}()`);
+    return [];
+  }
+  if (ts.isIdentifier(target)) {
+    const name = target.text;
+    if (seen.has(`var:${name}`)) return [];
+    const object = variableObjects.get(name);
+    if (object) return collectObjectMethods(object, new Set([...seen, `var:${name}`]));
+    unresolvedSpreads.push(name);
+    return [];
+  }
+  unresolvedSpreads.push(target.getText());
+  return [];
+}
+
+function collectObjectMethods(object, seen = new Set()) {
+  const names = [];
+  for (const property of object.properties) {
+    if (ts.isSpreadAssignment(property)) {
+      names.push(...resolveSpread(property.expression, seen));
+      continue;
+    }
+    if (ts.isPropertyAssignment(property) || ts.isMethodDeclaration(property)) {
+      const name = propertyName(property);
+      if (name) names.push(name);
+    }
+  }
+  return names;
+}
+
+const indexSourceEntry = agentHostSources.find(({ file }) => path.resolve(file) === path.join(agentHostDir, "index.ts"));
+if (!indexSourceEntry) fail("src/agent-host/index.ts 不存在");
+let rootHandlerObject;
+const findServerHandle = (node) => {
   if (
     ts.isCallExpression(node) &&
     ts.isPropertyAccessExpression(node.expression) &&
     node.expression.name.text === "handle" &&
     ts.isIdentifier(node.expression.expression) &&
-    node.expression.expression.text === "server"
+    node.expression.expression.text === "server" &&
+    ts.isObjectLiteralExpression(node.arguments[0])
   ) {
-    const [argument] = node.arguments;
-    if (argument && ts.isObjectLiteralExpression(argument)) {
-      for (const property of argument.properties) {
-        if (
-          (ts.isPropertyAssignment(property) || ts.isMethodDeclaration(property)) &&
-          (ts.isStringLiteral(property.name) || ts.isIdentifier(property.name))
-        ) {
-          registered.push(property.name.text);
-        }
-      }
-    }
+    rootHandlerObject = node.arguments[0];
   }
-  ts.forEachChild(node, visit);
+  ts.forEachChild(node, findServerHandle);
+};
+findServerHandle(indexSourceEntry.source);
+if (!rootHandlerObject) fail("src/agent-host/index.ts 中找不到 production server.handle({...}) 注册");
+const registered = collectObjectMethods(rootHandlerObject);
+if (unresolvedSpreads.length) {
+  fail(`无法静态展开 production host handler spread：${[...new Set(unresolvedSpreads)].join(", ")}`);
 }
-visit(handlersSource);
 
 // ---- 一致性校验 ----
 const registeredSet = new Set(registered);
@@ -140,11 +225,7 @@ const missing = apiMethods.filter((m) => !registeredSet.has(m));
 const duplicates = registered.filter((m, i) => registered.indexOf(m) !== i);
 const unknown = registered.filter((m) => !apiMethods.includes(m));
 
-if (missing.length) {
-  console.warn(
-    `WARN: ${missing.length} 个 Api 方法暂无 host handler（业务 handler 由 M1+ 业务任务实现，不阻塞本阶段）：${missing.join(", ")}`,
-  );
-}
+if (missing.length) fail(`Missing production host handlers for Api: ${missing.join(", ")}`);
 if (duplicates.length) fail(`Duplicate host handlers: ${[...new Set(duplicates)].join(", ")}`);
 if (unknown.length) fail(`Handlers missing from Api contract: ${unknown.join(", ")}`);
 
@@ -162,13 +243,28 @@ if (missingPreloadMethods.length) {
 }
 
 // ---- IPC 通道一致性 ----
-const ipcInvokeChannels = [...preloadTs.matchAll(/ipcRenderer\.invoke\("([^"]+)"/g)].map((m) => m[1]);
-const registeredIpc = new Set([...ipcTs.matchAll(/ipcMain\.handle\("([^"]+)"/g)].map((m) => m[1]));
-
+// preload 在 sandbox 限制下内联 IPC_CHANNELS；main 则从 shared/constants 导入。
+// 因而按常量键解析 invoke/send/on 与 handle/on，不能只匹配字面量 invoke。
+const preloadChannelValues = new Map(
+  [...preloadTs.matchAll(/^\s*([A-Z_]+):\s*["']([^"']+)["']/gm)].map((m) => [m[1], m[2]]),
+);
+const preloadIpc = [
+  ...preloadTs.matchAll(/ipcRenderer\.(?:invoke|send|on)\(IPC_CHANNELS\.([A-Z_]+)/g),
+].map((m) => preloadChannelValues.get(m[1]) ?? m[1]);
+const preloadLiteralIpc = [
+  ...preloadTs.matchAll(/ipcRenderer\.(?:invoke|send|on)\(["']([^"']+)["']/g),
+].map((m) => m[1]);
+const sharedConstantsTs = fs.readFileSync(path.join(root, "src/shared/constants.ts"), "utf8");
+const sharedChannelValues = new Map(
+  [...sharedConstantsTs.matchAll(/^\s*([A-Z_]+):\s*["']([^"']+)["']/gm)].map((m) => [m[1], m[2]]),
+);
+const registeredIpc = new Set([
+  ...ipcTs.matchAll(/ipcMain\.(?:handle|on)\(IPC_CHANNELS\.([A-Z_]+)/g),
+].map((m) => sharedChannelValues.get(m[1]) ?? m[1]));
+for (const m of ipcTs.matchAll(/ipcMain\.(?:handle|on)\(["']([^"']+)["']/g)) registeredIpc.add(m[1]);
+const ipcInvokeChannels = [...new Set([...preloadIpc, ...preloadLiteralIpc])];
 const missingIpcHandlers = ipcInvokeChannels.filter((c) => !registeredIpc.has(c));
-if (missingIpcHandlers.length) {
-  fail(`Missing IPC handlers for: ${missingIpcHandlers.join(", ")}`);
-}
+if (missingIpcHandlers.length) fail(`Missing IPC handlers for: ${missingIpcHandlers.join(", ")}`);
 
 // ---- 工具名前缀检查（registerTool 调用）----
 // 扫描 src/ 下所有 .ts 文件中的 registerTool 调用

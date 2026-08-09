@@ -22,8 +22,9 @@ import { createModelHandlers } from "./handlers/models";
 import { resolveDataRoot } from "./allowed-roots";
 import { createSessionStore, defaultSessionFixture } from "./session-store";
 import { createSessionHandlers } from "./handlers/sessions";
-import { createAgentHandlers, type StudyBuddySessionRef } from "./handlers/agent";
+import { createAgentHandlers, runMockFixture, type StudyBuddySessionRef } from "./handlers/agent";
 import { createStudyBuddySession } from "./studybuddy-extension-loader";
+import { readModelConfig } from "../agent/model-config";
 import path from "node:path";
 
 // T-M4-002 S1-S7/TTS/Backup 业务 handler 装配（断裂1修复，03-Arch §6.2）
@@ -41,9 +42,23 @@ import { BackupContext, createBackupHandlers } from "./handlers/backup";
 import { CredentialVault } from "../main/credential-vault";
 import { createCredentialHandlers } from "./handlers/credentials";
 import { createSettingsHandlers } from "./handlers/settings";
+import { createSkillHandlers } from "./handlers/skills";
 
 export interface AgentHost {
   dispose(): void;
+}
+
+/**
+ * 只从 DPAPI vault 获取运行时 key。任一读取/键名/加密不可用错误都不向 UI 泄漏，
+ * 由 agent.send 的 MODEL_NOT_CONFIGURED 固定错误统一呈现。
+ */
+function safeReadModelCredential(vault: CredentialVault, provider: string): string | null {
+  try {
+    const key = vault.get(`modelProvider:${provider}`);
+    return key?.trim() ? key : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -100,19 +115,26 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   // T-M3-001：会话内存仓库 + sessions.*/agent.* handlers（对话 Tab 承载层）
   const sessionStore = createSessionStore(defaultSessionFixture());
 
-  // T-M4-005：StudyBuddySession 异步初始化（fire-and-forget）。
-  // 成功 + session.model 存在 → agent.send 走真实 pi 内核 prompt()；
-  // 失败或 model 不存在 → 走受控夹具 fallback（08-Test §5.4）。
-  // 测试环境（VITEST）跳过：避免意外读取 ~/.pi/agent/auth.json 导致真实 LLM 调用。
+  // T-M4-023：生产模型只来自业务数据根 models.json + DPAPI credential-vault。
+  // 不读取 ~/.pi 认证信息；没有可用配置或初始化失败时，agent.send 返回固定安全错误，
+  // 不得静默产生 fixture 回复。测试夹具仅在 VITEST 显式注入。
+  const vault = new CredentialVault(path.join(dataRoot, "config", "credentials.json"));
   const studyBuddySessionRef: StudyBuddySessionRef = { current: null };
   if (process.env.VITEST === undefined) {
-    createStudyBuddySession({ dataRoot })
-      .then((s) => {
-        studyBuddySessionRef.current = s;
+    const modelConfig = readModelConfig(dataRoot);
+    const apiKey = modelConfig ? safeReadModelCredential(vault, modelConfig.provider) : null;
+    if (modelConfig && apiKey) {
+      studyBuddySessionRef.ready = createStudyBuddySession({
+        dataRoot,
+        modelConfig: { provider: modelConfig.provider, model: modelConfig.model, apiKey },
       })
-      .catch(() => {
-        // 初始化失败（如 ~/.pi/agent 无 auth.json）→ 保持 null，走受控夹具
-      });
+        .then((session) => {
+          studyBuddySessionRef.current = session;
+        })
+        .catch(() => {
+          // 错误细节可能包含 provider/运行时信息，不记录；agent.send 统一返回安全配置错误。
+        });
+    }
   }
 
   server.handle({
@@ -120,12 +142,15 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     ...toolchainHandlers,
     ...createFileHandlers(fileWatch, { dataRoot }),
     ...createModelHandlers(dataRoot),
+    ...createSkillHandlers(),
     ...createSessionHandlers({ store: sessionStore, dataRoot, exportDir: path.join(dataRoot, "exports") }),
-    ...createAgentHandlers(server, sessionStore, studyBuddySessionRef),
+    ...createAgentHandlers(server, sessionStore, studyBuddySessionRef, {
+      ...(process.env.VITEST !== undefined ? { fixture: runMockFixture } : {}),
+    }),
     // T-M4-002 S1-S7/TTS/Backup 业务 handler（断裂1修复，03-Arch §6.2）
     ...createBusinessHandlers(dataRoot),
     // T-M4-003 credentials.*/settings.* handler（断裂5修复，06-API §3.14/§3.15）
-    ...createCredentialHandlers(new CredentialVault(path.join(dataRoot, "config", "credentials.json"))),
+    ...createCredentialHandlers(vault),
     ...createSettingsHandlers(dataRoot),
   });
 

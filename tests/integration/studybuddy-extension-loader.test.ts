@@ -11,7 +11,8 @@ import type { ToolInfo } from "@earendil-works/pi-coding-agent";
  * T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（断裂 2 修复）
  *
  * 断言（03-Arch §2.1/§6.2 + 08-Test §4 集成测试）：
- *   - createStudyBuddySession() 成功创建 pi AgentSession（不抛错）
+ *   - createStudyBuddySession() 仅在注入业务数据根的模型配置和凭证后创建 pi AgentSession
+ *   - 未提供模型配置时明确拒绝，不可构造无 model 会话供生产 agent.send 静默降级
  *   - session.getAllTools() 包含 35 个 studybuddy_* 工具（S1 6 + OCR 1 + S2 6 + S3 3 + S4 4 + S5 2 + S6 3 + S7 2 + TTS 3 + 备份恢复 5）
  *   - 不侵入 ~/.pi（通过 PI_CODING_AGENT_DIR 环境变量隔离 pi agent 目录）
  *   - session 可 dispose（资源清理）
@@ -125,15 +126,26 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
     }
   });
 
+  it("未提供模型配置时明确返回 MODEL_NOT_CONFIGURED", async () => {
+    await expect(
+      createStudyBuddySession({ dataRoot: DATA_ROOT, agentDir: AGENT_DIR, cwd: DATA_ROOT }),
+    ).rejects.toMatchObject({
+      code: "MODEL_NOT_CONFIGURED",
+      message: "尚未配置可用 AI 模型，请先在设置中完成模型配置",
+    });
+  });
+
   it("createStudyBuddySession() 成功创建 pi AgentSession（不抛错）", async () => {
     session = await createStudyBuddySession({
       dataRoot: DATA_ROOT,
       agentDir: AGENT_DIR,
       cwd: DATA_ROOT,
+      modelConfig: { provider: "deepseek", model: "DeepSeek V4 Flash", apiKey: "test-key" },
     });
     expect(session).toBeDefined();
     expect(session.session).toBeDefined();
     expect(typeof session.session.getAllTools).toBe("function");
+    expect(session.session.model?.id).toBe("deepseek-v4-flash");
   }, 30_000);
 
   it("session.getAllTools() 包含 35 个 studybuddy_* 工具（S1-S7 + TTS + 备份恢复）", () => {

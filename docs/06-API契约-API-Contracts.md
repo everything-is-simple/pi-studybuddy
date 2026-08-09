@@ -1,9 +1,9 @@
 # 06 API 契约
 
-**版本**：v0.1.5
-**日期**：2026-08-07
+**版本**：v0.1.6
+**日期**：2026-08-09
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
-**上游**：[02-PRD v0.1.2 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.0](./05-数据模型-ERD-Data-Model.md)
+**上游**：[02-PRD v0.1.4 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)
 **下游**：07-Workflow、08-Test、09-UI
 **架构依据**：pi-desktop contract 类型化 IPC + 自研 MessagePort RPC（非 HTTP REST）
 
@@ -78,7 +78,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 }
 ```
 
-### 2.2 统一错误码（5 个，02-PRD §5.4）
+### 2.2 统一错误码（6 个，02-PRD §5.4）
 
 | 错误码 | HTTP 类比 | 含义 | 中文消息示例 |
 |---|---|---|---|
@@ -87,9 +87,11 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | `FILE_TOO_LARGE` | 413 | 文件超过大小限制 | "文件过大，请压缩或分段上传" |
 | `BAD_REQUEST` | 400 | 业务校验失败（状态机/权限/约束） | "该考试未确认，无法生成模拟卷" |
 | `INTERNAL_ERROR` | 500 | 内部错误（脱敏后返回） | "操作失败，请稍后重试；如持续发生请重启应用" |
+| `MODEL_NOT_CONFIGURED` | 400 | 生产 agent session 没有完整的业务模型配置或可用凭证 | "尚未配置可用 AI 模型，请先在设置中完成模型配置" |
 
 **特殊错误码**（非通用，特定场景）：
 - `PARENT_REPORT_PRIVACY_VIOLATION`（500）：UUID 泄漏检测失败（02-PRD §5.2）
+- `MODEL_NOT_CONFIGURED`（400）：模型未配置或无法由受控运行时解析；生产路径不得静默回退测试夹具。
 
 **错误码格式约束**：`errorCode` 必须匹配 `^[A-Z][A-Z0-9_]{1,63}$`（02-PRD §5.3）
 
@@ -129,16 +131,18 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 > **agent.send（T-M3-002 扩展）**：受控序列扩展 tool_call/tool_result 事件对（输入含触发词「出题/笔记/朗读」→ 模拟 studybuddy_* 工具调用，工具调用透明 09-UI §4.2）；事件 payload 结构化（见 §4 AgentEvent payload 说明）。
 >
 > **agent.send（T-M3-003 扩展）**：参数新增可选 `sessionMeta { subject?, goal?, mistakeIds? }`（09-UI §4.2 学习场景业务化）——受控序列在 message_start 后同步注入 `[学习上下文]` token（学科/目标/错题段，保持序列确定性），并写回会话元数据到内存仓库（sessions.get 可见）。
+>
+> **agent.send（T-M4-023 修订）**：生产环境只能使用 `<dataRoot>/config/models.json` 与 credential-vault 解密凭证构造的 pi `ModelRuntime` session；未配置、凭证不可读或模型无法解析时返回 `MODEL_NOT_CONFIGURED`。`runMockFixture` 仅可由 VITEST 显式注入，不能作为生产 fallback。
 
 ### 3.2 文件体验（files.*，借鉴 pi-desktop）
 
 | 方法 | 参数 | 返回 | 说明 |
 |---|---|---|---|
-| `files.selectDirectory` | `{}` | `{ path: string }` | dialog.showOpenDialog，记录 recentCwds（最多 12） |
-| `files.list` | `{ dir: string }` | `FileEntry[]` | lazy 加载 |
+| `files.selectDirectory` | `{}` | `{ path: string }` | 仅桌面 PiBridge 可调用；agent-host 直接调用显式返回 BAD_REQUEST |
+| `files.list` | `{ dir: string }` | `FileEntry[]` | 受 allowed-roots 校验的 lazy 加载 |
 | `files.read` | `{ path: string }` | `{ content: string, encoding: string }` | 受 allowed-roots 校验（T-M3-002 实现：白名单门禁 + 相对 storageKey 解析 + 1MB 截断） |
-| `files.previewMarkdown` | `{ path: string }` | `{ html: string }` | react-markdown + KaTeX + Mermaid |
-| `files.previewDocx` | `{ path: string }` | `{ html: string }` | mammoth，DOCX_PREVIEW_MAX_BYTES 限制 |
+| `files.previewMarkdown` | `{ path: string }` | `{ html: string }` | 当前安全转义的文本预览；富 Markdown/KaTeX/Mermaid 渲染待对应 UI 任务 |
+| `files.previewDocx` | `{ path: string }` | `{ html: string }` | 未配置 DOCX 预览组件时显式返回 BAD_REQUEST |
 | `files.watch` | `{ path: string }` | `subscribe` | fs.watch recursive，100ms 防抖→Streams["files.changed"] |
 | `files.unwatch` | `{ path: string }` | `void` | 取消监听 |
 
@@ -411,11 +415,11 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
-| `skills.list` | `{}` | `SkillManifest[]` | 目录扫描 + skills.manifest.json |
-| `skills.search` | `{ query }` | `SkillManifest[]` | 模糊搜索 |
-| `skills.install` | `{ source: 'github', hub, name }` | `SkillManifest` | content-source GitHub hub（03-Architecture §5.4） |
-| `skills.getContent` | `{ name }` | `{ skillMd: string, helpers: string[] }` | SKILL.md 正文 + helper 脚本 |
-| `skills.uninstall` | `{ name }` | `void` | |
+| `skills.list` | `{}` | `SkillManifest[]` | 当前返回受控空集，不触网扫描 |
+| `skills.search` | `{ query }` | `SkillManifest[]` | 当前返回受控空集，不触网搜索 |
+| `skills.install` | `{ source: 'github', hub, name }` | `SkillManifest` | 当前显式拒绝：GitHub 安装尚未启用，不隐式联网 |
+| `skills.getContent` | `{ name }` | `{ skillMd: string, helpers: string[] }` | 当前未安装时返回 NOT_FOUND |
+| `skills.uninstall` | `{ name }` | `void` | 当前未安装时返回 NOT_FOUND |
 
 ### 3.13 模型配置（models.*，借鉴 pi-desktop）
 
@@ -424,9 +428,9 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | `models.list` | `{}` | `ModelProvider[]` | 受控 fixture（不读 ~/.pi；T-M3-002 裁决） |
 | `modelsConfig.get` | `{}` | `ModelConfig` | 读 `<dataRoot>/config/models.json`（存在则返回默认 provider/model） |
 | `modelsConfig.set` | `{ provider, model }` | `ModelConfig` | 持久化到 `<dataRoot>/config/models.json`（__studybuddy_managed 标记） |
-| `modelsConfig.test` | `{ provider, model, apiKey? }` | `{ ok: boolean, latencyMs: number, error? }` | 一键测试连通性 |
-| `models.addProvider` | `{ providerConfig }` | `ModelProvider` | 添加自定义 provider |
-| `models.probe` | `{ baseUrl, apiKey, providerType }` | `ModelInfo[]` | model-probe 探测模型列表（03-Architecture §2.4） |
+| `modelsConfig.test` | `{ provider, model, apiKey? }` | `{ ok: boolean, latencyMs: number, error? }` | 当前返回受控未启用结果，不对外探测 |
+| `models.addProvider` | `{ providerConfig }` | `ModelProvider` | 当前只做参数回显，不持久化、不联网 |
+| `models.probe` | `{ baseUrl, apiKey, providerType }` | `ModelInfo[]` | 当前显式拒绝；model-probe 尚未启用，不能假装执行外部探测 |
 
 <!-- supersedes: v0.1.4 原写 models.list"从 ~/.pi/agent/models.json"、modelsConfig.set 未标落点；T-M3-005 裁决 1 改业务数据根 <dataRoot>/config/models.json（AGENTS.md §9.5 物理隔离，pi-studybuddy 不侵入 ~/.pi） -->
 
@@ -568,7 +572,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 ## 7. 版本历史
 
 | 版本 | 日期 | 变更 |
-|---|---|---|
+| v0.1.6 | 2026-08-09 | 交叉审查修订：新增 `MODEL_NOT_CONFIGURED`；明确生产 `agent.send` 只能路由到业务数据根配置构造的真实 session，测试夹具必须显式注入；同步实际文件/技能/模型安全占位 handler 与契约覆盖检查。 |
 | v0.1.5 | 2026-08-08 | §3.13 模型配置落点修订（T-M3-005 裁决 1）：models.list 约束列"从 ~/.pi/agent/models.json" → "受控 fixture（不读 ~/.pi；T-M3-002 裁决）"；modelsConfig.get/set 约束列标清落点 `<dataRoot>/config/models.json`（__studybuddy_managed 标记）。原因：AGENTS.md §9.5 物理隔离（pi-studybuddy 不侵入 ~/.pi）。影响：仅约束列文字修订 + supersedes 注记，无契约方法新增/变更（Api 方法总数仍 127）。依据：AGENTS.md §11.1 + T-M3-005 裁决 1 |
 | v0.1.4 | 2026-08-08 | §3.1 落地注解：sessions.search（T-M3-003 实现，L3 bigram OR-combined MATCH + session_id 聚合映射）+ SessionSummary 扩展学习场景元数据（subject/goal/mistakeIds 可选字段）+ §3.1.1 agent.send T-M3-003 扩展注解（sessionMeta 参数 + [学习上下文] token 同步注入 + 元数据写回）。原因：T-M3-003 学习场景业务化实施（学科标签/学习目标/错题关联/L1 注入/L3 检索承载层）。影响：§3.1/§3.1.1 说明性增补 + SessionSummary 类型扩展（可选字段向后兼容），无契约方法新增（Api 方法总数仍 127）。依据：AGENTS.md §11.1 治理基线修改规则 + T-M3-003 计划 |
 | v0.1.3 | 2026-08-08 | §4 增补 AgentEvent payload 结构化说明（tool_call/tool_result 脱敏载荷字段子集对齐 pi 底座 ToolCallEvent/ToolResultEvent + 脱敏铁律）+ §3.2 files.read 落地注解（T-M3-002 实现：allowed-roots 白名单门禁 + 相对 storageKey 解析 + 1MB 截断）+ §3.1.1 agent.send T-M3-002 扩展注解（tool_call/tool_result 事件对）。原因：T-M3-002 pi 原生能力承载实施（用户批准 payload 结构化 + files.read 现成契约方案）。影响：§4 AgentEvent 说明性增补 + §3.2/§3.1.1 注解，无契约方法新增/变更（Api 方法总数仍 127）。依据：AGENTS.md §11.1 治理基线修改规则 + T-M3-002 计划 |

@@ -5,11 +5,13 @@
  * main 创建 MessageChannelMain，host 端经 parentPort 转交 agent-host，
  * renderer 端经 sender.postMessage + transferList 接收 renderer 端口。
  */
-import { ipcMain, MessageChannelMain, utilityProcess, type MessagePortMain } from "electron";
+import { BrowserWindow, dialog, ipcMain, MessageChannelMain, utilityProcess, type MessagePortMain } from "electron";
 import path from "node:path";
 import { IPC_CHANNELS } from "../shared/constants";
 import { createHostManager, type AgentHostHandle } from "./host-manager";
 import type { AnyMessagePort } from "../contract/rpc";
+import type { DialogOptions, DialogResult, ToolchainStatus } from "../contract/types";
+import { createToolchainManager } from "./toolchains";
 
 function forkAgent(): AgentHostHandle {
   const child = utilityProcess.fork(path.join(__dirname, "../agent-host/index.js"));
@@ -56,6 +58,30 @@ function getHostManager() {
   return hostManager;
 }
 
+/** 统一 DialogOptions 到 preload 契约的最小安全结果，不返回底层错误详情。 */
+async function showDesktopDialog(options: DialogOptions): Promise<DialogResult> {
+  if (options.type === "open") {
+    const result = await dialog.showOpenDialog({
+      title: options.title,
+      defaultPath: options.defaultPath,
+      filters: options.filters,
+      properties: ["openFile", "openDirectory"],
+    });
+    return { canceled: result.canceled, filePaths: result.filePaths, filePath: result.filePaths[0] };
+  }
+  if (options.type === "save") {
+    const result = await dialog.showSaveDialog({
+      title: options.title,
+      defaultPath: options.defaultPath,
+      filters: options.filters,
+    });
+    return { canceled: result.canceled, filePath: result.filePath };
+  }
+  const result = await dialog.showMessageBox({ title: options.title, message: options.message ?? "", buttons: ["确定"] });
+  return { canceled: false };
+}
+
+/** 注册 preload 白名单中的全部 desktop IPC。 */
 export function registerConnectHostIpc(): void {
   // MessagePortMain 不能作为 ipcRenderer.invoke 的结构化克隆返回值；
   // 必须通过 sender.postMessage 的 transferList 交给 renderer（Electron IPC 契约）。
@@ -69,4 +95,26 @@ export function registerConnectHostIpc(): void {
         // 连接失败时不泄漏内部错误；renderer 端由超时/关闭处理。
       });
   });
+
+  ipcMain.handle(IPC_CHANNELS.SELECT_DIRECTORY, async (): Promise<string | null> => {
+    const result = await dialog.showOpenDialog({ properties: ["openDirectory"] });
+    return result.canceled ? null : (result.filePaths[0] ?? null);
+  });
+  ipcMain.handle(IPC_CHANNELS.SHOW_DIALOG, async (_event, options: DialogOptions): Promise<DialogResult> =>
+    showDesktopDialog(options),
+  );
+  ipcMain.handle(IPC_CHANNELS.QUERY_TOOLCHAINS, async (): Promise<ToolchainStatus[]> =>
+    createToolchainManager().list(),
+  );
+  ipcMain.handle(IPC_CHANNELS.GET_WINDOW_STATE, (event): { maximized: boolean } => ({
+    maximized: BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false,
+  }));
+  ipcMain.on(IPC_CHANNELS.MINIMIZE_WINDOW, (event) => BrowserWindow.fromWebContents(event.sender)?.minimize());
+  ipcMain.on(IPC_CHANNELS.MAXIMIZE_WINDOW, (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (!window) return;
+    if (window.isMaximized()) window.unmaximize();
+    else window.maximize();
+  });
+  ipcMain.on(IPC_CHANNELS.CLOSE_WINDOW, (event) => BrowserWindow.fromWebContents(event.sender)?.close());
 }

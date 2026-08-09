@@ -30,6 +30,21 @@ function fileNotFound(): never {
   throw { code: "NOT_FOUND", message: "文件不存在" };
 }
 
+function invalidParams(): never {
+  throw { code: "BAD_REQUEST", message: "参数无效" };
+}
+
+function resolveAllowedPath(rawPath: unknown, dataRoot: string): string {
+  if (typeof rawPath !== "string" || !rawPath) invalidParams();
+  const absPath = path.isAbsolute(rawPath) ? rawPath : path.join(dataRoot, rawPath);
+  if (!isPathWithinAllowedRoot(absPath, dataRoot)) outsideAllowedRoot();
+  return absPath;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]!);
+}
+
 export function createFileHandlers(
   service: FileWatchService,
   options?: { dataRoot?: string },
@@ -37,6 +52,48 @@ export function createFileHandlers(
   const dataRoot = options?.dataRoot ?? resolveDataRoot();
 
   return {
+    // 目录选择依赖 Electron main 的 dialog 能力，renderer 应调用 PiBridge.selectDirectory。
+    // host 仍显式拒绝，避免契约方法在 production 入口中静默缺失。
+    "files.selectDirectory": (): { path: string } => {
+      throw { code: "BAD_REQUEST", message: "目录选择仅可通过桌面桥调用" };
+    },
+    "files.list": (params: unknown) => {
+      const absDir = resolveAllowedPath((params as { dir?: unknown }).dir, dataRoot);
+      if (!fs.existsSync(absDir)) fileNotFound();
+      let stat: fs.Stats;
+      try {
+        stat = fs.statSync(absDir);
+      } catch {
+        throw { code: "BAD_REQUEST", message: "目录读取失败" };
+      }
+      if (!stat.isDirectory()) throw { code: "BAD_REQUEST", message: "目标不是目录" };
+      return fs.readdirSync(absDir, { withFileTypes: true }).map((entry) => {
+        const entryPath = path.join(absDir, entry.name);
+        const entryStat = fs.statSync(entryPath);
+        return {
+          name: entry.name,
+          path: entryPath,
+          type: entry.isDirectory() ? ("dir" as const) : ("file" as const),
+          ...(entry.isDirectory() ? {} : { size: entryStat.size }),
+          mtime: entryStat.mtime.toISOString(),
+        };
+      });
+    },
+    "files.previewMarkdown": (params: unknown): { html: string } => {
+      const absPath = resolveAllowedPath((params as { path?: unknown }).path, dataRoot);
+      if (!fs.existsSync(absPath)) fileNotFound();
+      if (path.extname(absPath).toLowerCase() !== ".md") {
+        throw { code: "BAD_REQUEST", message: "仅支持 Markdown 预览" };
+      }
+      const content = fs.readFileSync(absPath, "utf8");
+      return { html: `<pre>${escapeHtml(content)}</pre>` };
+    },
+    "files.previewDocx": (params: unknown): { html: string } => {
+      const absPath = resolveAllowedPath((params as { path?: unknown }).path, dataRoot);
+      if (!fs.existsSync(absPath)) fileNotFound();
+      // 当前未引入 DOCX 渲染器；明确失败而非返回伪造 HTML 或泄漏内容。
+      throw { code: "BAD_REQUEST", message: "DOCX 预览组件尚未配置" };
+    },
     "files.watch": async (params: unknown): Promise<void> => {
       const { path } = params as { path: string };
       await service.start(path);
@@ -49,13 +106,7 @@ export function createFileHandlers(
     // 相对路径（materials.storageKey）先相对数据根解析为绝对路径，再做白名单校验
     "files.read": async (params: unknown): Promise<{ content: string; encoding: string }> => {
       const { path: rawPath } = params as { path: string };
-      if (typeof rawPath !== "string" || !rawPath) {
-        throw { code: "BAD_REQUEST", message: "参数无效" };
-      }
-      const absPath = path.isAbsolute(rawPath) ? rawPath : path.join(dataRoot, rawPath);
-      if (!isPathWithinAllowedRoot(absPath, dataRoot)) {
-        outsideAllowedRoot();
-      }
+      const absPath = resolveAllowedPath(rawPath, dataRoot);
       if (!fs.existsSync(absPath)) {
         fileNotFound();
       }

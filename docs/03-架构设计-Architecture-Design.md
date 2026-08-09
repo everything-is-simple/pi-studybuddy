@@ -1,9 +1,9 @@
 # 03 架构设计
 
-**版本**：v0.1.2
-**日期**：2026-08-07
+**版本**：v0.1.3
+**日期**：2026-08-09
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
-**上游**：[docs/00 索引](./00-文档索引-Index.md)、[01-TRD v0.2.0](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.2](./02-PRD-产品需求-Product-Requirements.md)、[docs/prep-参考点核对表.md](./prep-参考点核对表.md)
+**上游**：[docs/00 索引](./00-文档索引-Index.md)、[01-TRD v0.2.4](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.4](./02-PRD-产品需求-Product-Requirements.md)、[docs/prep-参考点核对表.md](./prep-参考点核对表.md)
 **下游**：05-ERD、06-API、07-Workflow、08-Test、09-UI
 
 ---
@@ -380,17 +380,16 @@ registerTool<TParams, TDetails, TState>(tool: ToolDefinition<...>): void
   │  ├ l1/learner-profile.json        ← L1 学习者画像
   │  ├ l2/wiki-index/                 ← L2 知识库索引
   │  └ l3/conversation.sqlite         ← L3 会话检索（FTS5）
-  ├ config/
-  │  └ models.json                    ← 默认模型选择（__studybuddy_managed 标记，T-M3-005）
-  └ credential-vault/                 ← DPAPI 加密密钥库
-     ├ modelProvider-xxx.enc          ← 模型供应商 API Key
-     └ parentContact-xxx.enc          ← 家长联系凭证
+   ├ config/
+   │  ├ models.json                    ← 默认模型选择（__studybuddy_managed 标记，T-M3-005）
+   │  └ credentials.json                ← credential-vault DPAPI 加密 JSON（safeStorage 密文 base64）
+   └ ...                               ← 不使用独立 credential-vault/*.enc 文件树
 ```
 
 **隔离原则**（prep §一第 8 行 + TRD §7 决策 3）：
 - pi 会话目录 `~/.pi` 由 pi 自管，pi-studybuddy 不侵入
 - 业务数据根 `%LOCALAPPDATA%\PiStudyBuddy` 存学期注册表/semester.db/家长报告/学情
-- 密钥走 credential-vault（safeStorage/DPAPI），键名 `modelProvider:xxx`/`parentContact:xxx`（从 pi-desktop 的 `channel:xxx` 改名）
+- 密钥由 `src/main/credential-vault.ts` 通过 safeStorage/DPAPI 加密后写入业务数据根 `config/credentials.json`；键名仍为 `modelProvider:xxx`/`parentContact:xxx`（从 pi-desktop 的 `channel:xxx` 改名）
 
 ### 4.2 三层记忆（借鉴 inno-agent，prep §三第 2 行）
 
@@ -789,7 +788,7 @@ src/
 
 ### 8.4 隐私边界（02-PRD §5）
 
-- **API 信封**：`{ success, data, error }`，统一 5 错误码，中文可操作消息
+- **API 信封**：`{ success, data, error }`，统一 6 错误码，中文可操作消息
 - **仅 127.0.0.1**：无公网入口；loopback Origin 策略
 - **AI 日志 allowlist**（02-PRD §5.3）：非 allowlist 字段抛错
 - **UUID 泄漏检测**（02-PRD §5.2）：`assertNoSensitiveLeak` 序列化整个 ParentReportResult，UUID 正则检测
@@ -838,7 +837,7 @@ src/
 ## 10. 版本历史
 
 | 版本 | 日期 | 变更 |
-|---|---|---|
+| v0.1.3 | 2026-08-09 | 交叉审查修订：修正 credential-vault 实际拓扑为 `config/credentials.json`，并明确生产模型运行时从业务数据根配置与 DPAPI 解密凭证构造，不读取 `~/.pi`。 |
 | v0.1.2 | 2026-08-08 | §2.3 model_select 行落点修订：`~/.pi/agent/models.json` → `<dataRoot>/config/models.json`（T-M3-005 裁决 1，AGENTS.md §9.5 物理隔离；supersedes 注记见 §2.3 表后） |
 | v0.1.1 | 2026-08-07 | §6.7 会话管理补"pi 原生 AI 对话是默认主入口"——应用启动即默认打开"💬 对话"标签页，会话即对话 Tab 内容，学生零碎问答 AI 自主调用 S1-S7+TTS+备份恢复工具，对话 Tab（自由探索）+ S1-S7 标签页（结构化工具）双层并存（02-PRD §3.11 + 09-UI §4.2 贯通） |
 | v0.1.0 | 2026-08-07 | 初始草案：四层架构总览（桌面壳/pi 扩展/业务 Adapter/数据层）；pi 扩展层（单一 extension factory + registerTool + pi.on 钩子 + pi-ai provider + Simple Mode）；业务 Adapter（S1-S7 + TTS + 备份恢复工具清单 + WPS COM/whisper.cpp/OCR 桥 + workspace-path-guard + observability）；数据层（物理隔离 + 三层记忆 + global.db + semester.db + credential-vault）；技能体系（学习技能包同构 + 引入 pi-skills + content-source + skills.manifest）；桌面壳五件骨架（三进程 + contract + RPC + 安全 + toolchain + file-watch）；调度层（cron-scheduler + 备份恢复 + 学习 taskType）；安全与不变量；装配纪律映射。输入：prep-参考点核对表 + 02-PRD + 01-TRD |

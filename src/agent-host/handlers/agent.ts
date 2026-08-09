@@ -4,10 +4,11 @@
  * 语义：renderer 发送用户消息 → agent-host 触发 Streams["agent.events"]
  * 返回发射事件数。
  *
- * 双路径（T-M4-005 断裂 3 修复）：
- *   - 真实路径：有 StudyBuddySession 且 session.model 存在 → 调用 pi 内核 prompt()，
- *     subscribe 事件映射为 AgentEvent 实时推送（生产环境用户配 API key 后生效）
- *   - 受控夹具路径：无 session 或无 model → 固定片段发射（08-Test §5.4 全 mock 测试隔离）
+ * 路径纪律（T-M4-023 审查修订）：
+ *   - 生产路径：有 StudyBuddySession 且 session.model 存在 → 调用 pi 内核 prompt()，
+ *     subscribe 事件映射为 AgentEvent 实时推送。
+ *   - 无可用模型：返回固定安全的 MODEL_NOT_CONFIGURED；绝不静默降级为模拟回复。
+ *   - 受控夹具仅由测试调用方显式注入，隔离于生产 agent-host。
  *
  * 事件映射（pi AgentSessionEvent → 应用 AgentEvent）：
  *   - agent_start            → message_start
@@ -25,10 +26,26 @@ import type { RpcServer } from "../../contract/rpc";
 import type { AgentEvent } from "../../contract/types";
 import type { SessionStore } from "../session-store";
 import type { StudyBuddySession } from "../studybuddy-extension-loader";
+import { modelNotConfiguredError } from "../model-errors";
 
 /** 可变引用：支持 StudyBuddySession 异步初始化后注入（index.ts fire-and-forget） */
 export interface StudyBuddySessionRef {
   current: StudyBuddySession | null;
+  /** 生产 host 启动时的异步模型会话初始化；agent.send 会先等待它，避免启动竞态误报。 */
+  ready?: Promise<void>;
+}
+
+/** 仅测试环境显式注入的确定性 fixture；生产调用不得提供。 */
+export type AgentFixture = (
+  server: RpcServer,
+  sessionId: string,
+  text: string,
+  sessionMeta?: { subject?: string; goal?: string; mistakeIds?: string[] },
+) => { eventCount: number };
+
+export interface CreateAgentHandlersOptions {
+  /** 受控夹具只服务测试；缺省时生产路径必须返回 MODEL_NOT_CONFIGURED。 */
+  fixture?: AgentFixture;
 }
 
 /** 固定回复片段（受控夹具，非真实 LLM 输出） */
@@ -164,14 +181,16 @@ function buildContextPrefix(sessionMeta: {
 /**
  * 构造 agent.* handlers：注入 RpcServer 以发射 agent.events。
  *
- * 双路径（T-M4-005）：
+ * 路径选择：
  *   - studyBuddySession 存在且 session.model 存在 → 真实 pi 内核 prompt()
- *   - 否则 → 受控夹具（08-Test §5.4 测试隔离）
+ *   - 测试调用方显式提供 fixture → 受控夹具（08-Test §5.4 测试隔离）
+ *   - 其他情况 → MODEL_NOT_CONFIGURED（不允许生产模拟回答）
  */
 export function createAgentHandlers(
   server: RpcServer,
   sessionStore?: SessionStore,
   studyBuddySessionRef?: StudyBuddySessionRef,
+  options: CreateAgentHandlersOptions = {},
 ) {
   return {
     "agent.send": async (params: unknown): Promise<{ eventCount: number }> => {
@@ -188,12 +207,18 @@ export function createAgentHandlers(
         sessionStore.updateMeta(sessionId, sessionMeta);
       }
 
-      // ── 双路径选择 ──
+      // 等待生产 host 完成已配置模型的异步初始化，避免首条消息与启动并发时误报未配置。
+      await studyBuddySessionRef?.ready;
+
+      // ── 路径选择 ──
       const piSession = studyBuddySessionRef?.current?.session;
       if (piSession && piSession.model) {
         return await runRealPiKernel(server, piSession, sessionId, text, sessionMeta);
       }
-      return runMockFixture(server, sessionId, text, sessionMeta);
+      if (options.fixture) {
+        return options.fixture(server, sessionId, text, sessionMeta);
+      }
+      throw modelNotConfiguredError();
     },
   };
 }
@@ -305,14 +330,14 @@ async function runRealPiKernel(
 }
 
 /**
- * 受控夹具路径（08-Test §5.4 测试隔离 + 生产无 model 时 fallback）。
+ * 受控夹具路径（08-Test §5.4 测试隔离；仅由测试显式注入）。
  *
  * 固定序列：message_start → [上下文 token] → [tool_call → tool_result] → token×6 → context_compressed。
  * T-M3-002 扩展：输入含触发词 → 插入 studybuddy_* 工具事件对。
  * T-M3-003 扩展：sessionMeta → 前置上下文 token。
  * T-M3-004 扩展：按域分组覆盖 35 工具全部域。
  */
-function runMockFixture(
+export function runMockFixture(
   server: RpcServer,
   sessionId: string,
   text: string,

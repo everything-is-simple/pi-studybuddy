@@ -1,9 +1,9 @@
 # 02-PRD 产品需求
 
-**版本**：v0.1.3
-**日期**：2026-08-07
+**版本**：v0.1.4
+**日期**：2026-08-09
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
-**上游**：docs/00 索引、[01-TRD v0.2.0](./01-TRD-技术需求-Technical-Requirements.md)、[docs/prep-参考点核对表.md](./prep-参考点核对表.md)
+**上游**：docs/00 索引、[01-TRD v0.2.4](./01-TRD-技术需求-Technical-Requirements.md)、[docs/prep-参考点核对表.md](./prep-参考点核对表.md)
 **业务来源**：ai-studybuddy S1-S7 业务认知迁移、kaobuddy 功能基本面吸收结论
 **下游**：03-Architecture、05-ERD、07-Workflow、09-UI
 
@@ -319,7 +319,7 @@ kaobuddy 6 模块与 ai-studybuddy S1-S7 是**互补为主、局部重叠**关�
 
 ### 5.4 其他隐私边界
 
-- **API 信封**：`{ success: true, data, meta? } | { success: false, error: { code, message } }`，统一 5 个安全错误码（`NOT_FOUND`/`INVALID_JSON`/`FILE_TOO_LARGE`/`BAD_REQUEST`/`INTERNAL_ERROR`），中文可操作消息，永不暴露内部错误栈
+- **API 信封**：`{ success: true, data, meta? } | { success: false, error: { code, message } }`，统一 6 个安全错误码（`NOT_FOUND`/`INVALID_JSON`/`FILE_TOO_LARGE`/`BAD_REQUEST`/`INTERNAL_ERROR`），中文可操作消息，永不暴露内部错误栈
 - **仅 127.0.0.1**：无公网入口；loopback Origin 策略
 - **密钥存储**：DPAPI 加密（pi-desktop credential-vault 的 safeStorage 模式），键名 `modelProvider:xxx`/`parentContact:xxx`
 - **日志根与受保护根互不包含**：拒绝符号链接；单文件 5MiB 轮转保留 3 份
@@ -384,7 +384,7 @@ kaobuddy 6 模块与 ai-studybuddy S1-S7 是**互补为主、局部重叠**关�
 - [ ] `assertNoSensitiveLeak` UUID 泄漏检测有测试断言
 - [ ] AI 日志 allowlist 有测试断言（非 allowlist 字段抛错）
 - [ ] 家长报告不含资料原文/题干/答案/作答/错因/完整 UUID
-- [ ] API 信封统一 5 错误码，中文可操作消息
+- [ ] API 信封统一 6 错误码，中文可操作消息
 - [ ] 仅 127.0.0.1，无公网入口
 
 ### 7.3 证据驱动
@@ -424,7 +424,7 @@ kaobuddy 6 模块与 ai-studybuddy S1-S7 是**互补为主、局部重叠**关�
 ## 8. 版本历史
 
 | 版本 | 日期 | 变更 |
-|---|---|---|
+| v0.1.4 | 2026-08-09 | 交叉审查修订：补充未配置模型时 `agent.send` 返回固定 `MODEL_NOT_CONFIGURED`，生产路径不注入测试夹具；密钥与模型配置统一落在业务数据根 `config/`。 |
 | v0.1.3 | 2026-08-07 | 按用户反馈增强：§1.2 补"pi 原生 AI 对话是基础能力，不是可选"；新增 §3.11 通用 AI 对话（pi 原生默认主入口 + AI 自主调用 S1-S7 工具 + 双层并存 + 工具调用透明）；响应用户反馈"不能把 ai 输入基础功能废弃"——pi 天生自带对话，作为"专属 studybuddy"不废弃，避免学生被迫用别的 AI |
 | v0.1.2 | 2026-08-07 | 按用户反馈增强：§3.10 新增备份恢复（每课程 zip 包 + 定期调度 + SQLite 崩溃应对）；§6 澄清"拒绝压缩包"指资料导入不解析 zip，备份恢复用 zip 作容器不冲突；§6.3 增云端备份为非目标；§7.6 增备份恢复验收项 |
 | v0.1.1 | 2026-08-07 | 按用户反馈增强：TTS 提升为 §3.9 跨子系统随时可击发能力（S2 笔记朗读/S4 错题复盘朗读/S5 考前冲刺朗读/任意 Markdown）；§1.4 增"听觉复习通道"价值主张；§7.1 增 TTS 验收项 |

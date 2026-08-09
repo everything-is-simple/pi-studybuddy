@@ -1,9 +1,9 @@
 # 05 数据模型 ERD
 
-**版本**：v0.1.1
-**日期**：2026-08-07
+**版本**：v0.1.2
+**日期**：2026-08-09
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
-**上游**：[02-PRD v0.1.2 §3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.0 §4](./03-架构设计-Architecture-Design.md)
+**上游**：[02-PRD v0.1.4 §3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §4](./03-架构设计-Architecture-Design.md)
 **下游**：06-API、07-Workflow、08-Test
 **业务来源**：ai-studybuddy S1-S7 已验证数据模型业务认知迁移（不复制实现）
 
@@ -20,7 +20,7 @@
 | **L3 会话库** | `%LOCALAPPDATA%\PiStudyBuddy\memory\l3\conversation.sqlite` | 会话检索（FTS5 bigram） | SQLite (node:sqlite, Node≥22.5) |
 | **L1 画像** | `%LOCALAPPDATA%\PiStudyBuddy\memory\l1\learner-profile.json` | 学习者画像（JSON + events.jsonl） | 文件 |
 | **L2 知识库索引** | `%LOCALAPPDATA%\PiStudyBuddy\memory\l2\wiki-index\` | BM25 + 知识图谱 | 文件 + 内存 |
-| **credential-vault** | `%LOCALAPPDATA%\PiStudyBuddy\credential-vault\*.enc` | DPAPI 加密密钥 | 文件（0o600） |
+| **credential-vault** | `%LOCALAPPDATA%\PiStudyBuddy\config\credentials.json` | DPAPI 加密 JSON（值为 safeStorage 密文的 base64 表示） | 文件（尽力设置 0o600） |
 | **pi 会话目录** | `~/.pi/agent/` | pi 自管（auth.json/models.json/settings.json） | pi 内核 |
 
 ### 1.2 物理隔离原则（TRD §7 决策 3）
@@ -1232,6 +1232,6 @@ PRAGMA mmap_size = 268435456;          -- 256MB 内存映射
 ## 10. 版本历史
 
 | 版本 | 日期 | 变更 |
-|---|---|---|
+| v0.1.2 | 2026-08-09 | 交叉审查修订：credential-vault 路径与实现统一为业务数据根 `config/credentials.json`，不再描述不存在的 `credential-vault/*.enc` 文件树。 |
 | v0.1.1 | 2026-08-07 | §4.3 L3 会话检索补"对话 Tab 承载"注——"💬 对话"标签页会话即 pi 会话，session_id 引用 pi 会话 id，对话内容经 turn_end 钩子增量索引到此表（02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2 贯通） |
 | v0.1.0 | 2026-08-07 | 初始草案：全局库 schema（semesters/parent_report_targets/backup_records/backup_schedules）；学期库 schema（S1-S7 全量表 30+）；三层记忆 schema（L1 JSON/L2 BM25+图谱/L3 FTS5 bigram）；ER 关系图（全局库 + 学期库核心关系 + 跨子系统数据流）；触发器（6 个 S4 关系一致性 + storage_key 路径逃逸防护 + mock_exam confirmed 校验 + 幂等归档）；索引汇总；备份 zip 内部结构 + 恢复流程；PRAGMA 配置。输入：02-PRD §3 数据契约 + 03-Architecture §4 数据层 + ai-studybuddy S1-S7 业务认知迁移 |

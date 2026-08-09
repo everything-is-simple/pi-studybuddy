@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.100
+**版本**：v0.1.102
 **日期**：2026-08-09
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -30,22 +30,24 @@
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
 | 00 | 本文档 | ✅ 已创建 | 导航、门禁、参考仓库清单 |
-| 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.3 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
-| 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
+| 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
+| 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
-| 03 | 架构设计-Architecture-Design.md | ✅ v0.1.2 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.96 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨/M4后端断裂修复+业务接线+打包部署）+ 58 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明（v0.2.3 打包能力常态化）+ §7.1.1 M0、§7.2.1 M1、§7.3.1 M2、§7.4.1 M3 均已收官；§7.6.1 M4 中 T-M4-001~010/T-M4-022 done，T-M4-011~021 pending；§7.5 全局执行顺序表维持 40 行；§6.6 M4 退出门槛保持后端断裂修复、业务接线与打包冒烟范围。 |
-| 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
-| 06 | API契约-API-Contracts.md | ✅ v0.1.5 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
-| 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
-| 08 | 测试验收-Test-Plan.md | ✅ v0.1.3 已审查批准 | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E + §4.2 model_select 断言落点业务数据根 |
-| 09 | 使用者介面-UI-Design.md | ✅ v0.1.3 已审查批准 | 三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话）** + 8 学习标签页（S1-S7）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 + 模型选择持久化业务数据根 |
+| 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.98 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-023 交叉审查修订进行中，T-M4-001~010/T-M4-022 done，T-M4-011~021 仍 pending；不改变既有 40 行业务执行顺序，也不自动启动后续任务。 |
+| 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
+| 06 | API契约-API-Contracts.md | ✅ v0.1.6 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
+| 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
+| 08 | 测试验收-Test-Plan.md | ✅ v0.1.4 已审查批准 | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E + §4.2 model_select 断言落点业务数据根 |
+| 09 | 使用者介面-UI-Design.md | ✅ v0.1.4 已审查批准 | 三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话）** + 8 学习标签页（S1-S7）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 + 模型选择持久化业务数据根 |
 | 10 | 开发规范-Dev-Rules.md | ✅ v0.1.0 已审查批准 | 16 步开发流程（准备/执行/收尾三阶段）+ TDD 纪律 + 单一执行任务门禁 + 文档治理检查 + diff 检查 + 用户授权门 |
 | 11 | 组件装配-Component-Assembly.md | ✅ v0.1.0 已审查批准 | "先分解再组合" SoT + 6 步装配流程 + 能力卡规范 + 试炼场边界 + 装配门禁四项（测试全绿/工作区干净/API 有文档/无越权） |
 | 12 | 目录治理-Directory-Governance.md | ✅ v0.1.1 已审查批准 | 目录职责速查 + 物理隔离（主仓/试炼场/临时/数据根/pi 会话/参考仓/备份）+ Git 纪律 + 不提交清单 + 数据流图 + 默认模型选型落业务数据根 config/models.json |
 | subsystems/ | 业务子系统文档（S1-S7 收编） | 📝 待创建 | 学习节奏/资料笔记/限时练习/错题/冲刺/家长报告/课堂采集 |
 
 ## 四、组件治理流程（强制）
+
+> v0.1.101 交叉审查同步：01-09 版本、credential-vault 实际拓扑、默认对话入口、生产模型配置边界与 T-M4-023 任务证据已对齐。
 
 > 用户定义的五阶段组件治理，是本项目的铁律：
 
@@ -78,12 +80,12 @@
 - [x] 初始化仓库（git init + 关联远端 `https://github.com/everything-is-simple/pi-studybuddy.git`）
 - [x] 下载四参考仓库到 `H:\pi-references`（pi / pi-skills / inno-agent / pi-desktop）
 - [x] 本文档（00 索引）
-- [x] 01-TRD v0.2.1：技术需求 + 五点待决项定案（Python pywin32 / 自建壳 / 物理隔离 / SAPI 默认 / 中文优先）+ §2.4 会话管理对话默认主入口 —— 决策已定案
+- [x] 01-TRD v0.2.4：技术需求 + 六点决策定案（原五点 + 决策 6 v0.1 交付形态：源码形态可运行 + 打包能力常态化）+ §2.4 会话管理对话默认主入口 —— 已审查批准
 - [x] prep-参考点核对表：四参考仓库逐项核对 + 跨仓库结论（03-Architecture 准备材料）
 - [x] 02-PRD v0.1.3 ✅ 已审查批准：产品需求（业务闭环、使用者、家长报告边界、kaobuddy 吸收结论、TTS 跨子系统朗读、备份恢复）+ §1.2 愿景 + §3.11 通用 AI 对话（默认主入口）
 - [x] 03-Architecture v0.1.1 ✅ 已审查批准：四层架构 + pi 扩展层 + 业务 Adapter + 数据层 + 技能体系 + 桌面壳 + 调度 + 安全 + §6.7 会话管理 pi 原生 AI 对话默认主入口
 - [x] 05-ERD v0.1.1 ✅ 已审查批准：全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 + ER 图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载
-- [x] 06-API v0.1.1 ✅ 已审查批准：RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表 + 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解
+- [x] 06-API v0.1.1 ✅ 已审查批准：RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表 + 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解
 - [x] 07-Workflow v0.1.2 ✅ 已审查批准：学生主路径（S1-S7 闭环）+ 家长报告 + TTS 朗读 + 备份恢复 + 组件治理 + 调度层 + 11 状态机汇总 + §2.8 通用 AI 对话路径 + 工具→Tab 映射表
 - [x] 08-Test v0.1.1 ✅ 已审查批准：测试金字塔 + 四层分层 + 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E
 - [x] 09-UI v0.1.2 ✅ 已审查批准：三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话，响应用户反馈不废弃）** + 8 学习标签页（S1-S7）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 —— 完整性/上游一致性/铁律落实/E2E 覆盖四项通过
@@ -151,7 +153,10 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
-| v0.1.100 | 2026-08-09 | T-M4-010 最终 Git 收口：网络恢复后，本地 `master`、`origin/master` 和远端 `refs/heads/master` 已共同核验至 `b9a3c49`；功能提交 `a06d8a5` 的 Node 24.14.0 master 完整质量门复验保持通过，任务 in_progress→done。最终治理同步随后推送并复验，M4 统计为 9 pending / 0 in_progress / 11 done，合计 9 pending / 0 in_progress / 47 done；无 API/handler/schema 变化，T-M4-011~021 保持 pending。依据：AGENTS.md §4.5、§7、§8.4、§11.2 + 用户明确授权。 |
+| v0.1.102 | 2026-08-09 | T-M4-023 本地修订与 Node 24.14.0 完整质量门验收同步：unit/integration 104 files/1028 tests、真实 Electron E2E 16 files/118 tests、contract 127/127、security 6/6、smoke 6/6、UUID 7/7、文档治理与 diff check 通过；任务保持 in_progress，Git 收口待授权，T-M4-011~021 未启动。 |
+| v0.1.101 | 2026-08-09 | 登记 T-M4-023 交叉审查问题修订并同步 01-09 文档元数据：生产 `agent.send` 无模型配置返回固定 `MODEL_NOT_CONFIGURED`、credential-vault 实际拓扑为 `config/credentials.json`、默认入口为“💬 对话”。任务仍 in_progress，Git 收口未授权，T-M4-011~021 未启动。 |
+|---|---|---|
+| v0.1.100 | 2026-08-09 | T-M4-010 最终 Git 收口：网络恢复后，本地 `master`、`origin/master` 和远端 `refs/heads/master` 已T-M4-010 历史关闭点为 `b9a3c49`；当前仓库基线为 `6cd1e903`；功能提交 `a06d8a5` 的 Node 24.14.0 master 完整质量门复验保持通过，任务 in_progress→done。最终治理同步随后推送并复验，M4 统计为 9 pending / 0 in_progress / 11 done，合计 9 pending / 0 in_progress / 47 done；无 API/handler/schema 变化，T-M4-011~021 保持 pending。依据：AGENTS.md §4.5、§7、§8.4、§11.2 + 用户明确授权。 |
 | v0.1.96 | 2026-08-09 | 同步 04-Todo v0.1.92：用户明确授权 T-M4-010 S1 首页 Tab RPC 接线实施，唯一计划 `.plan/T-M4-010-s1-home-rpc.md` 已创建，任务 pending→in_progress。范围仅当前学期/课程上下文内 `tasks.dailyBrief`、`tasks.list`、`exams.list` 真实接线及受控异步状态；不新增 API/handler/schema，不启动 T-M4-011~021，Git 收口未授权。依据：AGENTS.md §4.4、§4.5、§5、§8、§11.2 + 用户明确授权。 |
 | v0.1.99 | 2026-08-09 | 修正 T-M4-010 远端收口事实：功能与治理提交已在本地 `master`（`3aa51a7`），但两次 `git push origin master` 均因 GitHub 连接重置失败，`origin/master` 尚未核验到新提交；任务保持 in_progress。依据：AGENTS.md §4.5、§7、§8.4、§11.2 + 远端网络错误证据。 |
 | v0.1.95 | 2026-08-09 | 同步 04-Todo v0.1.91：T-M4-009 electron-builder 配置、Windows x64 NSIS setup、隔离安装与两次真实 Electron 启动验证已完成 Git 收口；功能提交 `36202b0` 已快进合并至 master 并推送 `origin/master`。无 API/handler/schema 变化，T-M4-010~021 保持 pending。依据：AGENTS.md §4.5、§7、§8.2、§8.4、§11.2 + 用户明确授权。 |
@@ -238,7 +243,7 @@
 | v0.1.8 | 2026-08-07 | 09-UI v0.1.0 草案完成待审查（三栏布局 + 8 学习标签页 S1-S7 + TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式） |
 | v0.1.7 | 2026-08-07 | 07-Workflow v0.1.0 审查批准；08-Test v0.1.0 草案完成待审查（测试金字塔 + 四层分层 + 单件/集成/系统冒烟/系统 E2E + 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离） |
 | v0.1.6 | 2026-08-07 | 06-API v0.1.0 审查批准；07-Workflow v0.1.0 草案完成待审查（学生主路径 S1-S7 闭环 + 家长报告 + TTS 朗读 + 备份恢复 + 组件治理 + 调度层 + 11 状态机汇总） |
-| v0.1.5 | 2026-08-07 | 05-ERD v0.1.0 审查批准；06-API v0.1.0 草案完成待审查（RPC 契约 + API 信封 + 5 错误码 + 100+ 方法表 + 9 Streams + DTO 规范） |
+| v0.1.5 | 2026-08-07 | 05-ERD v0.1.0 审查批准；06-API v0.1.0 草案完成待审查（RPC 契约 + API 信封 + 6 错误码 + 100+ 方法表 + 9 Streams + DTO 规范） |
 | v0.1.4 | 2026-08-07 | 03-Architecture v0.1.0 审查批准；05-ERD v0.1.0 草案完成待审查（全局库 + 学期库 S1-S7 全量表 30+ + 三层记忆 + ER 图 + 触发器 + 索引 + 备份 zip 结构） |
 | v0.1.3 | 2026-08-07 | 02-PRD v0.1.2 审查批准（含 TTS 跨子系统 + 备份恢复）；03-Architecture v0.1.0 草案完成待审查（四层架构 + pi 扩展层 + 业务 Adapter + 数据层 + 技能体系 + 桌面壳 + 调度 + 安全） |
 | v0.1.2 | 2026-08-07 | 01-TRD 升级 v0.2.0（五点待决项定案）；新增 prep-参考点核对表（03-Architecture 准备材料）；02-PRD v0.1.0 草案完成待审查 |

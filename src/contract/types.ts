@@ -26,14 +26,15 @@ export interface RpcError {
 /* 06-API §2 统一信封 + 错误码                                         */
 /* ------------------------------------------------------------------ */
 
-/** 统一错误码（06-API §2.2：5 通用码 + PARENT_REPORT_PRIVACY_VIOLATION 特殊码） */
+/** 统一错误码（06-API §2.2：5 通用码 + 2 个业务特殊码） */
 export type ErrorCode =
   | "NOT_FOUND"
   | "INVALID_JSON"
   | "FILE_TOO_LARGE"
   | "BAD_REQUEST"
   | "INTERNAL_ERROR"
-  | "PARENT_REPORT_PRIVACY_VIOLATION";
+  | "PARENT_REPORT_PRIVACY_VIOLATION"
+  | "MODEL_NOT_CONFIGURED";
 
 /** 分页元信息（06-API §2.1 / §5.3） */
 export interface Meta {

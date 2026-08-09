@@ -42,7 +42,7 @@ const {
   defaultSessionFixture,
 } = require("../../dist/agent-host/session-store");
 const { createSessionHandlers } = require("../../dist/agent-host/handlers/sessions");
-const { createAgentHandlers } = require("../../dist/agent-host/handlers/agent");
+const { createAgentHandlers, runMockFixture } = require("../../dist/agent-host/handlers/agent");
 const { createModelHandlers } = require("../../dist/agent-host/handlers/models");
 const { createFileHandlers } = require("../../dist/agent-host/handlers/files");
 const { indexTurnEndChunks } = require("../../dist/agent/turn-end");
@@ -124,7 +124,7 @@ const allHandlers = {
     dataRoot,
     exportDir: path.join(dataRoot, "exports"),
   }),
-  ...createAgentHandlers(eventForwardServer, sessionStore),
+  ...createAgentHandlers(eventForwardServer, sessionStore, null, { fixture: runMockFixture }),
   ...createModelHandlers(dataRoot),
   // T-M3-002：files.read @引用白名单门禁（E2E-12 前置，AGENTS.md §9.4）
   ...createFileHandlers(noopFileWatch, { dataRoot }),

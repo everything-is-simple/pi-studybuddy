@@ -306,13 +306,14 @@ describe("Streams 九主题（06-API §4）", () => {
 });
 
 describe("错误码与信封（06-API §2.1-§2.2）", () => {
-  it("ErrorCode 含 5 通用码 + PARENT_REPORT_PRIVACY_VIOLATION", () => {
+  it("ErrorCode 含 5 通用码 + MODEL_NOT_CONFIGURED + PARENT_REPORT_PRIVACY_VIOLATION", () => {
     expectTypeOf<ErrorCode>().toEqualTypeOf<
       | "NOT_FOUND"
       | "INVALID_JSON"
       | "FILE_TOO_LARGE"
       | "BAD_REQUEST"
       | "INTERNAL_ERROR"
+      | "MODEL_NOT_CONFIGURED"
       | "PARENT_REPORT_PRIVACY_VIOLATION"
     >();
   });
