@@ -1,8 +1,8 @@
-# 任务计划：T-M4-010 S1 首页 Tab RPC 接线（Git 收口完成）
+# 任务计划：T-M4-010 S1 首页 Tab RPC 接线（本地 master 已合并，远端推送待完成）
 
 **任务 ID**：T-M4-010
 **计划文件**：`.plan/T-M4-010-s1-home-rpc.md`
-**状态**：✅ done（Git 收口完成）
+**状态**：🟡 merged_local_push_pending（本地 master 已合并；origin/master 推送待完成）
 **日期**：2026-08-09
 **里程碑**：M4 业务接线 + 打包部署
 **标题**：S1 首页 Tab RPC 接线（dailyBrief + tasks + exams）
@@ -95,4 +95,4 @@ git diff --check
 
 实施记录必须记录 RED→GREEN→REFACTOR、三组 RPC 参数和异步状态断言、工具版本、全部退出码/测试数量、审阅结果、Git 状态与未授权收口事实。
 
-> docs/04 完成证据、master 复验和 `origin/master` 推送均已满足；任务登记为 done，不自动启动后续任务。
+> docs/04 完成证据与 master 复验已满足；两次 origin/master 推送因远端连接重置失败，任务保持 in_progress，不自动启动后续任务。
