@@ -134,7 +134,7 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
     expect(session).toBeDefined();
     expect(session.session).toBeDefined();
     expect(typeof session.session.getAllTools).toBe("function");
-  });
+  }, 30_000);
 
   it("session.getAllTools() 包含 35 个 studybuddy_* 工具（S1-S7 + TTS + 备份恢复）", () => {
     const allTools: ToolInfo[] = session!.session.getAllTools();

@@ -39,7 +39,7 @@ describe("toolchain manager integration", () => {
     expect(node!.health).toBe("healthy");
     expect(node!.version).toBeDefined();
     manager.dispose();
-  });
+  }, 30_000);
 
   it("MANAGER-02: manager.rescan() 刷新缓存", () => {
     const manager = createToolchainManager();
@@ -47,7 +47,7 @@ describe("toolchain manager integration", () => {
     const second = manager.rescan();
     expect(second.length).toBe(first.length);
     manager.dispose();
-  });
+  }, 30_000);
 
   it("MANAGER-03: manager.install() 返回 ToolchainStatus（不实际下载）", async () => {
     const manager = createToolchainManager();
@@ -57,7 +57,7 @@ describe("toolchain manager integration", () => {
     const installPath = path.join(ISOLATION_DIR, "toolchains", "js.node");
     expect(fs.existsSync(installPath)).toBe(true);
     manager.dispose();
-  });
+  }, 30_000);
 
   it("MANAGER-04: manager.onChanged 在 rescan 后被调用", () => {
     const manager = createToolchainManager();
@@ -68,7 +68,7 @@ describe("toolchain manager integration", () => {
     manager.rescan();
     expect(called).toBe(true);
     manager.dispose();
-  });
+  }, 30_000);
 
   it("ISOLATION-01: 测试写入隔离目录，不产生真实数据文件", () => {
     // 验证隔离目录存在

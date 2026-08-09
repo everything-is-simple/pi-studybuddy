@@ -16,7 +16,7 @@
  * T-M1-009：根据 activeTabId 渲染对应 S1-S4 业务 Tab 组件。
  *   chat/cram/report/capture 留待后续里程碑。
  */
-import React, { useState } from "react";
+import React, { useReducer, useState } from "react";
 import { TABS, DEFAULT_TAB_ID } from "../tabs";
 import { TabBar } from "./TabBar";
 import { HomeTab } from "./tabs/HomeTab";
@@ -31,9 +31,36 @@ import { ChatTab } from "./tabs/ChatTab";
 import { SessionSidebar, type SessionSidebarItem } from "./SessionSidebar";
 import { TtsControlBar } from "./TtsControlBar";
 import { BackupPanel } from "./BackupPanel";
+import { SettingsPage, isSettingsShortcut } from "./SettingsPage";
 import { TabContainer } from "./common/TabContainer";
 import { EmptyState } from "./common/EmptyState";
 import type { TypedRpcClient } from "../rpc-client";
+
+export interface AppShellViewState {
+  activeTabId: string;
+  settingsOpen: boolean;
+}
+
+export type AppShellViewAction =
+  | { type: "selectTab"; tabId: string }
+  | { type: "openSettings" }
+  | { type: "closeSettings" };
+
+/** 设置是独立页面；仅切换页面状态，不得覆盖当前工作台 Tab。 */
+export function initialAppShellViewState(): AppShellViewState {
+  return { activeTabId: DEFAULT_TAB_ID, settingsOpen: false };
+}
+
+export function appShellViewReducer(state: AppShellViewState, action: AppShellViewAction): AppShellViewState {
+  switch (action.type) {
+    case "selectTab":
+      return { ...state, activeTabId: action.tabId };
+    case "openSettings":
+      return { ...state, settingsOpen: true };
+    case "closeSettings":
+      return { ...state, settingsOpen: false };
+  }
+}
 
 interface Props {
   /** RPC 通道状态文本（由 App.tsx 传入，骨架阶段用于显示连通性） */
@@ -100,11 +127,22 @@ export function AppShell({
   semesterId,
   courseId,
 }: Props): React.JSX.Element {
-  const [activeTabId, setActiveTabId] = useState(DEFAULT_TAB_ID);
+  const [viewState, dispatchView] = useReducer(appShellViewReducer, undefined, initialAppShellViewState);
+  const { activeTabId, settingsOpen } = viewState;
   // T-M3-006：选中会话状态 AppShell 提升（裁决 5：会话即对话 Tab 内容，09-UI §7）
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
   const [sidebarSessions, setSidebarSessions] = useState<SessionSidebarItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  // 09-UI §13.3：Ctrl+, 从任意学习工作台打开设置；activeTabId 保持不变，返回时自然恢复。
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (!isSettingsShortcut(event)) return;
+      event.preventDefault();
+      dispatchView({ type: "openSettings" });
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // T-M3-006：左侧栏会话列表数据源（sessions.list；搜索时走 sessions.search，
   // L3 未建库降级为内存过滤——search handler 返回空数组时不覆盖当前列表）
@@ -245,6 +283,25 @@ export function AppShell({
             onDelete={handleDelete}
             onExport={handleExport}
           />
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border, #e0e0e0)" }}>
+            <button
+              type="button"
+              aria-label="打开设置"
+              onClick={() => dispatchView({ type: "openSettings" })}
+              style={{
+                width: "100%",
+                padding: "7px 8px",
+                border: "1px solid var(--border, #e0e0e0)",
+                borderRadius: 6,
+                background: settingsOpen ? "var(--accent, #e8f0fe)" : "transparent",
+                color: "var(--text, #222)",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              ⚙ 设置
+            </button>
+          </div>
         </aside>
 
         {/* 主内容区 */}
@@ -257,37 +314,43 @@ export function AppShell({
             minWidth: 0,
           }}
         >
-          {/* TabBar */}
-          <TabBar tabs={TABS} activeTabId={activeTabId} onSelectTab={setActiveTabId} />
+          {settingsOpen ? (
+            <SettingsPage rpc={rpc} onClose={() => dispatchView({ type: "closeSettings" })} />
+          ) : (
+            <>
+              {/* TabBar：固定 9 个学习工作台 Tab（设置不在其中）。 */}
+              <TabBar tabs={TABS} activeTabId={activeTabId} onSelectTab={(tabId) => dispatchView({ type: "selectTab", tabId })} />
 
-          {/* TTS 全局控制条（T-M2-008，09-UI §5.1-§5.5） */}
-          <TtsControlBar rpc={rpc} />
+              {/* TTS 全局控制条（T-M2-008，09-UI §5.1-§5.5） */}
+              <TtsControlBar rpc={rpc} />
 
-          {/* Tab 内容：根据 activeTabId 渲染对应业务组件（T-M1-009） */}
-          {renderTab(activeTabId, rpc, semesterId, courseId, setActiveTabId, activeSessionId)}
+              {/* Tab 内容：根据 activeTabId 渲染对应业务组件（T-M1-009） */}
+              {renderTab(activeTabId, rpc, semesterId, courseId, (tabId) => dispatchView({ type: "selectTab", tabId }), activeSessionId)}
 
-          {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
-          {rpcStatus && activeTabId === DEFAULT_TAB_ID && (
-            <div style={{ padding: 16, fontSize: 12 }}>
-              <p>RPC 状态：{rpcStatus}</p>
-              {onVerifyRpc && (
-                <button
-                  type="button"
-                  onClick={onVerifyRpc}
-                  style={{
-                    padding: "4px 12px",
-                    fontSize: 12,
-                    cursor: "pointer",
-                    border: "1px solid var(--border, #e0e0e0)",
-                    background: "var(--bg-panel, #f5f5f5)",
-                    borderRadius: 4,
-                  }}
-                >
-                  验证 RPC 通道
-                </button>
+              {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
+              {rpcStatus && activeTabId === DEFAULT_TAB_ID && (
+                <div style={{ padding: 16, fontSize: 12 }}>
+                  <p>RPC 状态：{rpcStatus}</p>
+                  {onVerifyRpc && (
+                    <button
+                      type="button"
+                      onClick={onVerifyRpc}
+                      style={{
+                        padding: "4px 12px",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        border: "1px solid var(--border, #e0e0e0)",
+                        background: "var(--bg-panel, #f5f5f5)",
+                        borderRadius: 4,
+                      }}
+                    >
+                      验证 RPC 通道
+                    </button>
+                  )}
+                  {rpcResult && <p style={{ marginTop: 4 }}>ping 结果：{rpcResult}</p>}
+                </div>
               )}
-              {rpcResult && <p style={{ marginTop: 4 }}>ping 结果：{rpcResult}</p>}
-            </div>
+            </>
           )}
         </main>
 

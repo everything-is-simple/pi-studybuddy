@@ -62,6 +62,16 @@ function detectStage() {
 
 const stage = detectStage();
 
+// ---- 子进程运行时一致性 ----
+// 质量门由指定 Node（当前 process.execPath）启动时，npm/npx/node 子进程也必须
+// 使用同一运行时目录。否则 Windows PATH 中更高版本的全局 Node 会改变测试对象，
+// 令 toolchain 探测与质量门自身的 Node 基线不一致。
+const runtimeBinDirectory = path.dirname(process.execPath);
+const childEnv = {
+  ...process.env,
+  PATH: [runtimeBinDirectory, process.env.PATH ?? ""].filter(Boolean).join(path.delimiter),
+};
+
 // ---- 步骤执行器 ----
 function run(label, cmd, args, { optional = false } = {}) {
   if (opts.skip.has(label.toLowerCase().replace(/[^a-z]/g, ""))) {
@@ -69,7 +79,12 @@ function run(label, cmd, args, { optional = false } = {}) {
     return true;
   }
   console.log(`\n==> ${label}\n> ${cmd} ${args.join(" ")}\n`);
-  const r = spawnSync(cmd, args, { cwd: root, stdio: "inherit", shell: true });
+  const r = spawnSync(cmd, args, {
+    cwd: root,
+    stdio: "inherit",
+    shell: true,
+    env: childEnv,
+  });
   if (r.status !== 0) {
     if (optional) {
       console.warn(`\n[verify] OPTIONAL STEP FAILED: ${label}（继续）`);

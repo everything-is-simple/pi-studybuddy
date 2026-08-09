@@ -13,7 +13,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { TABS, DEFAULT_TAB_ID, type TabDef } from "../../src/renderer/tabs";
 import { TabBar } from "../../src/renderer/components/TabBar";
-import { AppShell } from "../../src/renderer/components/AppShell";
+import { AppShell, appShellViewReducer, initialAppShellViewState } from "../../src/renderer/components/AppShell";
 
 // ---------- Tab 定义（09-UI §4.1） ----------
 
@@ -103,6 +103,18 @@ describe("TabBar 组件（09-UI §4.1）", () => {
 
 // ---------- AppShell 组件（09-UI §2.1） ----------
 
+describe("AppShell 设置导航状态（09-UI §3.1 / §13.3）", () => {
+  it("打开和返回设置不会改变已有工作台 Tab", () => {
+    let state = initialAppShellViewState();
+    state = appShellViewReducer(state, { type: "selectTab", tabId: "notes" });
+    state = appShellViewReducer(state, { type: "openSettings" });
+    expect(state).toEqual({ activeTabId: "notes", settingsOpen: true });
+
+    state = appShellViewReducer(state, { type: "closeSettings" });
+    expect(state).toEqual({ activeTabId: "notes", settingsOpen: false });
+  });
+});
+
 describe("AppShell 组件（09-UI §2.1 三栏布局）", () => {
   function renderShell(): string {
     return renderToStaticMarkup(React.createElement(AppShell));
@@ -119,6 +131,8 @@ describe("AppShell 组件（09-UI §2.1 三栏布局）", () => {
     expect(html).toContain("会话");
     expect(html).toContain("搜索会话");
     expect(html).toContain("新建会话");
+    // 09-UI §3.1：设置位于左侧导航，而不是第 10 个工作台 Tab。
+    expect(html).toContain("⚙ 设置");
   });
 
   it("渲染主内容区（TabBar 所在）", () => {

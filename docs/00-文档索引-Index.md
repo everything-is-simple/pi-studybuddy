@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.80
-**日期**：2026-08-08
+**版本**：v0.1.85
+**日期**：2026-08-09
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.2 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.73 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨/M4后端断裂修复+业务接线+打包部署）+ 58 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明（v0.2.3 打包能力常态化）+ §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~008 全 done，M3 收官）+ §7.6.1 M4 任务登记表（T-M4-001~005 done，T-M4-022 in_progress，T-M4-006~021 pending；P0 运行时阻塞前置 + 5 个 P0 后端断裂修复 + 3 个 P0 基础 UI + 1 个 P0.5 打包 + 10 个 P1-P3 接线 + 2 个 P4 收尾）+ §7.5 全局执行顺序表（M1/M2/M3/M4 统一排序 40 行，T-M4-022 位于 T-M4-005 后、T-M4-006 前）+ §6.5 M3 退出门槛全勾选 + §6.6 M4 退出门槛（后端断裂修复 + 设置页/学期切换 + S1-S7 接线 + 打包冒烟） |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.79 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨/M4后端断裂修复+业务接线+打包部署）+ 58 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明（v0.2.3 打包能力常态化）+ §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~008 全 done，M3 收官）+ §7.6.1 M4 任务登记表（T-M4-001~005/T-M4-022 done，T-M4-006 in_progress（实施、双独立复审、diff 检查与 Node 24.14.0 完整质量门已通过，Git 收口待授权），T-M4-007~021 pending；P0 运行时阻塞与后端断裂已修复，当前进入 P0 设置 UI）+ §7.5 全局执行顺序表（M1/M2/M3/M4 统一排序 40 行，T-M4-006 位于 T-M4-022 后）+ §6.5 M3 退出门槛全勾选 + §6.6 M4 退出门槛（后端断裂修复 + 设置页/学期切换 + S1-S7 接线 + 打包冒烟） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.5 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -138,11 +138,20 @@
 - [x] 01-TRD v0.2.3：§7 决策 6 修订（v0.1 交付形态从"不打包 .exe"改为"源码形态可运行 + 打包能力常态化"，supersedes v0.2.2）。依据：用户 2026-08-08 明确指令"系统不管什么时候，只要功能正常，就要能够被打包"。打包工具链（electron-builder）纳入 M4 里程碑
 - [x] 04-Todo v0.1.66：新增 M4 里程碑（业务接线 + 打包部署）—— §6.6 M4 退出门槛 7 项 + §7.6.1 M4 任务登记表 T-M4-001~018 全 pending（18 任务：P0 设置页/学期切换/AppShell 数据流 + P1 S1-S4 接线 + P2 S5-S7 接线 + P3 TTS/备份 + P4 打包/E2E）+ §7.5 全局执行顺序表追加 M4 行 19-36 + §9 统计加 M4 行（18 pending）+ 合计 54 任务。M3 收官后人工检验发现前端 127 RPC handler 仅接通约 12 个（AI 对话线），S1-S7 业务 Tab "有壳无接线"，设置页/学期切换完全缺失
 - [x] 04-Todo v0.1.74：T-M4-022 已完成（Electron 36.9.5 / Node 22.19.0 / node:sqlite + 真实 Electron 桌面双启动）；两名独立审查最终 PASS；commit 0ec4163 已推送 origin/master，任务按 AGENTS.md §8.4 登记 done
+- [x] 04-Todo v0.1.75：T-M4-006 设置页 UI 已由用户明确选择并登记 in_progress；唯一计划 `.plan/T-M4-006-settings-ui.md` 待用户审查，尚未写业务代码；T-M4-007~021 保持 pending，不自动启动
+- [x] 04-Todo v0.1.77：T-M4-006 设置页/AppShell、RED→GREEN、独立审查修复、实施记录与 Node 24.14.0 verify full 已完成；因 Git 提交/推送未获授权，任务仍 in_progress，未预选后续任务。
+- [x] 04-Todo v0.1.78：T-M4-006 两名独立审查最终 PASS，删除 `AppShell.tsx` EOF 空白行后 `git diff --check` 通过；Git 收口仍未授权，任务继续 in_progress。
+- [x] 04-Todo v0.1.79：修复质量门父/子 Node 运行时漂移；由 Node 24.14.0 显式启动的 verify full 已将 Node 24 传递给 npm/npx/node 子进程，避免 PATH 的 Node 25.4.0 改变 `js.node` 健康断言；任务仍 in_progress，未启动后续任务。
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.85 | 2026-08-09 | 04-Todo v0.1.79：同步 T-M4-006 质量门运行时一致性修复与 Node 24.14.0 完整 verify full 复验。原因：显式 Node 24 启动的 verify 原先让 npm/npx/node 子进程误解析 PATH 的 Node 25.4.0，致使工具链健康断言误报。影响：仅索引版本/质量门证据，无 API 变更、无后续任务启动；任务继续 in_progress，待 Git 授权。依据：AGENTS.md §5.1、§10、§11.1/§11.2 + 用户 2026-08-09 授权。 |
+| v0.1.84 | 2026-08-09 | 04-Todo v0.1.78：同步 T-M4-006 两名独立审查最终 PASS 与 `git diff --check` 通过的事实；因 Git 完成门槛未满足，保持 in_progress。原因：交叉审查与受控收尾证据同步。影响：仅索引版本/状态登记，无 API 变更、无后续任务启动。依据：AGENTS.md §4.5、§7、§8.4、§11.2、§11.4 + 用户 2026-08-09 授权 |
+| v0.1.83 | 2026-08-09 | 04-Todo v0.1.77：同步 T-M4-006 实施、测试稳定性与全量质量门事实（verify full：smoke 6/6、真实 Electron E2E 16 files/117 tests）；依 Git 完成门槛保留 in_progress。原因：受控收尾与实施证据同步。影响：仅索引版本/状态登记，无 API 变更、无后续任务启动。依据：AGENTS.md §4.5、§7、§8.4、§11.2 + 用户 2026-08-09 授权 |
+| v0.1.82 | 2026-08-09 | 04-Todo v0.1.76：同步 T-M4-006 已获用户批准且正在实施的事实（RED→GREEN、设置页/AppShell 组装、定向 type-check），保留 in_progress。原因：独立审查发现索引/Todo 仍表述“待审查、未写代码”，与事实冲突。影响：仅状态与版本登记同步；无 API 变更、无后续任务启动。依据：AGENTS.md §4.5、§11.1/§11.2 + 用户 2026-08-09 授权 |
+| v0.1.81 | 2026-08-09 | 04-Todo v0.1.75：用户明确选择 T-M4-006 设置页 UI，前置 T-M4-003/T-M4-022 已 done，唯一计划 `.plan/T-M4-006-settings-ui.md` 已创建并待审查；任务 pending→in_progress，代码/契约未变，T-M4-007~021 未自动启动。依据：AGENTS.md §4.4/§4.5/§11.2 + 用户 T-M4-006 Prompt |
 | v0.1.80 | 2026-08-09 | 04-Todo v0.1.74：T-M4-022 已完成 master 复验、commit `0ec4163` 与 origin/master 推送；真实 Electron 16 files/117 tests 与 Node 24.14.0 `pnpm verify` 全通过。T-M4-006~021 仍 pending，未自动启动。依据：AGENTS.md §4.5/§7/§8.4 + 用户明确授权 |
 | v0.1.79 | 2026-08-08 | 04-Todo v0.1.73：T-M4-022 业务 E2E 已从 Node fork 迁移为真实 Electron 36.9.5 + 127.0.0.1 TCP JSON-lines，runtime sentinel 与全量 16 files/117 tests 通过；stdin pipe 根因与回环边界记录于实施记录。Git 收口仍待用户授权，任务保持 in_progress。依据：AGENTS.md §4.5/§5.3/§9.1/§11.2 + 用户 T-M4-022 Prompt + `.record/T-M4-022-实施记录.md` |
 | v0.1.78 | 2026-08-08 | 04-Todo v0.1.72：T-M4-022 实施与质量门完成（Electron 36.9.5 / 内嵌 Node 22.19.0 / `node:sqlite`，真实 Electron 6/6 与同一数据根双启动 smoke，完整 E2E 15 files/116 tests，Node24.14.0 单元/集成与 Node22 verify 全通过）。两名独立审查完成；因尚未获 Git 收口授权，未 commit/push，任务继续 in_progress。依据：AGENTS.md §4.5/§7/§8.4/§11.4 + `.record/T-M4-022-实施记录.md` |
