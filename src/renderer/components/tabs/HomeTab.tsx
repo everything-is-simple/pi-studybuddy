@@ -31,9 +31,8 @@ interface Props {
 }
 
 /** 计算考试倒计时天数 */
-function daysUntil(dateStr: string): number {
+function daysUntil(dateStr: string, now = new Date()): number {
   const target = new Date(dateStr);
-  const now = new Date("2026-08-08T00:00:00Z");
   const diffMs = target.getTime() - now.getTime();
   return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 }
@@ -56,25 +55,33 @@ function taskStatusLabel(status: StudyTask["status"]): string {
 
 export function HomeTab({ dailyBrief, tasks, exams, rpc, semesterId, academicContext }: Props): React.JSX.Element {
   const effectiveSemesterId = academicContext?.semesterId ?? semesterId;
-  const resource = useTabData<DailyBrief | undefined>({
+  const effectiveCourseId = academicContext?.courseId;
+  const dailyBriefResource = useTabData<DailyBrief | undefined>({
     rpc,
-    key: `home:${effectiveSemesterId ?? ""}`,
+    key: `home:daily-brief:${effectiveSemesterId ?? ""}`,
     enabled: Boolean(rpc && effectiveSemesterId),
     initialData: undefined,
     load: (client) => client.call("tasks.dailyBrief", { semesterId: effectiveSemesterId! }),
   });
-  const visibleBrief = rpc ? resource.data : dailyBrief;
-  const visibleTasks = rpc ? visibleBrief?.tasks : tasks;
+  const tasksResource = useTabData<StudyTask[]>({
+    rpc,
+    key: `home:tasks:${effectiveSemesterId ?? ""}:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(rpc && effectiveCourseId),
+    initialData: [],
+    load: (client) => client.call("tasks.list", { courseId: effectiveCourseId! }),
+  });
+  const examsResource = useTabData<AssessmentAttempt[]>({
+    rpc,
+    key: `home:exams:${effectiveSemesterId ?? ""}:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(rpc && effectiveCourseId),
+    initialData: [],
+    load: (client) => client.call("exams.list", { courseId: effectiveCourseId! }),
+  });
+  const visibleBrief = rpc ? dailyBriefResource.data : dailyBrief;
+  const visibleTasks = rpc ? tasksResource.data : tasks;
+  const visibleExams = rpc ? examsResource.data : exams;
 
-  if (rpc && resource.status === "loading") {
-    return <TabContainer><div role="status">正在加载学习简报…</div></TabContainer>;
-  }
-  if (rpc && resource.status === "error") {
-    return <TabContainer><div role="alert">暂时无法加载学习简报，请稍后重试。</div></TabContainer>;
-  }
-
-  // 空状态：无 dailyBrief
-  if (!visibleBrief) {
+  if ((rpc && !effectiveSemesterId) || (!rpc && !visibleBrief)) {
     return (
       <TabContainer>
         <EmptyState message="暂无学习简报，请先选择学期" />
@@ -89,13 +96,13 @@ export function HomeTab({ dailyBrief, tasks, exams, rpc, semesterId, academicCon
         <h2 style={{ margin: 0, fontSize: 16, color: "var(--text, #222)" }}>
           每日学习简报
         </h2>
-        <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4 }}>
-          {visibleBrief.date}
-        </div>
+        {rpc && dailyBriefResource.status === "loading" && <div role="status">正在加载学习简报…</div>}
+        {rpc && dailyBriefResource.status === "error" && <div role="alert">暂时无法加载学习简报，请稍后重试。</div>}
+        {visibleBrief && <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4 }}>{visibleBrief.date}</div>}
       </div>
 
       {/* 待办数量 */}
-      <div
+      {visibleBrief && <div
         style={{
           padding: 12,
           background: "var(--bg-panel, #f5f5f5)",
@@ -106,13 +113,16 @@ export function HomeTab({ dailyBrief, tasks, exams, rpc, semesterId, academicCon
         <span style={{ fontSize: 13 }}>今日待办：</span>
         <strong style={{ fontSize: 16, color: "#1976d2" }}>{visibleBrief.pendingItems}</strong>
         <span style={{ fontSize: 13 }}> 项</span>
-      </div>
+      </div>}
 
       {/* 待办任务列表 */}
-      {visibleTasks && visibleTasks.length > 0 && (
+      {(rpc || (visibleTasks && visibleTasks.length > 0)) && (
         <div style={{ marginBottom: 16 }}>
           <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>任务列表</h3>
-          {visibleTasks.map((task) => (
+          {rpc && !effectiveCourseId && <EmptyState message="请先选择课程以查看任务和考试" />}
+          {rpc && effectiveCourseId && tasksResource.status === "loading" && <div role="status">正在加载任务…</div>}
+          {rpc && effectiveCourseId && tasksResource.status === "error" && <div role="alert">暂时无法加载任务，请稍后重试。</div>}
+          {visibleTasks?.map((task) => (
             <div
               key={task.id}
               style={{
@@ -131,14 +141,18 @@ export function HomeTab({ dailyBrief, tasks, exams, rpc, semesterId, academicCon
               </span>
             </div>
           ))}
+          {rpc && effectiveCourseId && tasksResource.status === "empty" && <EmptyState message="暂无任务" />}
         </div>
       )}
 
       {/* 考试倒计时 */}
-      {exams && exams.length > 0 && (
+      {(rpc || (visibleExams && visibleExams.length > 0)) && (
         <div>
           <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>考试倒计时</h3>
-          {exams.map((exam) => (
+          {rpc && !effectiveCourseId && <EmptyState message="请先选择课程以查看任务和考试" />}
+          {rpc && effectiveCourseId && examsResource.status === "loading" && <div role="status">正在加载考试…</div>}
+          {rpc && effectiveCourseId && examsResource.status === "error" && <div role="alert">暂时无法加载考试，请稍后重试。</div>}
+          {visibleExams?.map((exam) => (
             <div
               key={exam.id}
               style={{
@@ -157,6 +171,7 @@ export function HomeTab({ dailyBrief, tasks, exams, rpc, semesterId, academicCon
               </span>
             </div>
           ))}
+          {rpc && effectiveCourseId && examsResource.status === "empty" && <EmptyState message="暂无考试" />}
         </div>
       )}
     </TabContainer>

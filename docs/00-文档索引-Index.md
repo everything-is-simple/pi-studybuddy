@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.95
+**版本**：v0.1.97
 **日期**：2026-08-09
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.3 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.2 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.91 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨/M4后端断裂修复+业务接线+打包部署）+ 58 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明（v0.2.3 打包能力常态化）+ §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~008 全 done，M3 收官）+ §7.6.1 M4 任务登记表（T-M4-001~009/T-M4-022 done，T-M4-010~021 pending；P0 运行时阻塞、后端断裂、设置页、学期/课程切换 UI、AppShell 数据流与首次 x64 setup 已完成）+ §7.5 全局执行顺序表（M1/M2/M3/M4 统一排序 40 行，T-M4-009 已完成，T-M4-010~021 保持 pending）+ §6.5 M3 退出门槛全勾选 + §6.6 M4 退出门槛（后端断裂修复 + 设置页/学期切换 + S1-S7 接线 + 打包冒烟） |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.93 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划（M0骨架/M1核心闭环/M2完整闭环/M3对话打磨/M4后端断裂修复+业务接线+打包部署）+ 58 任务大纲 + 修复记录区 + §1.4 治理体系就绪状态 + §6.0 M0 完成与版本演进说明（v0.2.3 打包能力常态化）+ §7.1.1 M0 任务登记表（T-M0-001~009 全 done，M0 收官）+ §7.2.1 M1 任务登记表（T-M1-001~010 全 done，M1 收官）+ §7.3.1 M2 任务登记表（T-M2-001~009 全 done，M2 收官）+ §7.4.1 M3 任务登记表（T-M3-001~008 全 done，M3 收官）+ §7.6.1 M4 任务登记表（T-M4-001~009/T-M4-022 done，T-M4-010 in_progress，T-M4-011~021 pending；T-M4-010 本地实施与验收完成、Git 待授权）+ §7.5 全局执行顺序表（M1/M2/M3/M4 统一排序 40 行，T-M4-010 已完成本地实现）+ §6.5 M3 退出门槛全勾选 + §6.6 M4 退出门槛（后端断裂修复 + 设置页/学期切换 + S1-S7 接线 + 打包冒烟） |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.1 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.5 已审查批准 | RPC 契约（非 REST）+ API 信封 + 5 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.1 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -145,12 +145,14 @@
 - [x] 04-Todo v0.1.80：T-M4-006 设置页 UI 已完成 Git 收口：功能提交 `0e378c0` 已在 master 快进复验并推送 `origin/master`；任务登记为 done，T-M4-007~021 继续 pending，未自动启动。
 - [x] 04-Todo v0.1.85：T-M4-007 学期/课程切换 UI 已完成 Git 收口：功能提交 `9e5116f` 和 master 复验证据提交 `9493f99` 已推送 `origin/master`；任务登记为 done，T-M4-008~021 继续 pending，未自动启动。
 - [x] 04-Todo v0.1.88：T-M4-008 AppShell 数据流重构已完成 Git 收口：功能提交 `76bef58` 已快进合并至 master，Node 24.14.0 master 完整质量门、UUID 7/7、文档治理和 diff 检查通过，并已推送 `origin/master`；任务登记为 done，T-M4-009~021 继续 pending，未自动启动。
-- [x] 04-Todo v0.1.91：T-M4-009 electron-builder 配置与 x64 NSIS setup 已完成 Git 收口：功能提交 `36202b0` 已快进进入 master，经 Node 24.14.0 完整质量门复验后推送 `origin/master`；任务登记为 done，T-M4-010~021 继续 pending，未自动启动。
+- [x] 04-Todo v0.1.93：T-M4-010 S1 首页 Tab RPC 接线本地实施与验收已完成；HomeTab 已接通 `tasks.dailyBrief`、`tasks.list`、`exams.list`，Node 24.14.0 定向/相关测试与完整质量门通过；任务保持 in_progress，Git 收口未授权，不启动 T-M4-011~021。
 
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.96 | 2026-08-09 | 同步 04-Todo v0.1.92：用户明确授权 T-M4-010 S1 首页 Tab RPC 接线实施，唯一计划 `.plan/T-M4-010-s1-home-rpc.md` 已创建，任务 pending→in_progress。范围仅当前学期/课程上下文内 `tasks.dailyBrief`、`tasks.list`、`exams.list` 真实接线及受控异步状态；不新增 API/handler/schema，不启动 T-M4-011~021，Git 收口未授权。依据：AGENTS.md §4.4、§4.5、§5、§8、§11.2 + 用户明确授权。 |
+| v0.1.97 | 2026-08-09 | 同步 T-M4-010 本地实施与验收证据：HomeTab 三数据域 RPC、课程门控、竞态隔离、固定错误文案和动态倒计时已实现；Node 24.14.0 完整质量门、契约/安全/UUID/文档治理/diff 检查通过。任务仍 in_progress，Git 收口未授权。依据：AGENTS.md §4.5、§5、§7、§8.4、§11.2 + 用户明确授权。 |
 | v0.1.95 | 2026-08-09 | 同步 04-Todo v0.1.91：T-M4-009 electron-builder 配置、Windows x64 NSIS setup、隔离安装与两次真实 Electron 启动验证已完成 Git 收口；功能提交 `36202b0` 已快进合并至 master 并推送 `origin/master`。无 API/handler/schema 变化，T-M4-010~021 保持 pending。依据：AGENTS.md §4.5、§7、§8.2、§8.4、§11.2 + 用户明确授权。 |
 | v0.1.94 | 2026-08-09 | T-M4-008 收口完成：`useTabData` 统一 idle/loading/error/empty/ready 生命周期，Tab 绑定 AppShell 唯一 semesterId/courseId 上下文并防止旧响应污染；Node 24.14.0 在 master 完整 verify full 通过（unit/integration 102 files/1017 tests、真实 Electron E2E 16 files/117 tests），UUID 7/7、文档治理、diff 检查均通过；功能提交 `76bef58` 已快进合并并推送 `origin/master`。任务状态 in_progress→done，T-M4-009~021 保持 pending；无 API/handler/schema 变化。 |
 | v0.1.91 | 2026-08-09 | 同步 04-Todo v0.1.85：T-M4-007 功能提交 `9e5116f` 已快进合并并完成 Node 24.14.0 master 完整质量门复验，治理提交 `9493f99` 已成功推送 `origin/master`；任务状态更新为 done，T-M4-008~021 保持 pending。无 API 变更。依据：AGENTS.md §4.5、§7、§8.2、§8.4、§11.2 + 用户明确授权。 |

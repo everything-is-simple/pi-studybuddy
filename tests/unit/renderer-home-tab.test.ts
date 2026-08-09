@@ -8,7 +8,7 @@
  * - 规则聚合非 AI（不调用 AI RPC，dailyBrief 来自 tasks.dailyBrief）
  * - 空状态（无学期）
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { HomeTab } from "../../src/renderer/components/tabs/HomeTab";
@@ -133,5 +133,21 @@ describe("HomeTab 组件（09-UI §4.3 首页）", () => {
     // tasks 中的 id 是 "task-001" 非 UUID，但若任何 UUID 出现应被 ShortId 处理
     // 此处断言渲染输出不含 36 字符 UUID 格式
     expect(html).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  });
+
+  it("考试倒计时使用运行时当前日期，不冻结在历史日期", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-09T00:00:00Z"));
+    try {
+      const html = renderToStaticMarkup(
+        React.createElement(HomeTab, {
+          dailyBrief: fixtureDailyBrief,
+          exams: fixtureExams,
+        }),
+      );
+      expect(html).toContain("还有 6 天");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
