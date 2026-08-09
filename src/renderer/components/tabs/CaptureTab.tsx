@@ -8,6 +8,8 @@
  * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
 import type { FileMeta } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
@@ -20,9 +22,11 @@ interface Props {
   /** 转写结果 */
   transcription?: string;
   /** RPC 客户端（运行时交互用） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 课程 ID */
   courseId?: string;
+  /** AppShell 唯一学术上下文 */
+  academicContext?: SemesterCourseContext;
 }
 
 /** 文件大小格式化 */

@@ -9,6 +9,9 @@
  * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
+import { useTabData } from "./useTabData";
 import type { ParentReport, ParentReportType } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
@@ -20,9 +23,11 @@ interface Props {
   /** 选中的报告详情（展示内容） */
   selectedReport?: ParentReport;
   /** RPC 客户端（运行时交互用） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 学期 ID */
   semesterId?: string;
+  /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
+  academicContext?: SemesterCourseContext;
 }
 
 /** 报告类型中文标签 */
@@ -55,9 +60,26 @@ function parseContent(contentJson: unknown): ReportContent {
   return {};
 }
 
-export function ReportTab({ reports, selectedReport }: Props): React.JSX.Element {
+export function ReportTab({ reports, selectedReport, rpc, semesterId, academicContext }: Props): React.JSX.Element {
+  const effectiveSemesterId = academicContext?.semesterId ?? semesterId;
+  const resource = useTabData<ParentReport[]>({
+    rpc,
+    key: `reports:${effectiveSemesterId ?? ""}`,
+    enabled: Boolean(rpc && effectiveSemesterId),
+    initialData: [],
+    load: (client) => client.call("reports.list", { semesterId: effectiveSemesterId }),
+  });
+  const visibleReports = rpc ? resource.data : reports;
+
+  if (rpc && resource.status === "loading") {
+    return <TabContainer><div role="status">正在加载报告…</div></TabContainer>;
+  }
+  if (rpc && resource.status === "error") {
+    return <TabContainer><div role="alert">暂时无法加载报告，请稍后重试。</div></TabContainer>;
+  }
+
   // 空状态
-  if (!reports || reports.length === 0) {
+  if (!visibleReports || visibleReports.length === 0) {
     return (
       <TabContainer>
         <div style={{ marginBottom: 16 }}>
@@ -193,7 +215,7 @@ export function ReportTab({ reports, selectedReport }: Props): React.JSX.Element
 
       {/* 报告列表 */}
       <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>报告历史</h3>
-      {reports.map((report) => (
+      {visibleReports.map((report) => (
         <div
           key={report.reportKey}
           style={{

@@ -20,6 +20,7 @@ import type { AgentEvent, ModelProvider } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
 import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
 import { jumpButtonLabel, toolJumpTarget } from "../../tool-tab-map";
 
 /** 工具调用视图条目（T-M3-002：tool_call → running / tool_result → done|error） */
@@ -63,6 +64,8 @@ const SUBJECT_OPTIONS = ["高数", "物理", "化学", "英语", "语文", "其�
 interface Props {
   /** RPC 客户端（运行时交互用） */
   rpc?: TypedRpcClient;
+  /** AppShell 唯一学术上下文 */
+  academicContext?: SemesterCourseContext;
   /** 初始消息列表（静态渲染测试用） */
   initialMessages?: ChatMessage[];
   /** 初始会话列表（静态渲染测试用） */
@@ -154,7 +157,9 @@ export function ChatTab({
   onNavigateTab,
   activeSessionId,
   sessionLoadError,
+  academicContext,
 }: Props): React.JSX.Element {
+  const effectiveCourseId = academicContext?.courseId;
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
   const [input, setInput] = useState("");
   const [sessions, setSessions] = useState<ChatSessionSummary[]>(initialSessions ?? []);
@@ -175,8 +180,12 @@ export function ChatTab({
 
   // 订阅 agent.events（07-WF §2.8 步骤 2：renderer 看到流式回复 + 工具调用视图）
   useEffect(() => {
-    if (!rpc) return;
+    let active = true;
+    if (!rpc) return () => {
+      active = false;
+    };
     subscriptionRef.current = rpc.subscribe("agent.events", undefined, (payload) => {
+      if (!active) return;
       const event = payload as AgentEvent;
       if (event.kind === "message_start") {
         setStatus("streaming");
@@ -237,6 +246,7 @@ export function ChatTab({
       }
     });
     return () => {
+      active = false;
       subscriptionRef.current?.();
       subscriptionRef.current = null;
     };
@@ -244,32 +254,52 @@ export function ChatTab({
 
   // 加载会话列表（sessions.list）
   useEffect(() => {
-    if (!rpc) return;
+    let cancelled = false;
+    if (!rpc) return () => {
+      cancelled = true;
+    };
     void rpc
       .call("sessions.list", {})
-      .then((list) => setSessions(list as unknown as ChatSessionSummary[]))
+      .then((list) => {
+        if (!cancelled) setSessions(list as unknown as ChatSessionSummary[]);
+      })
       .catch(() => {
         /* 静默失败：骨架阶段会话列表可空 */
       });
+    return () => {
+      cancelled = true;
+    };
   }, [rpc]);
 
   // T-M3-002：加载模型列表（models.list，受控 fixture）
   useEffect(() => {
-    if (!rpc || initialModels) return;
+    let cancelled = false;
+    if (!rpc || initialModels) return () => {
+      cancelled = true;
+    };
     void rpc
       .call("models.list", {})
-      .then((list) => setModels(list as unknown as ModelProvider[]))
+      .then((list) => {
+        if (!cancelled) setModels(list as unknown as ModelProvider[]);
+      })
       .catch(() => {
         /* 静默失败：模型选择器可空 */
       });
+    return () => {
+      cancelled = true;
+    };
   }, [rpc, initialModels]);
 
   // T-M3-005：挂载时回填默认模型（modelsConfig.get → provider:model 组合 id）
   useEffect(() => {
-    if (!rpc || initialModelId) return;
+    let cancelled = false;
+    if (!rpc || initialModelId) return () => {
+      cancelled = true;
+    };
     void rpc
       .call("modelsConfig.get", {})
       .then((cfg) => {
+        if (cancelled) return;
         const c = cfg as { provider?: string; model?: string };
         if (c && c.provider && c.model) {
           setSelectedModel(`${c.provider}:${c.model}`);
@@ -278,14 +308,21 @@ export function ChatTab({
       .catch(() => {
         /* 静默失败：模型配置可空 */
       });
+    return () => {
+      cancelled = true;
+    };
   }, [rpc, initialModelId]);
 
   // T-M3-002：@选择器展开时加载当前课程资料（materials.list）
   useEffect(() => {
-    if (!rpc || !pickerOpen || initialMaterials) return;
+    let cancelled = false;
+    if (!rpc || !pickerOpen || initialMaterials || !effectiveCourseId) return () => {
+      cancelled = true;
+    };
     void rpc
-      .call("materials.list", {})
-      .then((list) =>
+      .call("materials.list", { courseId: effectiveCourseId })
+      .then((list) => {
+        if (cancelled) return;
         setMaterials(
           (list as unknown as Array<{ id: string; fileName: string; courseId: string; storageKey?: string }>).map(
             (m) => ({
@@ -295,12 +332,15 @@ export function ChatTab({
               storageKey: m.storageKey,
             }),
           ),
-        ),
-      )
+        );
+      })
       .catch(() => {
         /* 静默失败：资料列表可空 */
       });
-  }, [rpc, pickerOpen, initialMaterials]);
+    return () => {
+      cancelled = true;
+    };
+  }, [rpc, pickerOpen, initialMaterials, effectiveCourseId]);
 
   function handleSend(): void {
     const text = input.trim();

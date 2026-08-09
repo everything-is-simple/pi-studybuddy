@@ -10,6 +10,9 @@
  * §5.2 TTS 朗读按钮位置：结果区域预留朗读按钮。
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
+import { useTabData } from "./useTabData";
 import type { PracticeSession, QuestionDTO, PracticeResult } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 
@@ -23,9 +26,11 @@ interface Props {
   /** 当前阶段：idle=未开始 / answering=作答中 / result=结果展示 */
   phase?: "idle" | "answering" | "result";
   /** RPC 客户端（运行时交互用） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 课程 ID */
   courseId?: string;
+  /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
+  academicContext?: SemesterCourseContext;
 }
 
 /** 题型中文标签 */
@@ -276,7 +281,26 @@ export function PracticeTab({
   questions,
   result,
   phase = "idle",
+  rpc,
+  courseId,
+  academicContext,
 }: Props): React.JSX.Element {
+  const effectiveCourseId = academicContext?.courseId ?? courseId;
+  const resource = useTabData({
+    rpc,
+    key: `practice:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(rpc && effectiveCourseId),
+    initialData: [],
+    load: (client) => client.call("practice.listSessions", { courseId: effectiveCourseId }),
+  });
+
+  if (rpc && resource.status === "loading") {
+    return <TabContainer><div role="status">正在加载练习…</div></TabContainer>;
+  }
+  if (rpc && resource.status === "error") {
+    return <TabContainer><div role="alert">暂时无法加载练习，请稍后重试。</div></TabContainer>;
+  }
+
   // idle 阶段
   if (phase === "idle" || !session || !questions) {
     return <IdlePhase />;

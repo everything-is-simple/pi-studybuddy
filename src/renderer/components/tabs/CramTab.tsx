@@ -8,6 +8,8 @@
  * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
 import type { CramCard, CramPlanDay } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
@@ -23,9 +25,11 @@ interface Props {
   /** 冲刺计划（确定性只读 DTO） */
   plan?: CramPlanDay[];
   /** RPC 客户端（运行时交互用） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 课程 ID */
   courseId?: string;
+  /** AppShell 唯一学术上下文 */
+  academicContext?: SemesterCourseContext;
 }
 
 /** 重要性星级 */

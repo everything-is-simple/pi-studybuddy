@@ -13,6 +13,9 @@
  *   - weakPoint.status: active → resolved → regressed
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
+import { useTabData } from "./useTabData";
 import type {
   Mistake,
   MistakeWithEvidence,
@@ -31,9 +34,11 @@ interface Props {
   /** 薄弱点列表 */
   weakPoints?: WeakPoint[];
   /** RPC 客户端（运行时交互用） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 课程 ID */
   courseId?: string;
+  /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
+  academicContext?: SemesterCourseContext;
 }
 
 /** 错因六分类中文标签 */
@@ -72,9 +77,34 @@ function weakPointStatusLabel(status: WeakPoint["status"]): string {
   }
 }
 
-export function MistakesTab({ mistakes, selectedMistake, weakPoints }: Props): React.JSX.Element {
+export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, courseId, academicContext }: Props): React.JSX.Element {
+  const effectiveCourseId = academicContext?.courseId ?? courseId;
+  const resource = useTabData<{ mistakes: Mistake[]; weakPoints: WeakPoint[] }>({
+    rpc,
+    key: `mistakes:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(rpc && effectiveCourseId),
+    initialData: { mistakes: [], weakPoints: [] },
+    load: async (client) => {
+      const [loadedMistakes, loadedWeakPoints] = await Promise.all([
+        client.call("mistakes.list", { courseId: effectiveCourseId }),
+        client.call("weakPoints.list", { courseId: effectiveCourseId }),
+      ]);
+      return { mistakes: loadedMistakes, weakPoints: loadedWeakPoints };
+    },
+    isEmpty: (value) => value.mistakes.length === 0,
+  });
+  const visibleMistakes = rpc ? resource.data.mistakes : mistakes;
+  const visibleWeakPoints = rpc ? resource.data.weakPoints : weakPoints;
+
+  if (rpc && resource.status === "loading") {
+    return <TabContainer><div role="status">正在加载错题…</div></TabContainer>;
+  }
+  if (rpc && resource.status === "error") {
+    return <TabContainer><div role="alert">暂时无法加载错题，请稍后重试。</div></TabContainer>;
+  }
+
   // 空状态
-  if (!mistakes || mistakes.length === 0) {
+  if (!visibleMistakes || visibleMistakes.length === 0) {
     return (
       <TabContainer>
         <EmptyState message="暂无错题，继续加油" />
@@ -87,7 +117,7 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints }: Props): R
       {/* 错题列表 */}
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 16, margin: "0 0 8px 0" }}>错题列表</h2>
-        {mistakes.map((m) => (
+        {visibleMistakes.map((m) => (
           <div
             key={m.id}
             style={{
@@ -237,10 +267,10 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints }: Props): R
       )}
 
       {/* 薄弱点列表 */}
-      {weakPoints && weakPoints.length > 0 && (
+      {visibleWeakPoints && visibleWeakPoints.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>薄弱点</h3>
-          {weakPoints.map((wp) => (
+          {visibleWeakPoints.map((wp) => (
             <div
               key={wp.id}
               style={{

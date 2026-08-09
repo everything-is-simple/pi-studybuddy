@@ -8,6 +8,9 @@
  * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
+import { useTabData } from "./useTabData";
 import type { DailyBrief, StudyTask, AssessmentAttempt } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
@@ -20,9 +23,11 @@ interface Props {
   /** 考试列表（倒计时展示） */
   exams?: AssessmentAttempt[];
   /** RPC 客户端（运行时交互用，静态渲染测试可不传） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 学期 ID */
   semesterId?: string;
+  /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
+  academicContext?: SemesterCourseContext;
 }
 
 /** 计算考试倒计时天数 */
@@ -49,9 +54,27 @@ function taskStatusLabel(status: StudyTask["status"]): string {
   }
 }
 
-export function HomeTab({ dailyBrief, tasks, exams }: Props): React.JSX.Element {
+export function HomeTab({ dailyBrief, tasks, exams, rpc, semesterId, academicContext }: Props): React.JSX.Element {
+  const effectiveSemesterId = academicContext?.semesterId ?? semesterId;
+  const resource = useTabData<DailyBrief | undefined>({
+    rpc,
+    key: `home:${effectiveSemesterId ?? ""}`,
+    enabled: Boolean(rpc && effectiveSemesterId),
+    initialData: undefined,
+    load: (client) => client.call("tasks.dailyBrief", { semesterId: effectiveSemesterId! }),
+  });
+  const visibleBrief = rpc ? resource.data : dailyBrief;
+  const visibleTasks = rpc ? visibleBrief?.tasks : tasks;
+
+  if (rpc && resource.status === "loading") {
+    return <TabContainer><div role="status">正在加载学习简报…</div></TabContainer>;
+  }
+  if (rpc && resource.status === "error") {
+    return <TabContainer><div role="alert">暂时无法加载学习简报，请稍后重试。</div></TabContainer>;
+  }
+
   // 空状态：无 dailyBrief
-  if (!dailyBrief) {
+  if (!visibleBrief) {
     return (
       <TabContainer>
         <EmptyState message="暂无学习简报，请先选择学期" />
@@ -67,7 +90,7 @@ export function HomeTab({ dailyBrief, tasks, exams }: Props): React.JSX.Element 
           每日学习简报
         </h2>
         <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4 }}>
-          {dailyBrief.date}
+          {visibleBrief.date}
         </div>
       </div>
 
@@ -81,15 +104,15 @@ export function HomeTab({ dailyBrief, tasks, exams }: Props): React.JSX.Element 
         }}
       >
         <span style={{ fontSize: 13 }}>今日待办：</span>
-        <strong style={{ fontSize: 16, color: "#1976d2" }}>{dailyBrief.pendingItems}</strong>
+        <strong style={{ fontSize: 16, color: "#1976d2" }}>{visibleBrief.pendingItems}</strong>
         <span style={{ fontSize: 13 }}> 项</span>
       </div>
 
       {/* 待办任务列表 */}
-      {tasks && tasks.length > 0 && (
+      {visibleTasks && visibleTasks.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>任务列表</h3>
-          {tasks.map((task) => (
+          {visibleTasks.map((task) => (
             <div
               key={task.id}
               style={{

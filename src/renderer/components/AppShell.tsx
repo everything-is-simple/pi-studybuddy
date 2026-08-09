@@ -108,33 +108,34 @@ function renderTab(
   rpc: TypedRpcClient | undefined,
   semesterId: string | undefined,
   courseId: string | undefined,
+  academicContext: SemesterCourseContext,
   onNavigateTab: (tabId: string) => void,
   activeSessionId: string | undefined,
 ): React.JSX.Element {
   switch (activeTabId) {
     case "home":
-      return <HomeTab rpc={rpc} semesterId={semesterId} />;
+      return <HomeTab rpc={rpc} semesterId={semesterId} academicContext={academicContext} />;
     case "materials":
-      return <MaterialsTab rpc={rpc} courseId={courseId} />;
+      return <MaterialsTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "notes":
-      return <NotesTab rpc={rpc} courseId={courseId} />;
+      return <NotesTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "practice":
-      return <PracticeTab rpc={rpc} courseId={courseId} />;
+      return <PracticeTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "mistakes":
-      return <MistakesTab rpc={rpc} courseId={courseId} />;
+      return <MistakesTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "cram":
-      return <CramTab rpc={rpc} courseId={courseId} />;
+      return <CramTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "report":
-      return <ReportTab rpc={rpc} semesterId={semesterId} />;
+      return <ReportTab rpc={rpc} semesterId={semesterId} academicContext={academicContext} />;
     case "capture":
-      return <CaptureTab rpc={rpc} courseId={courseId} />;
+      return <CaptureTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "backup":
       return <BackupPanel rpc={rpc} />;
     case "chat":
       // T-M3-004：工具卡片跳转接线（09-UI §4.2 + 07-WF §2.8 步骤 3 + E2E-11）
       // AppShell 是 tab 状态持有者，setActiveTabId 注入 ChatTab onNavigateTab
       // T-M3-006：受控 activeSessionId 注入（裁决 5：会话即对话 Tab 内容）
-      return <ChatTab rpc={rpc} onNavigateTab={onNavigateTab} activeSessionId={activeSessionId} />;
+      return <ChatTab rpc={rpc} academicContext={academicContext} onNavigateTab={onNavigateTab} activeSessionId={activeSessionId} />;
     default:
       return (
         <TabContainer>
@@ -156,6 +157,7 @@ export function AppShell({
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
   const [sidebarSessions, setSidebarSessions] = useState<SessionSidebarItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const sessionRequestIdRef = React.useRef(0);
   // T-M4-007：AppShell 持有唯一学期/课程上下文；不向各 Tab 分散复制选择状态。
   const [semesterCourseState, dispatchSemesterCourse] = useReducer(
     semesterCourseReducer,
@@ -184,17 +186,23 @@ export function AppShell({
   // T-M3-006：左侧栏会话列表数据源（sessions.list；搜索时走 sessions.search，
   // L3 未建库降级为内存过滤——search handler 返回空数组时不覆盖当前列表）
   React.useEffect(() => {
-    if (!rpc) return;
+    const requestId = ++sessionRequestIdRef.current;
+    let cancelled = false;
+    if (!rpc) return () => {
+      cancelled = true;
+    };
     const method = searchQuery.trim() ? "sessions.search" : "sessions.list";
     void rpc
       .call(method, searchQuery.trim() ? { query: searchQuery.trim() } : {})
       .then((list) => {
+        if (cancelled || requestId !== sessionRequestIdRef.current) return;
         const items = list as SessionSidebarItem[];
         if (method === "sessions.search" && items.length === 0 && searchQuery.trim()) {
           // L3 未建库：降级为内存过滤（sessions.list 全量）
           void rpc
             .call("sessions.list", {})
             .then((all) => {
+              if (cancelled || requestId !== sessionRequestIdRef.current) return;
               const keyword = searchQuery.trim().toLowerCase();
               const filtered = (all as SessionSidebarItem[]).filter(
                 (s) =>
@@ -215,6 +223,9 @@ export function AppShell({
       .catch(() => {
         /* 静默失败：会话列表可空 */
       });
+    return () => {
+      cancelled = true;
+    };
   }, [rpc, searchQuery]);
 
   // T-M4-007：卸载后统一使课程请求令牌过期，异步回调不会写入已销毁组件。
@@ -455,6 +466,7 @@ export function AppShell({
                 rpc,
                 academicContext.semesterId,
                 academicContext.courseId,
+                academicContext,
                 (tabId) => dispatchView({ type: "selectTab", tabId }),
                 activeSessionId,
               )}

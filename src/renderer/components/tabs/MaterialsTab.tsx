@@ -8,6 +8,9 @@
  * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
+import { useTabData } from "./useTabData";
 import type { Material, MaterialStatus } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
@@ -16,9 +19,11 @@ interface Props {
   /** 资料列表 */
   materials?: Material[];
   /** RPC 客户端（运行时交互用） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 课程 ID */
   courseId?: string;
+  /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
+  academicContext?: SemesterCourseContext;
 }
 
 /** Material 状态中文标签 */
@@ -65,9 +70,26 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function MaterialsTab({ materials }: Props): React.JSX.Element {
+export function MaterialsTab({ materials, rpc, courseId, academicContext }: Props): React.JSX.Element {
+  const effectiveCourseId = academicContext?.courseId ?? courseId;
+  const resource = useTabData<Material[]>({
+    rpc,
+    key: `materials:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(rpc && effectiveCourseId),
+    initialData: [],
+    load: (client) => client.call("materials.list", { courseId: effectiveCourseId }),
+  });
+  const visibleMaterials = rpc ? resource.data : materials;
+
+  if (rpc && resource.status === "loading") {
+    return <TabContainer><div role="status">正在加载资料…</div></TabContainer>;
+  }
+  if (rpc && resource.status === "error") {
+    return <TabContainer><div role="alert">暂时无法加载资料，请稍后重试。</div></TabContainer>;
+  }
+
   // 空状态
-  if (!materials || materials.length === 0) {
+  if (!visibleMaterials || visibleMaterials.length === 0) {
     return (
       <TabContainer>
         <div style={{ marginBottom: 16 }}>
@@ -112,7 +134,7 @@ export function MaterialsTab({ materials }: Props): React.JSX.Element {
       {/* 资料列表 */}
       <div>
         <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>资料列表</h3>
-        {materials.map((mat) => (
+        {visibleMaterials.map((mat) => (
           <div
             key={mat.id}
             style={{

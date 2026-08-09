@@ -8,6 +8,9 @@
  * §5.2 TTS 朗读按钮位置：笔记区域预留朗读按钮（onClick 调用 tts.speak）。
  */
 import React from "react";
+import type { TypedRpcClient } from "../../rpc-client";
+import type { SemesterCourseContext } from "../../semester-course-state";
+import { useTabData } from "./useTabData";
 import type { StructuredNote, KnowledgeModule, LearnStatus } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
@@ -18,9 +21,11 @@ interface Props {
   /** 知识模块列表 */
   modules?: KnowledgeModule[];
   /** RPC 客户端（运行时交互用） */
-  rpc?: unknown;
+  rpc?: TypedRpcClient;
   /** 课程 ID */
   courseId?: string;
+  /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
+  academicContext?: SemesterCourseContext;
 }
 
 /** 学习状态中文标签 */
@@ -53,7 +58,24 @@ function learnStatusColor(status: LearnStatus): string {
   }
 }
 
-export function NotesTab({ note, modules }: Props): React.JSX.Element {
+export function NotesTab({ note, modules, rpc, courseId, academicContext }: Props): React.JSX.Element {
+  const effectiveCourseId = academicContext?.courseId ?? courseId;
+  const resource = useTabData<KnowledgeModule[]>({
+    rpc,
+    key: `notes:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(rpc && effectiveCourseId),
+    initialData: [],
+    load: (client) => client.call("modules.list", { courseId: effectiveCourseId }),
+  });
+  const visibleModules = rpc ? resource.data : modules;
+
+  if (rpc && resource.status === "loading") {
+    return <TabContainer><div role="status">正在加载笔记…</div></TabContainer>;
+  }
+  if (rpc && resource.status === "error") {
+    return <TabContainer><div role="alert">暂时无法加载笔记，请稍后重试。</div></TabContainer>;
+  }
+
   // 空状态：无笔记
   if (!note) {
     return (
@@ -106,10 +128,10 @@ export function NotesTab({ note, modules }: Props): React.JSX.Element {
       </div>
 
       {/* 知识模块列表 */}
-      {modules && modules.length > 0 && (
+      {visibleModules && visibleModules.length > 0 && (
         <div>
           <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>知识模块</h3>
-          {modules.map((mod) => (
+          {visibleModules.map((mod) => (
             <div
               key={mod.id}
               style={{
