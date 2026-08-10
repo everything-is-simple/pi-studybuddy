@@ -1,11 +1,12 @@
 # T-M4-012 实施计划：S2 笔记 Tab RPC 接线
 
 - 任务 ID：T-M4-012
-- 状态：in_progress
+- 状态：done（Git 收口完成）
 - 日期：2026-08-10
 - 用户授权：已批准方案 A，并授权治理登记、唯一计划、隔离分支与随后 RED。
-- 基线：master=origin/master=2497de4
-- 分支：agent/T-M4-012-s2-notes-rpc
+- 集成基线：master=origin/master=2e1e7f6
+- 实施分支：agent/T-M4-012-s2-notes-rpc
+- 集成分支：master
 - 运行数据根：H:\pi-studybuddy-tmp\runs\T-M4-012\
 
 ## 1. 裁决与权威依据
@@ -87,7 +88,10 @@
 - 定向：tests/integration/t-m4-012-notes-rpc.test.ts 10/10、tests/e2e/t-m4-012-notes-renderer.test.ts 1/1 通过；type-check、build、docs-governance、git diff --check 通过。
 - 当前 Node24.14.0 / pnpm11.20.0 `verify --stage=full` 通过：unit 107 files / 1047 tests，真实 Electron E2E 17 files / 119 tests；contract coverage、desktop security 6/6、smoke 与 UUID 检查均通过。
 - E2E fixture 在 main 启动前于 `H:\pi-studybuddy-tmp\runs\T-M4-012\` 隔离根预置，避免 reload 后重复连接 agent-host；结果文件与错误输出不记录完整 UUID、路径或原始堆栈。
-- 两名独立审查者已复核当前变更，均无 P0/P1；任务仍 in_progress，未执行 Git 收口。
+- 两名独立审查者已复核当前变更，均无 P0/P1。
+- 功能提交：`2e1e7f6`；已快进进入 master。
+- Node24 master `verify --stage=full` 通过；`origin/master` 已推送并核验为 `2e1e7f6`。
+- T-M4-012 已登记为 done；未启动 T-M4-013~021。
 
 ## 8. 首轮独立审查与 P1 修复
 
@@ -96,4 +100,4 @@
 - 修复：资料选择 option 使用无业务 ID 的局部 token；资料名、笔记正文、模块名/摘要在 renderer 展示边界拦截完整 UUID、Windows/POSIX/file 路径与错误栈。
 - 修复：NOT_FOUND 空状态提供新建笔记，复用 notes.update 创建；补两资料两模块过滤、courseId 参数、延迟保存切换和对抗性 DOM 测试。
 - 修复后历史定向与质量门数字保留为审计快照；当前最终证据以 §7 最新复验为准。
-- 最终两名独立审查已回填：当前 E2E 导航、可见文本隐私断言、NotesTab 契约/竞态/归档边界均无 P0/P1；未执行 Git 收口。
+- 最终两名独立审查已回填：当前 E2E 导航、可见文本隐私断言、NotesTab 契约/竞态/归档边界均无 P0/P1；Git 收口已完成。
