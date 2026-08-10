@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.112
+**版本**：v0.1.114
 **日期**：2026-08-10
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.103 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-001~010/T-M4-022/T-M4-023 done，T-M4-011 in_progress，T-M4-012~021 pending；T-M4-011 本地证据已同步，Node24/真实文件导入/storage/target-machine/Git 仍有边界；不自动启动后续任务。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.110 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-001~011/T-M4-022/T-M4-023 done，T-M4-012 in_progress，T-M4-013~021 pending；T-M4-012 采用 NotesTab 局部显式资料选择，不新增 AppShell 跨 Tab 状态/API/handler/schema；不自动启动 T-M4-013~021。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -47,7 +47,8 @@
 
 ## 四、组件治理流程（强制）
 
-> v0.1.103 Git 收口同步：T-M4-023 功能提交 `92e0bcb` 已进入 master，完整质量门与远端 ref 核验通过；任务登记为 done，T-M4-011~021 仍 pending。
+> v0.1.114 T-M4-012 证据同步：Node24 `verify --stage=full` 通过（unit 107 files/1047 tests，真实 Electron E2E 17 files/119 tests），两名独立审查复核无 P0/P1；任务仍 in_progress，未执行 Git 收口。
+> v0.1.113 T-M4-012 开工登记同步：用户批准 NotesTab 局部显式资料选择；T-M4-011 已收官，T-M4-012 登记为 in_progress，唯一计划与隔离分支已建立；不启动 T-M4-013~021。
 > v0.1.101 交叉审查同步：01-09 版本、credential-vault 实际拓扑、默认对话入口、生产模型配置边界与 T-M4-023 任务证据已对齐。
 
 > 用户定义的五阶段组件治理，是本项目的铁律：
@@ -77,7 +78,7 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
-- [x] 04-Todo v0.1.108 ✅ 已审查批准：T-M4-011 已完成受控文件导入/storage、Node24 完整质量门与 x64 NSIS 新安装目录验收；用户已授权最终治理 commit/push，任务登记为 done；不自动启动 T-M4-012~021。
+- [x] 04-Todo v0.1.110 ✅ 已审查批准：T-M4-011 已收官，T-M4-012 已登记 in_progress；方案 A 为 NotesTab 局部显式资料选择，唯一计划与隔离分支已建立；T-M4-013~021 保持 pending，不自动启动。
 
 - [x] 初始化仓库（git init + 关联远端 `https://github.com/everything-is-simple/pi-studybuddy.git`）
 - [x] 下载四参考仓库到 `H:\pi-references`（pi / pi-skills / inno-agent / pi-desktop）
@@ -155,6 +156,8 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.114 | 2026-08-10 | T-M4-012 当前实现与证据同步：NotesTab 局部显式资料选择、RPC 接线与竞态/隐私/归档防线已通过定向复验；Node24 `verify --stage=full` 通过（unit 107 files/1047 tests、真实 Electron E2E 17 files/119 tests）；两名独立审查复核无 P0/P1；任务继续 in_progress，Git 收口另需授权。依据：AGENTS.md §4.5、§5、§7、§8.4、§11.1、§11.2、§11.4 + 用户明确授权。 |
+| v0.1.113 | 2026-08-10 | T-M4-012 开工登记：用户批准 NotesTab 局部显式资料选择；T-M4-012 pending→in_progress；唯一计划 `.plan/T-M4-012-s2-notes-rpc.md` 与隔离分支 `agent/T-M4-012-s2-notes-rpc` 已建立；不新增 API/handler/schema，不启动 T-M4-013~021。依据：AGENTS.md §4.4、§4.5、§5、§8、§11.1、§11.2 + 用户明确授权。 |
 | v0.1.112 | 2026-08-10 | T-M4-011 收官同步：受控文件导入/storage、host archived 写防线、Node24 完整质量门和 x64 NSIS 已安装应用验收均已完成；04-Todo v0.1.108 将任务登记为 done，M4 统计更新为 10 pending / 0 in_progress / 13 done，未选择下一任务。 |
 | v0.1.111 | 2026-08-10 | T-M4-011 target-machine acceptance 同步：当前 master 构建的 x64 NSIS setup 已静默安装到新隔离目录，已安装应用两次启动通过 renderer/preload `piBridge`、`system.ping` 与隔离 `global.db`；SHA-256 `C3D098698A9DC9A2572518184FBC04BEF9039DD834651AEC300B71550424E339`。当前 `master=origin/master=91e92f8`，新证据 Git 同步待授权。 |
 | v0.1.110 | 2026-08-10 | T-M4-011 Git 收口同步：功能提交 `516675b` 快进进入 master，治理同步提交 `73a95ad` 已推送并核验 `master=origin/master=73a95ad`；任务仍 in_progress，仅 target-machine acceptance 未完成。 |
