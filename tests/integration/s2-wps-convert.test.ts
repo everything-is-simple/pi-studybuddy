@@ -9,6 +9,7 @@ import {
   createFailingWpsAdapter,
 } from "../../src/agent-host/handlers/s2/wps-adapter";
 import type { Material, Job } from "../../src/contract/types";
+import { stageTestMaterial } from "../helpers/material-import";
 
 /**
  * T-M1-006 S2 wps_convert 集成测试（03-Arch §3.3 + 08-Test §3.3.1 + 07-WF §2.3）
@@ -30,6 +31,7 @@ interface Fixture {
   semesterId: string;
   courseId: string;
   storageDir: string;
+  dataRoot: string;
 }
 
 /** 在指定子目录建立全新学期/课程夹具，返回上下文（test 结束前由 afterAll 释放） */
@@ -55,15 +57,15 @@ function setupFixture(name: string): Fixture {
 
   const storageDir = join(dir, "semester", sem.id, "storage");
   mkdirSync(storageDir, { recursive: true });
-  return { ctx: null as unknown as S2Context, handlers: null as unknown as ReturnType<typeof createS2Handlers>, s1Ctx, semesterId: sem.id, courseId: course.id, storageDir };
+  return { ctx: null as unknown as S2Context, handlers: null as unknown as ReturnType<typeof createS2Handlers>, s1Ctx, semesterId: sem.id, courseId: course.id, storageDir, dataRoot: dir };
 }
 
-/** 上传旧版文件，返回 Material（真实落盘到 storage 目录模拟上传） */
+/** 上传旧版文件，返回 Material（通过一次性导入 capability 模拟主进程文件选择）。 */
 function uploadLegacy(f: Fixture, fileName: string, mime: string): Material {
-  writeFileSync(join(f.storageDir, fileName), "fake legacy content");
+  const file = stageTestMaterial(f.dataRoot, join(f.dataRoot, "fixtures"), fileName, mime, "fake legacy content");
   return (f.handlers["materials.upload"] as (p: unknown) => unknown)({
     courseId: f.courseId,
-    file: { name: fileName, size: 100, mime },
+    file,
   }) as Material;
 }
 

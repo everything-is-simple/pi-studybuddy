@@ -1,7 +1,7 @@
 # 06 API 契约
 
-**版本**：v0.1.6
-**日期**：2026-08-09
+**版本**：v0.1.8
+**日期**：2026-08-10
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.4 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)
 **下游**：07-Workflow、08-Test、09-UI
@@ -212,7 +212,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
 | `materials.list` | `{ courseId?, status? }` | `Material[]` | |
-| `materials.upload` | `{ courseId, file: FileMeta }` | `Material` | storage_key 相对路径；触发器拒绝 `..`/`:\`/`:/`；MIME 服务端验证 |
+| `materials.upload` | `{ courseId, file: FileMeta }` | `Material` | 生产 S2 renderer 必须提供 main 签发的一次性 `file.importToken`；host 消费 capability、校验普通文件、按源文件 stat 写入真实大小，并原子复制到 `<dataRoot>/<storageKey>` 后再写 Material；归档学期拒绝写入；storage_key 仍拒绝 `..`/`:\`/`:/`，MIME 服务端验证；不把源文件绝对路径交给 agent-host |
 | `materials.get` | `{ id }` | `Material` | |
 | `materials.convert` | `{ id }` | `Job` | 触发转换 Job（PDF/OCR/DOCX/PPTX 各有超时） |
 | `materials.retryConversion` | `{ id }` | `Job` | 最多 3 次 |
@@ -572,6 +572,8 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 ## 7. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.8 | 2026-08-10 | 修正 T-M4-011 文件导入契约：main 的 open-file dialog 返回一次性 `importToken/fileName/fileSize`，生产 S2 renderer 以 capability 调用 `materials.upload`，host 消费 token 并从 staging 源文件取得真实大小；`FileMeta.path` 不用于 S2 生产上传；无新增 RPC 方法。 |
+| v0.1.7 | 2026-08-10 | T-M4-011 资料上传契约落地：生产 S2 `materials.upload` 使用 Electron 选择器返回的 `FileMeta.path`，host 校验普通文件并复制到业务 storage，真实大小来自 `stat`；S2 写操作在 host 侧拒绝 archived 学期；无新增 RPC 方法。 |
 | v0.1.6 | 2026-08-09 | 交叉审查修订：新增 `MODEL_NOT_CONFIGURED`；明确生产 `agent.send` 只能路由到业务数据根配置构造的真实 session，测试夹具必须显式注入；同步实际文件/技能/模型安全占位 handler 与契约覆盖检查。 |
 | v0.1.5 | 2026-08-08 | §3.13 模型配置落点修订（T-M3-005 裁决 1）：models.list 约束列"从 ~/.pi/agent/models.json" → "受控 fixture（不读 ~/.pi；T-M3-002 裁决）"；modelsConfig.get/set 约束列标清落点 `<dataRoot>/config/models.json`（__studybuddy_managed 标记）。原因：AGENTS.md §9.5 物理隔离（pi-studybuddy 不侵入 ~/.pi）。影响：仅约束列文字修订 + supersedes 注记，无契约方法新增/变更（Api 方法总数仍 127）。依据：AGENTS.md §11.1 + T-M3-005 裁决 1 |
 | v0.1.4 | 2026-08-08 | §3.1 落地注解：sessions.search（T-M3-003 实现，L3 bigram OR-combined MATCH + session_id 聚合映射）+ SessionSummary 扩展学习场景元数据（subject/goal/mistakeIds 可选字段）+ §3.1.1 agent.send T-M3-003 扩展注解（sessionMeta 参数 + [学习上下文] token 同步注入 + 元数据写回）。原因：T-M3-003 学习场景业务化实施（学科标签/学习目标/错题关联/L1 注入/L3 检索承载层）。影响：§3.1/§3.1.1 说明性增补 + SessionSummary 类型扩展（可选字段向后兼容），无契约方法新增（Api 方法总数仍 127）。依据：AGENTS.md §11.1 治理基线修改规则 + T-M3-003 计划 |

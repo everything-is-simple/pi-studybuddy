@@ -18,6 +18,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
 import { RpcDriver } from "./helpers/rpc-driver";
+import { stageTestMaterial } from "../helpers/material-import";
 import { SEMESTER_FIXTURE, PRACTICE_FIXTURE, isRpcError } from "./helpers/fixtures";
 import type {
   Semester,
@@ -56,7 +57,7 @@ describe("E2E-08 备份与恢复全链", () => {
 
     const material = await rpc.call<Material>("materials.upload", {
       courseId,
-      file: { name: "backup-chapter.pdf", size: 1024, mime: "application/pdf" },
+      file: stageTestMaterial(app.dataRoot, path.join(app.dataRoot, "fixtures"), "backup-chapter.pdf", "application/pdf", "backup chapter fixture"),
     });
     materialId = material.id;
 

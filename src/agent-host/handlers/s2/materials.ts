@@ -15,14 +15,16 @@
  */
 import { randomUUID, createHash } from "node:crypto";
 import path from "node:path";
+
 import type { Material, Job, JobType, RpcError } from "../../../contract/types";
 import type { S2Context } from "./context";
 import type { TextExtractResult } from "./text-extractor";
 import { mapMaterial, mapJob } from "./dto";
 import { notFound, badRequest } from "./errors";
-import { findSemesterByCourseId, findSemesterByMaterialId } from "./lookup";
+import { assertSemesterWritable, findSemesterByCourseId, findSemesterByMaterialId } from "./lookup";
 import { writeMaterialUploadedEvent } from "./events";
 import type { SqlParams } from "../../../data/sqlite";
+import { consumeMaterialImport, removeMaterialImportTarget } from "../../../shared/material-import";
 
 function now(): string {
   return new Date().toISOString();
@@ -128,31 +130,46 @@ export function createMaterialHandlers(ctx: S2Context) {
     },
 
     "materials.upload": (params: unknown): Material => {
-      const { courseId, file } = params as { courseId: string; file: { name: string; size: number; mime: string } };
-      // 1. 路径安全
+      const { courseId, file } = params as {
+        courseId: string;
+        file: { name: string; size: number; mime: string; importToken?: string };
+      };
+      // 1. 路径安全 + MIME 服务端验证
       validateStorageKey(file.name);
-      // 2. MIME 服务端验证
       const { fileType } = validateMime(file.name, file.mime);
 
       const { db, semesterId } = findSemesterByCourseId(ctx, courseId);
+      assertSemesterWritable(ctx, semesterId);
       const id = randomUUID();
       const ts = now();
-      // storage_key 相对路径（05-ERD §3.2.1）
-      const storageKey = `semester/${semesterId}/storage/${file.name}`;
+      if (!file.importToken) throw badRequest("资料导入凭据缺失或已过期");
+      // material id 进入 storageKey，防止同学期同名资料覆盖（05-ERD §3.2.1）。
+      const storageKey = `semester/${semesterId}/storage/${id}-${file.name}`;
+      let actualSize: number;
+      try {
+        actualSize = consumeMaterialImport(ctx.dataRootPath, file.importToken, storageKey);
+      } catch {
+        throw badRequest("资料导入凭据无效或文件导入失败");
+      }
 
-      db.prepare(
-        `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at)
-         VALUES (@id, @cid, @fileName, @fileType, @fileSize, @mimeType, @storageKey, 'upload', 'pending', 0, @ts, @ts, @ts)`,
-      ).run({
-        id,
-        cid: courseId,
-        fileName: file.name,
-        fileType,
-        fileSize: file.size,
-        mimeType: file.mime,
-        storageKey,
-        ts,
-      });
+      try {
+        db.prepare(
+          `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at)
+           VALUES (@id, @cid, @fileName, @fileType, @fileSize, @mimeType, @storageKey, 'upload', 'pending', 0, @ts, @ts, @ts)`,
+        ).run({
+          id,
+          cid: courseId,
+          fileName: file.name,
+          fileType,
+          fileSize: actualSize,
+          mimeType: file.mime,
+          storageKey,
+          ts,
+        });
+      } catch (error) {
+        removeMaterialImportTarget(ctx.dataRootPath, storageKey);
+        throw error;
+      }
 
       // 写 material_uploaded 事件（07-WF §2.3 步骤 1，source_system='S2'）
       writeMaterialUploadedEvent(db, semesterId, courseId, id);
@@ -173,7 +190,8 @@ export function createMaterialHandlers(ctx: S2Context) {
 
     "materials.delete": (params: unknown): void => {
       const { id } = params as { id: string };
-      const { db } = findSemesterByMaterialId(ctx, id);
+      const { db, semesterId } = findSemesterByMaterialId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
         | Record<string, unknown>
         | undefined;
@@ -185,7 +203,8 @@ export function createMaterialHandlers(ctx: S2Context) {
 
     "materials.replaceText": (params: unknown): Material => {
       const { id, text } = params as { id: string; text: string };
-      const { db, semesterId: _semesterId } = findSemesterByMaterialId(ctx, id);
+      const { db, semesterId } = findSemesterByMaterialId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
         | Record<string, unknown>
         | undefined;
@@ -214,6 +233,7 @@ export function createMaterialHandlers(ctx: S2Context) {
     "materials.convert": async (params: unknown): Promise<Job> => {
       const { id } = params as { id: string };
       const { db, semesterId } = findSemesterByMaterialId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
         | Record<string, unknown>
         | undefined;
@@ -240,6 +260,7 @@ export function createMaterialHandlers(ctx: S2Context) {
     "materials.retryConversion": async (params: unknown): Promise<Job> => {
       const { id } = params as { id: string };
       const { db, semesterId } = findSemesterByMaterialId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
         | Record<string, unknown>
         | undefined;
@@ -283,6 +304,7 @@ export function createMaterialHandlers(ctx: S2Context) {
     "materials.generateNote": (params: unknown): Job => {
       const { id } = params as { id: string };
       const { db, semesterId } = findSemesterByMaterialId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
         | Record<string, unknown>
         | undefined;
@@ -297,6 +319,7 @@ export function createMaterialHandlers(ctx: S2Context) {
     "materials.retryAiGeneration": (params: unknown): Job => {
       const { id } = params as { id: string };
       const { db, semesterId } = findSemesterByMaterialId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM materials WHERE id = @id AND deleted_at IS NULL").get({ id }) as
         | Record<string, unknown>
         | undefined;

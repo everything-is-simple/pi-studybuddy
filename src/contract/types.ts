@@ -230,10 +230,12 @@ export interface FileMeta {
   size: number;
   mime: string;
   /**
-   * 文件系统绝对路径（Electron 文件选择器返回，S7 课堂采集读取 PCM WAV 头部用）。
-   * S2 上传场景不用此字段（可选）；S7 必填（handler 运行时校验）。
+   * 文件系统绝对路径（S7 课堂采集读取 PCM WAV 头部用）。
+   * S2 上传场景不把源路径交给 agent-host，而是使用 main 进程签发的一次性导入凭据。
    */
   path?: string;
+  /** main 进程为 S2 文件导入签发的一次性 capability。 */
+  importToken?: string;
 }
 
 /** Material.status（05-ERD §3.2.1 CHECK + §8.3 状态机） */
@@ -864,4 +866,8 @@ export interface DialogResult {
   canceled: boolean;
   filePath?: string;
   filePaths?: string[];
+  /** S2 open-file 选择成功后由 main 进程返回的一次性导入 capability。 */
+  importToken?: string;
+  fileName?: string;
+  fileSize?: number;
 }

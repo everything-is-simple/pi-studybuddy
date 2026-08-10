@@ -13,8 +13,10 @@
  * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-04\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { join } from "node:path";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
 import { RpcDriver } from "./helpers/rpc-driver";
+import { stageTestMaterial } from "../helpers/material-import";
 import { SEMESTER_FIXTURE, MATERIAL_FIXTURE, assertNoLeakage, isRpcError } from "./helpers/fixtures";
 import type {
   Semester,
@@ -60,7 +62,7 @@ describe("E2E-04 期末冲刺全链", () => {
     // 复用真实 materials.upload 产物满足 material_id FK。
     const mat = await rpc.call<Material>("materials.upload", {
       courseId,
-      file: { name: MATERIAL_FIXTURE.fileName, size: 1024, mime: MATERIAL_FIXTURE.mime },
+      file: stageTestMaterial(app.dataRoot, join(app.dataRoot, "fixtures"), MATERIAL_FIXTURE.fileName, MATERIAL_FIXTURE.mime, "E2E-04 material fixture"),
     });
     await rpc.call("test.seedModule", {
       courseInstanceId: courseId,

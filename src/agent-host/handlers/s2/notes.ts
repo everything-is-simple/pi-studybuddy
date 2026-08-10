@@ -10,7 +10,7 @@ import type { StructuredNote, MindMap } from "../../../contract/types";
 import type { S2Context } from "./context";
 import { mapNote, mapMindMap } from "./dto";
 import { notFound } from "./errors";
-import { findSemesterByMaterialId } from "./lookup";
+import { assertSemesterWritable, findSemesterByMaterialId } from "./lookup";
 
 function now(): string {
   return new Date().toISOString();
@@ -34,7 +34,8 @@ export function createNoteHandlers(ctx: S2Context) {
         noteMarkdown: string;
         highlights?: Array<{ text: string; color?: string }>;
       };
-      const { db } = findSemesterByMaterialId(ctx, materialId);
+      const { db, semesterId } = findSemesterByMaterialId(ctx, materialId);
+      assertSemesterWritable(ctx, semesterId);
 
       const existing = db
         .prepare("SELECT * FROM structured_notes WHERE material_id = @id")

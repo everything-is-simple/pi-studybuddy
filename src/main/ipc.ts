@@ -7,6 +7,8 @@
  */
 import { BrowserWindow, dialog, ipcMain, MessageChannelMain, utilityProcess, type MessagePortMain } from "electron";
 import path from "node:path";
+import { resolveDataRoot } from "../agent-host/allowed-roots";
+import { stageMaterialImport } from "../shared/material-import";
 import { IPC_CHANNELS } from "../shared/constants";
 import { createHostManager, type AgentHostHandle } from "./host-manager";
 import type { AnyMessagePort } from "../contract/rpc";
@@ -65,9 +67,21 @@ async function showDesktopDialog(options: DialogOptions): Promise<DialogResult> 
       title: options.title,
       defaultPath: options.defaultPath,
       filters: options.filters,
-      properties: ["openFile", "openDirectory"],
+      properties: ["openFile"],
     });
-    return { canceled: result.canceled, filePaths: result.filePaths, filePath: result.filePaths[0] };
+    if (result.canceled || !result.filePaths[0]) return { canceled: true };
+    try {
+      const staged = stageMaterialImport(resolveDataRoot(), result.filePaths[0]);
+      return {
+        canceled: false,
+        importToken: staged.token,
+        fileName: staged.fileName,
+        fileSize: staged.fileSize,
+      };
+    } catch {
+      // 不向 renderer 暴露源路径或底层文件系统错误。
+      return { canceled: true };
+    }
   }
   if (options.type === "save") {
     const result = await dialog.showSaveDialog({

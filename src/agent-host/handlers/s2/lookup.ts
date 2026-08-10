@@ -6,11 +6,21 @@
  */
 import type { S2Context } from "./context";
 import type { DatabaseSync } from "../../../data/sqlite";
-import { notFound } from "./errors";
+import { notFound, badRequest } from "./errors";
 
 export interface SemDbRef {
   db: DatabaseSync;
   semesterId: string;
+}
+
+/** 归档学期仍可读，但所有 S2 写操作必须在 host 侧拒绝（不能只依赖 renderer disabled）。 */
+export function assertSemesterWritable(ctx: S2Context, semesterId: string): void {
+  const row = ctx.globalDb
+    .prepare("SELECT status FROM semesters WHERE id = @id AND deleted_at IS NULL")
+    .get({ id: semesterId }) as { status?: string } | undefined;
+  if (row?.status === "archived") {
+    throw badRequest("归档学期为只读，不能写入资料、笔记或学习状态");
+  }
 }
 
 function activeSemesterIds(ctx: S2Context): string[] {

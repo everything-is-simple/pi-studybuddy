@@ -4,7 +4,7 @@
  * 使用 node_modules/electron/dist/electron.exe 启动真实 Electron 主进程，
  * 不再用系统 Node.js 子进程冒充 Electron E2E。
  * 运行数据隔离（AGENTS.md §5.3）：
- *   H:\\pi-studybuddy-tmp\\runs\\T-M4-022\\e2e\\<suffix>
+ *   process.env.PI_STUDYBUDDY_E2E_RUN_DIR ?? H:\\pi-studybuddy-tmp\\runs\\T-M4-022\\e2e\\<suffix>
  *
  * 通信协议：127.0.0.1 回环 TCP JSON-lines
  *   - 测试驱动器 → Electron：{"type":"rpc","id":"...","method":"...","args":[...]}
@@ -20,8 +20,8 @@ import net, { type Socket } from "node:net";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { once, EventEmitter } from "node:events";
 
-/** E2E 运行数据隔离根（AGENTS.md §5.3） */
-export const E2E_RUN_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M4-022\\e2e";
+/** E2E 运行数据隔离根（AGENTS.md §5.3）；任务可显式注入专属目录。 */
+export const E2E_RUN_DIR = process.env.PI_STUDYBUDDY_E2E_RUN_DIR ?? "H:\\pi-studybuddy-tmp\\runs\\T-M4-022\\e2e";
 
 /** 测试主入口绝对路径 */
 const TEST_MAIN = path.resolve(__dirname, "..", "test-main.js");

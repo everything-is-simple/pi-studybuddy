@@ -11,6 +11,7 @@ import type {
   Job,
 } from "../../src/contract/types";
 import type { RpcError } from "../../src/contract/types";
+import { stageTestMaterial } from "../helpers/material-import";
 
 /**
  * T-M1-002 S2 handler 集成测试（06-API §3.4 + 07-WF §2.3 + 05-ERD §3.2）
@@ -28,6 +29,7 @@ import type { RpcError } from "../../src/contract/types";
  */
 
 const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M1-002\\integration";
+const FIXTURE_DIR = `${ISOLATION_DIR}\\fixtures`;
 
 function isRpcError(e: unknown): e is RpcError {
   return (
@@ -101,13 +103,8 @@ describe("T-M1-002 S2 handler 集成测试", () => {
     let materialId: string;
 
     it("MAT-01 upload：写 materials(status=pending) + material_uploaded 事件", () => {
-      // 先落盘真实文件模拟上传
-      const filePath = `${STORAGE_DIR}\\test.pdf`;
-      writeFileSync(filePath, "fake pdf content");
-      const result = call("materials.upload", {
-        courseId,
-        file: { name: "test.pdf", size: 100, mime: "application/pdf" },
-      }) as Material;
+      const file = stageTestMaterial(ISOLATION_DIR, FIXTURE_DIR, "test.pdf", "application/pdf", "fake pdf content");
+      const result = call("materials.upload", { courseId, file }) as Material;
       materialId = result.id;
       expect(result.courseId).toBe(courseId);
       expect(result.fileType).toBe("pdf");
@@ -274,12 +271,8 @@ describe("T-M1-002 S2 handler 集成测试", () => {
     let moduleId: string;
 
     it("NOTE-01 前置：上传新资料供 notes 测试", () => {
-      const filePath = `${STORAGE_DIR}\\note-test.pdf`;
-      writeFileSync(filePath, "note test content");
-      const m = call("materials.upload", {
-        courseId,
-        file: { name: "note-test.pdf", size: 100, mime: "application/pdf" },
-      }) as Material;
+      const file = stageTestMaterial(ISOLATION_DIR, FIXTURE_DIR, "note-test.pdf", "application/pdf", "note test content");
+      const m = call("materials.upload", { courseId, file }) as Material;
       noteMaterialId = m.id;
       // 直接 SQL 写一条 structured_notes + mind_maps + knowledge_modules 供 notes/modules 测试
       const db = ctx.semesterDb(semesterId);
@@ -380,12 +373,8 @@ describe("T-M1-002 S2 handler 集成测试", () => {
   describe("jobs.* — 作业查询", () => {
     it("JOB-01 jobs.list：按 materialId 返回", async () => {
       // 先上传一个新资料触发 convert
-      const filePath = `${STORAGE_DIR}\\job-test.pdf`;
-      writeFileSync(filePath, "job test");
-      const m = call("materials.upload", {
-        courseId,
-        file: { name: "job-test.pdf", size: 100, mime: "application/pdf" },
-      }) as Material;
+      const file = stageTestMaterial(ISOLATION_DIR, FIXTURE_DIR, "job-test.pdf", "application/pdf", "job test");
+      const m = call("materials.upload", { courseId, file }) as Material;
       await call("materials.convert", { id: m.id });
       const jobs = call("jobs.list", { materialId: m.id }) as Job[];
       expect(jobs.length).toBeGreaterThanOrEqual(1);
@@ -416,24 +405,16 @@ describe("T-M1-002 S2 handler 集成测试", () => {
 
   describe("状态机边界", () => {
     it("STM-01 convert 在 completed 状态拒绝", async () => {
-      const filePath = `${STORAGE_DIR}\\stm-test.pdf`;
-      writeFileSync(filePath, "stm test");
-      const m = call("materials.upload", {
-        courseId,
-        file: { name: "stm-test.pdf", size: 100, mime: "application/pdf" },
-      }) as Material;
+      const file = stageTestMaterial(ISOLATION_DIR, FIXTURE_DIR, "stm-test.pdf", "application/pdf", "stm test");
+      const m = call("materials.upload", { courseId, file }) as Material;
       const db = ctx.semesterDb(semesterId);
       db.prepare("UPDATE materials SET status = 'completed' WHERE id = @id").run({ id: m.id });
       await expect(call("materials.convert", { id: m.id })).rejects.toThrowError(/状态|迁移|不允许/);
     });
 
     it("STM-02 generateNote 在 pending 状态拒绝（必须先 converted）", () => {
-      const filePath = `${STORAGE_DIR}\\stm-test2.pdf`;
-      writeFileSync(filePath, "stm test 2");
-      const m = call("materials.upload", {
-        courseId,
-        file: { name: "stm-test2.pdf", size: 100, mime: "application/pdf" },
-      }) as Material;
+      const file = stageTestMaterial(ISOLATION_DIR, FIXTURE_DIR, "stm-test2.pdf", "application/pdf", "stm test 2");
+      const m = call("materials.upload", { courseId, file }) as Material;
       // pending 状态调 generateNote 应拒绝
       expect(() => call("materials.generateNote", { id: m.id })).toThrowError(/状态|迁移|不允许|转换/);
     });

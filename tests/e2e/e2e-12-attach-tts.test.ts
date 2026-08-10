@@ -19,6 +19,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
 import { RpcDriver } from "./helpers/rpc-driver";
+import { stageTestMaterial } from "../helpers/material-import";
 import { SEMESTER_FIXTURE, isRpcError } from "./helpers/fixtures";
 import type {
   Semester,
@@ -63,7 +64,7 @@ describe("E2E-12 对话 @文件引用 + TTS 朗读", () => {
   it("E12-01 上传 PDF 资料（materials.upload）→ 返回 storageKey（@引用锚点）", async () => {
     const mat = await rpc.call<Material>("materials.upload", {
       courseId,
-      file: { name: "chapter2.pdf", size: 2048, mime: "application/pdf" },
+      file: stageTestMaterial(app.dataRoot, path.join(app.dataRoot, "fixtures"), "chapter2.pdf", "application/pdf", "chapter 2 fixture"),
     });
     expect(mat.id).toBeTruthy();
     expect(mat.storageKey).toBeTruthy();

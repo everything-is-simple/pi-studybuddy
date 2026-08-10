@@ -9,7 +9,7 @@ import type { KnowledgeModule, LearnStatus } from "../../../contract/types";
 import type { S2Context } from "./context";
 import { mapModule } from "./dto";
 import { notFound, badRequest } from "./errors";
-import { findSemesterByCourseId, findSemesterByModuleId } from "./lookup";
+import { assertSemesterWritable, findSemesterByCourseId, findSemesterByModuleId } from "./lookup";
 import type { SqlParams } from "../../../data/sqlite";
 
 const VALID_LEARN_STATUS: LearnStatus[] = ["not_started", "learning", "mastered", "needs_review"];
@@ -60,7 +60,8 @@ export function createModuleHandlers(ctx: S2Context) {
         );
       }
 
-      const { db } = findSemesterByModuleId(ctx, id);
+      const { db, semesterId } = findSemesterByModuleId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db
         .prepare("SELECT * FROM knowledge_modules WHERE id = @id AND deleted_at IS NULL")
         .get({ id }) as Record<string, unknown> | undefined;

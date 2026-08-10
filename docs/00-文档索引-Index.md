@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.103
-**日期**：2026-08-09
+**版本**：v0.1.108
+**日期**：2026-08-10
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -34,9 +34,9 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.99 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-023 交叉审查修订已完成，T-M4-001~010/T-M4-022/T-M4-023 done，T-M4-011~021 仍 pending；不改变既有 40 行业务执行顺序，也不自动启动后续任务。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.103 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-001~010/T-M4-022/T-M4-023 done，T-M4-011 in_progress，T-M4-012~021 pending；T-M4-011 本地证据已同步，Node24/真实文件导入/storage/target-machine/Git 仍有边界；不自动启动后续任务。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
-| 06 | API契约-API-Contracts.md | ✅ v0.1.6 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
+| 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
 | 08 | 测试验收-Test-Plan.md | ✅ v0.1.4 已审查批准 | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E + §4.2 model_select 断言落点业务数据根 |
 | 09 | 使用者介面-UI-Design.md | ✅ v0.1.4 已审查批准 | 三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话）** + 8 学习标签页（S1-S7）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 + 模型选择持久化业务数据根 |
@@ -77,6 +77,7 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
+- [x] 04-Todo v0.1.103 ✅ 已审查批准：T-M4-011 已修复真实文件导入/storage 和 host archived 写防线；Node24 定向、资料 E2E、全量与 verify full 均通过。任务保持 in_progress，进入最终独立审查与 Git 收口；target-machine acceptance 仍待验证，不启动 T-M4-012~021。
 
 - [x] 初始化仓库（git init + 关联远端 `https://github.com/everything-is-simple/pi-studybuddy.git`）
 - [x] 下载四参考仓库到 `H:\pi-references`（pi / pi-skills / inno-agent / pi-desktop）
@@ -154,6 +155,11 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.108 | 2026-08-10 | T-M4-011 文件导入契约闭环修订：main dialog → renderer → host 使用一次性 `importToken/fileName/fileSize`，不把源路径交给 agent-host；Node24 定向 6 files/79 tests、全量 106 files/1037 tests、verify full 16 files/118 tests 通过。Git 收口已获授权，target-machine acceptance 仍未完成。 |
+| v0.1.107 | 2026-08-10 | T-M4-011 P1 修复同步：S2 host 已受控导入 source file 到 `<dataRoot>/<storageKey>`、使用 stat 真实大小、转换读取 storage；materials/notes/modules 写操作在 archived 学期被 host 拒绝。06-API v0.1.7 / 04-Todo v0.1.103 同步，Node24 定向、资料 E2E、全量与 verify full 通过；任务仍 in_progress，进入最终审查与 Git 收口，target-machine acceptance 未完成。 |
+| v0.1.106 | 2026-08-10 | 用户明确授权环境适配后，Node24.14.0 已经官方 SHA-256 校验并安装，pnpm11.20.0 已验证；T-M4-011 完整质量门通过（unit/integration 105 files/1036 tests、真实 Electron E2E 16 files/118 tests）。任务仍 in_progress：真实文件导入/storage、host 侧归档写入防线、target-machine acceptance 与 Git 收口待后续授权/验证，不启动 T-M4-012~021。 |
+| v0.1.105 | 2026-08-10 | T-M4-011 本地实施与交叉审查证据同步：MaterialsTab S2 RPC 接线、归档只读与 dialog/action 竞态修复、main openFile 限制、定向 3 files/18 tests 与真实 Electron RPC E2E 1 file/10 tests 通过；Node25 全量有 2 个既有 toolchain 失败，文件导入/storage、Node24.14.0、target-machine acceptance 与 Git 收口待验证/授权；不启动 T-M4-012~021。 |
+| v0.1.104 | 2026-08-09 | T-M4-011 开工门禁同步：04-Todo v0.1.100 已登记 pending→in_progress，唯一计划 `.plan/T-M4-011-s2-materials-rpc.md` 与隔离分支 `agent/T-M4-011-s2-materials-rpc` 已建立；本轮仅 S2 资料 Tab 接线，不启动 T-M4-012~021，不执行 Git 收口。 |
 | v0.1.103 | 2026-08-09 | T-M4-023 Git 收口同步：功能提交 `92e0bcb` 已快进进入 master；Node 24.14.0 master 完整质量门通过（unit/integration 104 files/1028 tests、真实 Electron E2E 16 files/118 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、文档治理与 diff check）；治理同步已推送并核验 `master=origin/master`，任务登记为 done。 |
 | v0.1.102 | 2026-08-09 | T-M4-023 本地修订与 Node 24.14.0 完整质量门验收同步：unit/integration 104 files/1028 tests、真实 Electron E2E 16 files/118 tests、contract 127/127、security 6/6、smoke 6/6、UUID 7/7、文档治理与 diff check 通过；任务保持 in_progress，Git 收口待授权，T-M4-011~021 未启动。 |
 | v0.1.101 | 2026-08-09 | 登记 T-M4-023 交叉审查问题修订并同步 01-09 文档元数据：生产 `agent.send` 无模型配置返回固定 `MODEL_NOT_CONFIGURED`、credential-vault 实际拓扑为 `config/credentials.json`、默认入口为“💬 对话”。任务仍 in_progress，Git 收口未授权，T-M4-011~021 未启动。 |

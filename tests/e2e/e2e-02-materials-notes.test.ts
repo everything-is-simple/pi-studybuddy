@@ -16,8 +16,11 @@
  * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-02\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
 import { RpcDriver } from "./helpers/rpc-driver";
+import { stageTestMaterial } from "../helpers/material-import";
 import { SEMESTER_FIXTURE, MATERIAL_FIXTURE, isRpcError } from "./helpers/fixtures";
 import type {
   Semester,
@@ -55,15 +58,18 @@ describe("E2E-02 资料笔记全链", () => {
     await app?.dispose();
   });
 
-  it("E02-01 上传 PDF 资料（materials.upload）→ status=pending", async () => {
-    const mat = await rpc.call<Material>("materials.upload", {
-      courseId,
-      file: { name: MATERIAL_FIXTURE.fileName, size: 1024, mime: MATERIAL_FIXTURE.mime },
-    });
+  it("E02-01 上传 PDF 资料（materials.upload）→ 导入 storage + status=pending", async () => {
+    const sourceContent = "%PDF-E2E-02 fixture content%\n";
+    const file = stageTestMaterial(app.dataRoot, join(app.dataRoot, "fixtures"), MATERIAL_FIXTURE.fileName, MATERIAL_FIXTURE.mime, sourceContent);
+    const mat = await rpc.call<Material>("materials.upload", { courseId, file });
     expect(mat.id).toBeTruthy();
     expect(mat.status).toBe("pending");
     expect(mat.fileName).toBe(MATERIAL_FIXTURE.fileName);
     expect(mat.courseId).toBe(courseId);
+    expect(mat.fileSizeBytes).toBe(Buffer.byteLength(sourceContent));
+    const storedPath = join(app.dataRoot, mat.storageKey);
+    expect(existsSync(storedPath)).toBe(true);
+    expect(readFileSync(storedPath, "utf8")).toBe(sourceContent);
     materialId = mat.id;
   });
 

@@ -6,6 +6,7 @@ import { S1Context } from "../../src/agent-host/handlers/s1/context";
 import { createS1Handlers } from "../../src/agent-host/handlers/s1";
 import { createS2Tools, S2_TOOL_NAMES, S2_TOOL_COUNT } from "../../src/agent/tools/s2/tools";
 import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
+import { stageTestMaterial } from "../helpers/material-import";
 
 /**
  * T-M1-002 S2 registerTool 工具单件测试（08-Test §3.1 + 03-Arch §2.2 ToolDefinition 契约）
@@ -21,6 +22,10 @@ import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
  */
 
 const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M1-002\\unit-tools";
+
+function stagedFile(fileName: string, content = "upload test") {
+  return stageTestMaterial(ISOLATION_DIR, `${ISOLATION_DIR}\\fixtures`, fileName, "application/pdf", content);
+}
 
 describe("T-M1-002 S2 registerTool 工具单件测试", () => {
   let ctx: S2Context;
@@ -113,11 +118,9 @@ describe("T-M1-002 S2 registerTool 工具单件测试", () => {
     });
 
     it("UP-02 execute 成功返回 {content, details}", async () => {
-      const filePath = `${STORAGE_DIR}\\up-test.pdf`;
-      writeFileSync(filePath, "upload test");
       const result = await tool().execute("call-1", {
         courseId,
-        file: { name: "up-test.pdf", size: 100, mime: "application/pdf" },
+        file: stagedFile("up-test.pdf"),
       });
       expect(result.content).toBeInstanceOf(Array);
       expect(result.content.length).toBeGreaterThan(0);
@@ -158,7 +161,7 @@ describe("T-M1-002 S2 registerTool 工具单件测试", () => {
       const uploadTool = tools.find((t) => t.name === "studybuddy_upload_material")!;
       const uploadResult = await uploadTool.execute("cv-up", {
         courseId,
-        file: { name: "cv-test.pdf", size: 100, mime: "application/pdf" },
+        file: stagedFile("cv-test.pdf"),
       });
       const materialId = (uploadResult.details as { materialId: string }).materialId;
 
@@ -188,7 +191,7 @@ describe("T-M1-002 S2 registerTool 工具单件测试", () => {
       const uploadTool = tools.find((t) => t.name === "studybuddy_upload_material")!;
       const uploadResult = await uploadTool.execute("gn-up", {
         courseId,
-        file: { name: "gn-test.pdf", size: 100, mime: "application/pdf" },
+        file: stagedFile("gn-test.pdf"),
       });
       const materialId = (uploadResult.details as { materialId: string }).materialId;
       const replaceTool = tools.find((t) => t.name === "studybuddy_replace_material_text")!;
@@ -204,7 +207,7 @@ describe("T-M1-002 S2 registerTool 工具单件测试", () => {
       const uploadTool = tools.find((t) => t.name === "studybuddy_upload_material")!;
       const uploadResult = await uploadTool.execute("gn-fail", {
         courseId,
-        file: { name: "gn-fail.pdf", size: 100, mime: "application/pdf" },
+        file: stagedFile("gn-fail.pdf"),
       });
       const materialId = (uploadResult.details as { materialId: string }).materialId;
       await expect(tool().execute("gn-2", { id: materialId })).rejects.toThrow();
@@ -224,7 +227,7 @@ describe("T-M1-002 S2 registerTool 工具单件测试", () => {
       const uploadTool = tools.find((t) => t.name === "studybuddy_upload_material")!;
       const uploadResult = await uploadTool.execute("rt-up", {
         courseId,
-        file: { name: "rt-test.pdf", size: 100, mime: "application/pdf" },
+        file: stagedFile("rt-test.pdf"),
       });
       const materialId = (uploadResult.details as { materialId: string }).materialId;
 
@@ -253,7 +256,7 @@ describe("T-M1-002 S2 registerTool 工具单件测试", () => {
       const uploadTool = tools.find((t) => t.name === "studybuddy_upload_material")!;
       const uploadResult = await uploadTool.execute("nt-up", {
         courseId,
-        file: { name: "nt-test.pdf", size: 100, mime: "application/pdf" },
+        file: stagedFile("nt-test.pdf"),
       });
       const materialId = (uploadResult.details as { materialId: string }).materialId;
 
@@ -298,7 +301,7 @@ describe("T-M1-002 S2 registerTool 工具单件测试", () => {
       const uploadTool = tools.find((t) => t.name === "studybuddy_upload_material")!;
       const uploadResult = await uploadTool.execute("ls-up", {
         courseId,
-        file: { name: "ls-test.pdf", size: 100, mime: "application/pdf" },
+        file: stagedFile("ls-test.pdf"),
       });
       const materialId = (uploadResult.details as { materialId: string }).materialId;
       const ts = new Date().toISOString();

@@ -1,22 +1,22 @@
 /**
- * MaterialsTab 资料 Tab（T-M1-009，09-UI §4.4）
+ * MaterialsTab 资料 Tab（T-M1-009，T-M4-011，09-UI §4.4）
  *
  * S2 资料上传与管理：资料列表 + 状态标识 + 上传入口 + 转换/生成笔记操作。
  * Material 状态机（05-ERD §8.3）：pending→converting→converted→note_generating→completed
  *   转换失败：conversion_failed
  *
- * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
+ * §11.1 隐私边界：不渲染完整 ID、敏感路径或 RPC 内部错误。
  */
 import React from "react";
 import type { TypedRpcClient } from "../../rpc-client";
 import type { SemesterCourseContext } from "../../semester-course-state";
 import { useTabData } from "./useTabData";
-import type { Material, MaterialStatus } from "../../../contract/types";
+import type { DialogResult, FileMeta, Material, MaterialStatus } from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
 
 interface Props {
-  /** 资料列表 */
+  /** 资料列表（仅兼容无 RPC 的静态渲染/旧测试夹具） */
   materials?: Material[];
   /** RPC 客户端（运行时交互用） */
   rpc?: TypedRpcClient;
@@ -26,7 +26,47 @@ interface Props {
   academicContext?: SemesterCourseContext;
 }
 
-/** Material 状态中文标签 */
+type ActionKind = "upload" | "convert" | "generateNote";
+
+interface ContextToken {
+  courseId?: string;
+  rpc?: TypedRpcClient;
+  isReadOnly: boolean;
+}
+
+interface ActiveAction {
+  id: number;
+  key: string;
+  kind: ActionKind;
+  context: ContextToken;
+}
+
+const ACTION_ERROR_MESSAGE: Record<ActionKind, string> = {
+  upload: "上传资料失败，请稍后重试。",
+  convert: "转换资料失败，请稍后重试。",
+  generateNote: "生成笔记失败，请稍后重试。",
+};
+
+const ACTION_SUCCESS_MESSAGE: Record<ActionKind, string> = {
+  upload: "资料上传成功，资料列表已刷新。",
+  convert: "转换任务已提交，资料列表已刷新。",
+  generateNote: "笔记生成任务已提交，资料列表已刷新。",
+};
+
+const BUTTON_STYLE: React.CSSProperties = {
+  padding: "6px 16px",
+  fontSize: 13,
+  cursor: "pointer",
+  border: "1px solid var(--border, #e0e0e0)",
+  background: "var(--bg-panel, #f5f5f5)",
+  borderRadius: 4,
+};
+
+const FILE_FILTERS = [
+  { name: "课程资料", extensions: ["pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "md"] },
+  { name: "图片", extensions: ["png", "jpg", "jpeg", "gif", "bmp", "webp"] },
+];
+
 function materialStatusLabel(status: MaterialStatus): string {
   switch (status) {
     case "pending":
@@ -48,7 +88,6 @@ function materialStatusLabel(status: MaterialStatus): string {
   }
 }
 
-/** 状态颜色 */
 function materialStatusColor(status: MaterialStatus): string {
   switch (status) {
     case "completed":
@@ -63,23 +102,192 @@ function materialStatusColor(status: MaterialStatus): string {
   }
 }
 
-/** 文件大小格式化 */
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function fileNameFromPath(filePath: string): string {
+  const normalized = filePath.replaceAll("\\", "/");
+  return normalized.slice(normalized.lastIndexOf("/") + 1) || "未命名资料";
+}
+
+function mimeFromFileName(fileName: string): string {
+  const extension = fileName.toLowerCase().split(".").pop() ?? "";
+  const mimeByExtension: Record<string, string> = {
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ppt: "application/vnd.ms-powerpoint",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    txt: "text/plain",
+    md: "text/markdown",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    bmp: "image/bmp",
+    webp: "image/webp",
+  };
+  return mimeByExtension[extension] ?? "application/octet-stream";
+}
+
+function fileMetaFromDialog(selected: DialogResult): FileMeta {
+  const name = selected.fileName ?? (selected.filePath ? fileNameFromPath(selected.filePath) : "未命名资料");
+  if (!selected.importToken) throw new Error("资料导入凭据缺失或已过期");
+  return {
+    name,
+    size: selected.fileSize ?? 0,
+    mime: mimeFromFileName(name),
+    importToken: selected.importToken,
+  };
+}
+
+function actionLabel(kind: ActionKind): string {
+  switch (kind) {
+    case "upload":
+      return "上传中…";
+    case "convert":
+      return "转换中…";
+    case "generateNote":
+      return "生成中…";
+  }
+}
+
 export function MaterialsTab({ materials, rpc, courseId, academicContext }: Props): React.JSX.Element {
   const effectiveCourseId = academicContext?.courseId ?? courseId;
+  const isReadOnly = academicContext?.isReadOnly === true;
+  const contextToken = React.useMemo<ContextToken>(
+    () => ({ courseId: effectiveCourseId, rpc, isReadOnly }),
+    [effectiveCourseId, rpc, isReadOnly],
+  );
+  const [refreshToken, setRefreshToken] = React.useState(0);
+  const [activeAction, setActiveAction] = React.useState<ActiveAction | null>(null);
+  const [actionError, setActionError] = React.useState<string | null>(null);
+  const [actionNotice, setActionNotice] = React.useState<string | null>(null);
+  const activeActionRef = React.useRef<ActiveAction | null>(null);
+  const nextActionIdRef = React.useRef(0);
+  const contextRef = React.useRef(contextToken);
+  contextRef.current = contextToken;
+
   const resource = useTabData<Material[]>({
     rpc,
-    key: `materials:${effectiveCourseId ?? ""}`,
+    key: `materials:${effectiveCourseId ?? ""}:${refreshToken}`,
     enabled: Boolean(rpc && effectiveCourseId),
     initialData: [],
     load: (client) => client.call("materials.list", { courseId: effectiveCourseId }),
   });
   const visibleMaterials = rpc ? resource.data : materials;
+  const actionsEnabled = Boolean(rpc && effectiveCourseId && !isReadOnly);
+
+  React.useEffect(() => {
+    setActionError(null);
+    setActionNotice(null);
+    activeActionRef.current = null;
+    setActiveAction(null);
+  }, [contextToken]);
+
+  async function runAction(
+    kind: ActionKind,
+    key: string,
+    action: () => Promise<unknown>,
+    expectedContext: ContextToken = contextToken,
+  ): Promise<void> {
+    if (!actionsEnabled || expectedContext.isReadOnly || contextRef.current !== expectedContext || activeActionRef.current) return;
+    const active = { id: ++nextActionIdRef.current, key, kind, context: expectedContext };
+    activeActionRef.current = active;
+    setActiveAction(active);
+    setActionError(null);
+    setActionNotice(null);
+    try {
+      await action();
+      if (contextRef.current !== active.context || activeActionRef.current?.id !== active.id) return;
+      setRefreshToken((token) => token + 1);
+      setActionNotice(ACTION_SUCCESS_MESSAGE[kind]);
+    } catch {
+      if (contextRef.current === active.context && activeActionRef.current?.id === active.id) {
+        setActionError(ACTION_ERROR_MESSAGE[kind]);
+      }
+    } finally {
+      if (activeActionRef.current?.id === active.id) {
+        activeActionRef.current = null;
+        setActiveAction(null);
+      }
+    }
+  }
+
+  async function uploadMaterial(): Promise<void> {
+    const dialogContext = contextToken;
+    if (!actionsEnabled || !rpc || !effectiveCourseId || contextRef.current !== dialogContext) return;
+    try {
+      const bridge = typeof window === "undefined" ? undefined : window.piBridge;
+      if (!bridge) throw new Error("bridge unavailable");
+      const selected = await bridge.showDialog({
+        type: "open",
+        title: "选择课程资料",
+        filters: FILE_FILTERS,
+      });
+      if (selected.canceled) return;
+      const filePath = selected.filePath ?? selected.filePaths?.[0];
+      const uploadCourseId = dialogContext.courseId;
+      if ((!filePath && !selected.importToken) || !uploadCourseId || contextRef.current !== dialogContext || dialogContext.isReadOnly) return;
+      const file = fileMetaFromDialog({ ...selected, filePath });
+      await runAction(
+        "upload",
+        "upload",
+        () => rpc.call("materials.upload", { courseId: uploadCourseId, file }),
+        dialogContext,
+      );
+    } catch {
+      if (contextRef.current === dialogContext && !dialogContext.isReadOnly) {
+        setActionError(ACTION_ERROR_MESSAGE.upload);
+      }
+    }
+  }
+
+  function convertMaterial(mat: Material): void {
+    if (!actionsEnabled || !rpc) return;
+    const kind: ActionKind = "convert";
+    const method = mat.status === "conversion_failed" ? "materials.retryConversion" : "materials.convert";
+    void runAction(kind, `${kind}:${mat.id}`, () => rpc.call(method, { id: mat.id }));
+  }
+
+  function generateNote(mat: Material): void {
+    if (!actionsEnabled || !rpc) return;
+    void runAction("generateNote", `generateNote:${mat.id}`, () =>
+      rpc.call("materials.generateNote", { id: mat.id }),
+    );
+  }
+
+  function renderActionButton(mat: Material): React.JSX.Element | null {
+    const active = activeAction?.key === `convert:${mat.id}`;
+    if (mat.status === "pending" || mat.status === "conversion_failed") {
+      return (
+        <button style={BUTTON_STYLE} type="button" onClick={() => convertMaterial(mat)} disabled={!actionsEnabled || Boolean(activeAction)}>
+          {active ? actionLabel("convert") : mat.status === "conversion_failed" ? "重试转换" : "开始转换"}
+        </button>
+      );
+    }
+    if (mat.status === "converted") {
+      const noteActive = activeAction?.key === `generateNote:${mat.id}`;
+      return (
+        <button style={BUTTON_STYLE} type="button" onClick={() => generateNote(mat)} disabled={!actionsEnabled || Boolean(activeAction)}>
+          {noteActive ? actionLabel("generateNote") : "生成笔记"}
+        </button>
+      );
+    }
+    return null;
+  }
+
+  const uploadActive = activeAction?.key === "upload";
+  const uploadButton = (
+    <button style={BUTTON_STYLE} type="button" onClick={() => void uploadMaterial()} disabled={!actionsEnabled || Boolean(activeAction)}>
+      {uploadActive ? actionLabel("upload") : "上传资料"}
+    </button>
+  );
 
   if (rpc && resource.status === "loading") {
     return <TabContainer><div role="status">正在加载资料…</div></TabContainer>;
@@ -88,87 +296,38 @@ export function MaterialsTab({ materials, rpc, courseId, academicContext }: Prop
     return <TabContainer><div role="alert">暂时无法加载资料，请稍后重试。</div></TabContainer>;
   }
 
-  // 空状态
   if (!visibleMaterials || visibleMaterials.length === 0) {
     return (
       <TabContainer>
-        <div style={{ marginBottom: 16 }}>
-          <button
-            type="button"
-            style={{
-              padding: "6px 16px",
-              fontSize: 13,
-              cursor: "pointer",
-              border: "1px solid var(--border, #e0e0e0)",
-              background: "var(--bg-panel, #f5f5f5)",
-              borderRadius: 4,
-            }}
-          >
-            上传资料
-          </button>
-        </div>
-        <EmptyState message="暂无资料，请上传课程资料" />
+        <div style={{ marginBottom: 16 }}>{uploadButton}</div>
+        {actionError ? <div role="alert">{actionError}</div> : null}
+        {actionNotice ? <div role="status">{actionNotice}</div> : null}
+        <EmptyState message={effectiveCourseId ? "暂无资料，请上传课程资料" : "暂无资料，请先选择课程后查看资料"} />
       </TabContainer>
     );
   }
 
   return (
     <TabContainer>
-      {/* 上传入口 */}
-      <div style={{ marginBottom: 16 }}>
-        <button
-          type="button"
-          style={{
-            padding: "6px 16px",
-            fontSize: 13,
-            cursor: "pointer",
-            border: "1px solid var(--border, #e0e0e0)",
-            background: "var(--bg-panel, #f5f5f5)",
-            borderRadius: 4,
-          }}
-        >
-          上传资料
-        </button>
-      </div>
-
-      {/* 资料列表 */}
+      <div style={{ marginBottom: 16 }}>{uploadButton}</div>
+      {actionError ? <div role="alert">{actionError}</div> : null}
+      {actionNotice ? <div role="status">{actionNotice}</div> : null}
       <div>
         <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>资料列表</h3>
         {visibleMaterials.map((mat) => (
-          <div
-            key={mat.id}
-            style={{
-              padding: "10px 12px",
-              border: "1px solid var(--border, #e0e0e0)",
-              borderRadius: 4,
-              marginBottom: 6,
-            }}
-          >
+          <div key={mat.id} style={{ padding: "10px 12px", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <strong>{mat.fileName}</strong>
-              <span
-                style={{
-                  fontSize: 12,
-                  color: materialStatusColor(mat.status),
-                  fontWeight: 600,
-                }}
-              >
-                {materialStatusLabel(mat.status)}
+              <span style={{ fontSize: 12, color: materialStatusColor(mat.status), fontWeight: 600 }}>
+                {activeAction?.key === `convert:${mat.id}` ? "转换中" : activeAction?.key === `generateNote:${mat.id}` ? "笔记生成中" : materialStatusLabel(mat.status)}
               </span>
             </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-muted, #888)",
-                marginTop: 4,
-                display: "flex",
-                gap: 12,
-              }}
-            >
+            <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4, display: "flex", gap: 12 }}>
               <span>类型：{mat.fileType}</span>
               <span>大小：{formatFileSize(mat.fileSizeBytes)}</span>
               <span>上传：{mat.uploadedAt.slice(0, 10)}</span>
             </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>{renderActionButton(mat)}</div>
           </div>
         ))}
       </div>
