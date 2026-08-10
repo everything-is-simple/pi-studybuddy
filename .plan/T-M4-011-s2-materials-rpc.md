@@ -1,11 +1,11 @@
 # T-M4-011 当前任务计划：S2 资料 Tab RPC 接线
 
 **任务 ID**：T-M4-011
-**状态**：in_progress
+**状态**：done
 **日期**：2026-08-10
 **分支**：agent/T-M4-011-s2-materials-rpc
 **基线**：master/origin/master @ 49904bd
-**授权**：用户明确批准本轮只实施 T-M4-011，并已明确授权 commit/merge/push；不启动 T-M4-012~021。
+**授权**：用户明确批准本轮只实施 T-M4-011，并明确授权最终治理证据 commit/push；不启动 T-M4-012~021。
 
 ## 1. 权威范围
 
@@ -57,6 +57,6 @@
 - 本地实现：功能提交 `516675b` 已快进进入 master；治理同步提交 `73a95ad` 已推送，当前 `master=origin/master=73a95ad`。
 - 开发机验证：Node v24.14.0 / pnpm 11.20.0；用户级运行时安装于 `C:\Users\Administrator\.tools\node-v24.14.0`，并已以此运行完整质量门。
 - 真实 Electron：以 `PI_STUDYBUDDY_E2E_RUN_DIR=H:\pi-studybuddy-tmp\runs\T-M4-011\e2e` 重跑资料 E2E，资料 E2E 1 file / 10 tests passed；完整 verify full 真实 Electron E2E 16 files / 118 tests passed；E02-01 已验证真实 fixture → storage 文件存在、真实大小和转换读取。
-- target-machine acceptance：pending-target-machine，未验证。
-- Git：commit/merge/push 已按 AGENTS §8 顺序执行并核验；target-machine acceptance 仍 pending。
+- target-machine acceptance：`passed-installed-x64`。构建 setup `H:\pi-studybuddy-tmp\runs\T-M4-011\target-machine-20260810\release\Pi StudyBuddy Setup 0.1.0.exe`（117647758 bytes，SHA-256 `C3D098698A9DC9A2572518184FBC04BEF9039DD834651AEC300B71550424E339`）；静默安装到任务隔离目录，`package-smoke` 两次启动均通过真实 Electron、renderer/preload `piBridge`、`system.ping` 与隔离 `global.db`。
+- Git：既有 commit/merge/push 已按 AGENTS §8 顺序执行，当前 `master=origin/master=91e92f8`；本轮 target-machine 新证据的治理同步仍需新的 commit/push 授权。
 - T-M4-012 及之后任务不得启动。

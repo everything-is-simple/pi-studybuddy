@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.110
+**版本**：v0.1.112
 **日期**：2026-08-10
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -77,7 +77,7 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
-- [x] 04-Todo v0.1.103 ✅ 已审查批准：T-M4-011 已修复真实文件导入/storage 和 host archived 写防线；Node24 定向、资料 E2E、全量与 verify full 均通过。任务保持 in_progress，进入最终独立审查与 Git 收口；target-machine acceptance 仍待验证，不启动 T-M4-012~021。
+- [x] 04-Todo v0.1.108 ✅ 已审查批准：T-M4-011 已完成受控文件导入/storage、Node24 完整质量门与 x64 NSIS 新安装目录验收；用户已授权最终治理 commit/push，任务登记为 done；不自动启动 T-M4-012~021。
 
 - [x] 初始化仓库（git init + 关联远端 `https://github.com/everything-is-simple/pi-studybuddy.git`）
 - [x] 下载四参考仓库到 `H:\pi-references`（pi / pi-skills / inno-agent / pi-desktop）
@@ -155,6 +155,8 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.112 | 2026-08-10 | T-M4-011 收官同步：受控文件导入/storage、host archived 写防线、Node24 完整质量门和 x64 NSIS 已安装应用验收均已完成；04-Todo v0.1.108 将任务登记为 done，M4 统计更新为 10 pending / 0 in_progress / 13 done，未选择下一任务。 |
+| v0.1.111 | 2026-08-10 | T-M4-011 target-machine acceptance 同步：当前 master 构建的 x64 NSIS setup 已静默安装到新隔离目录，已安装应用两次启动通过 renderer/preload `piBridge`、`system.ping` 与隔离 `global.db`；SHA-256 `C3D098698A9DC9A2572518184FBC04BEF9039DD834651AEC300B71550424E339`。当前 `master=origin/master=91e92f8`，新证据 Git 同步待授权。 |
 | v0.1.110 | 2026-08-10 | T-M4-011 Git 收口同步：功能提交 `516675b` 快进进入 master，治理同步提交 `73a95ad` 已推送并核验 `master=origin/master=73a95ad`；任务仍 in_progress，仅 target-machine acceptance 未完成。 |
 | v0.1.109 | 2026-08-10 | T-M4-011 功能提交 `516675b` 已快进合并进入 master；Node24 master verify full 通过（unit/integration 106 files/1037 tests、真实 Electron E2E 16 files/118 tests）；origin/master push 与 target-machine acceptance 仍待完成。 |
 | v0.1.108 | 2026-08-10 | T-M4-011 文件导入契约闭环修订：main dialog → renderer → host 使用一次性 `importToken/fileName/fileSize`，不把源路径交给 agent-host；Node24 定向 6 files/79 tests、全量 106 files/1037 tests、verify full 16 files/118 tests 通过。Git 收口已获授权，target-machine acceptance 仍未完成。 |
