@@ -54,9 +54,9 @@
 
 ## 6. 证据边界
 
-- 本地实现：当前隔离分支，尚未进入 master；Git 收口授权已生效。
+- 本地实现：功能提交 `516675b` 已快进进入 master；治理同步提交 `73a95ad` 已推送，当前 `master=origin/master=73a95ad`。
 - 开发机验证：Node v24.14.0 / pnpm 11.20.0；用户级运行时安装于 `C:\Users\Administrator\.tools\node-v24.14.0`，并已以此运行完整质量门。
 - 真实 Electron：以 `PI_STUDYBUDDY_E2E_RUN_DIR=H:\pi-studybuddy-tmp\runs\T-M4-011\e2e` 重跑资料 E2E，资料 E2E 1 file / 10 tests passed；完整 verify full 真实 Electron E2E 16 files / 118 tests passed；E02-01 已验证真实 fixture → storage 文件存在、真实大小和转换读取。
 - target-machine acceptance：pending-target-machine，未验证。
-- Git：用户已授权 commit/merge/push；按 AGENTS §8 顺序执行。
+- Git：commit/merge/push 已按 AGENTS §8 顺序执行并核验；target-machine acceptance 仍 pending。
 - T-M4-012 及之后任务不得启动。

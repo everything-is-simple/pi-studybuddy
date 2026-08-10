@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.109
+**版本**：v0.1.110
 **日期**：2026-08-10
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -155,6 +155,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.110 | 2026-08-10 | T-M4-011 Git 收口同步：功能提交 `516675b` 快进进入 master，治理同步提交 `73a95ad` 已推送并核验 `master=origin/master=73a95ad`；任务仍 in_progress，仅 target-machine acceptance 未完成。 |
 | v0.1.109 | 2026-08-10 | T-M4-011 功能提交 `516675b` 已快进合并进入 master；Node24 master verify full 通过（unit/integration 106 files/1037 tests、真实 Electron E2E 16 files/118 tests）；origin/master push 与 target-machine acceptance 仍待完成。 |
 | v0.1.108 | 2026-08-10 | T-M4-011 文件导入契约闭环修订：main dialog → renderer → host 使用一次性 `importToken/fileName/fileSize`，不把源路径交给 agent-host；Node24 定向 6 files/79 tests、全量 106 files/1037 tests、verify full 16 files/118 tests 通过。Git 收口已获授权，target-machine acceptance 仍未完成。 |
 | v0.1.107 | 2026-08-10 | T-M4-011 P1 修复同步：S2 host 已受控导入 source file 到 `<dataRoot>/<storageKey>`、使用 stat 真实大小、转换读取 storage；materials/notes/modules 写操作在 archived 学期被 host 拒绝。06-API v0.1.7 / 04-Todo v0.1.103 同步，Node24 定向、资料 E2E、全量与 verify full 通过；任务仍 in_progress，进入最终审查与 Git 收口，target-machine acceptance 未完成。 |
