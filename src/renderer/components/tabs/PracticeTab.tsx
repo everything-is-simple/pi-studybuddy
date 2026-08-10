@@ -1,316 +1,423 @@
 /**
- * PracticeTab 练习 Tab（T-M1-009，09-UI §4.6）
+ * PracticeTab 练习 Tab（T-M1-009 / T-M4-013，09-UI §4.6）
  *
- * S3 限时练习：创建会话 + 作答（防泄露）+ 提交 + 结果展示 + 计时器。
+ * S3 限时练习：显式模块选择 → 创建会话 → 作答（防泄露）→ 提交 → 结果展示。
  *
- * §7.2 防泄露铁律：作答前阶段（phase="answering"）渲染绝不访问 question 对象的
- *   correct_answer/acceptable_answers/explanation 字段，渲染输出 HTML 不含这些字段名。
- *   结果阶段（phase="result"）才展示正确答案和解析（来自 PracticeResult）。
- * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
- * §5.2 TTS 朗读按钮位置：结果区域预留朗读按钮。
+ * T-M4-013 仅复用既有 practice.* / modules.list RPC；不新增 API、handler、schema 或
+ * AppShell 跨 Tab 模块状态。作答前绝不将 correct_answer / acceptable_answers /
+ * explanation 读入或展示到 renderer DOM；结果阶段才显示已有 PracticeResult 的结果字段。
  */
 import React from "react";
 import type { TypedRpcClient } from "../../rpc-client";
 import type { SemesterCourseContext } from "../../semester-course-state";
+import { safeAcademicDisplayText } from "../../semester-course-state";
 import { useTabData } from "./useTabData";
-import type { PracticeSession, QuestionDTO, PracticeResult } from "../../../contract/types";
+import type {
+  Answer,
+  KnowledgeModule,
+  PracticeResult,
+  PracticeSession,
+  QuestionDTO,
+} from "../../../contract/types";
 import { TabContainer } from "../common/TabContainer";
 
 interface Props {
-  /** 练习会话 */
+  /** 旧静态展示兼容 props。运行时 RPC 接线使用组件内部状态。 */
   session?: PracticeSession;
-  /** 题目列表（作答前 DTO，防泄露） */
   questions?: QuestionDTO[];
-  /** 结果（提交后） */
   result?: PracticeResult;
-  /** 当前阶段：idle=未开始 / answering=作答中 / result=结果展示 */
   phase?: "idle" | "answering" | "result";
-  /** RPC 客户端（运行时交互用） */
   rpc?: TypedRpcClient;
-  /** 课程 ID */
   courseId?: string;
-  /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
   academicContext?: SemesterCourseContext;
 }
 
-/** 题型中文标签 */
+type RuntimePhase = "idle" | "creating" | "questions_loading" | "answering" | "submitting" | "result_loading" | "result";
+
 function questionTypeLabel(type: QuestionDTO["questionType"]): string {
   switch (type) {
-    case "single_choice":
-      return "单选题";
-    case "multiple_choice":
-      return "多选题";
-    case "fill_blank":
-      return "填空题";
-    default:
-      return type;
+    case "single_choice": return "单选题";
+    case "multiple_choice": return "多选题";
+    case "fill_blank": return "填空题";
   }
 }
 
-/** 时间格式化（秒→MM:SS） */
 function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const safeSeconds = Math.max(0, seconds);
+  const m = Math.floor(safeSeconds / 60);
+  const s = safeSeconds % 60;
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-/** idle 阶段：未开始练习 */
+function formatElapsed(elapsedMs: number): string {
+  return formatTime(Math.floor(Math.max(0, elapsedMs) / 1000));
+}
+
+function isTimerPayload(value: unknown, sessionId: string): value is { sessionId: string; elapsedMs: number; remainingMs?: number } {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as { sessionId?: unknown; elapsedMs?: unknown; remainingMs?: unknown };
+  return candidate.sessionId === sessionId && typeof candidate.elapsedMs === "number" &&
+    (candidate.remainingMs === undefined || typeof candidate.remainingMs === "number");
+}
+
+/** 不显示 RPC 原始异常，避免 UUID、绝对路径和堆栈进入 renderer。 */
+function practiceErrorText(action: "modules" | "create" | "questions" | "submit" | "result"): string {
+  switch (action) {
+    case "modules": return "暂时无法加载知识模块，请切换课程后重试。";
+    case "create": return "暂时无法创建练习，请检查选择后重试。";
+    case "questions": return "暂时无法加载练习题，请重新开始练习。";
+    case "submit": return "暂时无法提交答案，请稍后重试。";
+    case "result": return "答案已提交，但暂时无法读取练习结果，请稍后重试。";
+  }
+}
+
 function IdlePhase(): React.JSX.Element {
   return (
     <TabContainer>
       <div style={{ textAlign: "center", padding: "32px 16px" }}>
         <h2 style={{ fontSize: 16, margin: "0 0 16px 0" }}>练习</h2>
-        <p style={{ color: "var(--text-muted, #888)", marginBottom: 16 }}>
-          选择课程和知识模块开始练习
-        </p>
-        <button
-          type="button"
-          style={{
-            padding: "8px 24px",
-            fontSize: 13,
-            cursor: "pointer",
-            border: "1px solid var(--border, #e0e0e0)",
-            background: "var(--bg-panel, #f5f5f5)",
-            borderRadius: 4,
-          }}
-        >
-          开始练习
-        </button>
+        <p style={{ color: "var(--text-muted, #888)", marginBottom: 16 }}>选择课程和知识模块开始练习</p>
+        <button type="button" style={buttonStyle()}>开始练习</button>
       </div>
     </TabContainer>
   );
 }
 
-/** answering 阶段：作答中（防泄露铁律） */
-function AnsweringPhase({
-  session,
-  questions,
-}: {
-  session: PracticeSession;
-  questions: QuestionDTO[];
-}): React.JSX.Element {
-  // §7.2 防泄露：此阶段只渲染 questionStem/options/score，
-  // 绝不访问 correct_answer/acceptable_answers/explanation 字段。
-  const timeLimitSec = session.timeLimit ? session.timeLimit : 0;
+function buttonStyle(disabled = false): React.CSSProperties {
+  return {
+    padding: "8px 24px",
+    fontSize: 13,
+    cursor: disabled ? "not-allowed" : "pointer",
+    border: "1px solid var(--border, #e0e0e0)",
+    background: disabled ? "#9e9e9e" : "#1976d2",
+    color: "#fff",
+    borderRadius: 4,
+    opacity: disabled ? 0.7 : 1,
+  };
+}
 
+/** 静态 props 模式仍服务于 T-M1 既有纯渲染测试。 */
+function StaticAnsweringPhase({ session, questions }: { session: PracticeSession; questions: QuestionDTO[] }): React.JSX.Element {
+  const timeLimitSec = session.timeLimit ?? 0;
   return (
     <TabContainer>
-      {/* 计时器 */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-          padding: "8px 12px",
-          background: "var(--bg-panel, #f5f5f5)",
-          borderRadius: 4,
-        }}
-      >
+      <div style={timerStyle()}>
         <span style={{ fontSize: 13 }}>题目数：{questions.length}</span>
-        <span style={{ fontSize: 13, color: "#d32f2f", fontWeight: 600 }}>
-          剩余：{formatTime(timeLimitSec)}
-        </span>
+        <span style={{ fontSize: 13, color: "#d32f2f", fontWeight: 600 }}>剩余：{formatTime(timeLimitSec)}</span>
       </div>
-
-      {/* 题目列表（防泄露：不含正确答案/解析） */}
       {questions.map((q, idx) => (
-        <div
-          key={q.id}
-          style={{
-            padding: 12,
-            border: "1px solid var(--border, #e0e0e0)",
-            borderRadius: 4,
-            marginBottom: 12,
-          }}
-        >
-          <div style={{ marginBottom: 8 }}>
-            <strong>
-              {idx + 1}. [{questionTypeLabel(q.questionType)}]
-            </strong>{" "}
-            <span style={{ fontSize: 12, color: "var(--text-muted, #888)" }}>
-              （{q.score} 分）
-            </span>
-          </div>
+        <div key={q.id} style={questionCardStyle()}>
+          <div style={{ marginBottom: 8 }}><strong>{idx + 1}. [{questionTypeLabel(q.questionType)}]</strong> <span style={{ fontSize: 12, color: "var(--text-muted, #888)" }}>（{q.score} 分）</span></div>
           <div style={{ marginBottom: 8, fontSize: 13 }}>{q.questionStem}</div>
-          {/* 选项（仅选择题展示） */}
-          {q.options && q.options.length > 0 && (
-            <div style={{ paddingLeft: 16 }}>
-              {q.options.map((opt, oi) => (
-                <div key={oi} style={{ fontSize: 13, lineHeight: 1.8 }}>
-                  <label>
-                    <input type="radio" name={`q-${q.id}`} style={{ marginRight: 8 }} />
-                    {String.fromCharCode(65 + oi)}. {opt}
-                  </label>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* 填空题：文本输入 */}
-          {q.questionType === "fill_blank" && (
-            <div style={{ paddingLeft: 16 }}>
-              <input
-                type="text"
-                style={{
-                  width: "80%",
-                  padding: "4px 8px",
-                  border: "1px solid var(--border, #e0e0e0)",
-                  borderRadius: 4,
-                  fontSize: 13,
-                }}
-              />
-            </div>
-          )}
+          {q.options?.map((option, optionIndex) => <div key={optionIndex} style={{ fontSize: 13, lineHeight: 1.8 }}>{String.fromCharCode(65 + optionIndex)}. {option}</div>)}
+          {q.questionType === "fill_blank" && <input type="text" aria-label={`题目 ${idx + 1} 答案`} />}
         </div>
       ))}
-
-      {/* 提交按钮 */}
-      <div style={{ textAlign: "center", marginTop: 16 }}>
-        <button
-          type="button"
-          style={{
-            padding: "8px 32px",
-            fontSize: 14,
-            cursor: "pointer",
-            border: "1px solid var(--border, #e0e0e0)",
-            background: "#1976d2",
-            color: "#fff",
-            borderRadius: 4,
-          }}
-        >
-          提交
-        </button>
-      </div>
+      <div style={{ textAlign: "center", marginTop: 16 }}><button type="button" style={buttonStyle()}>提交</button></div>
     </TabContainer>
   );
 }
 
-/** result 阶段：结果展示（防泄露结束，可展示正确答案） */
-function ResultPhase({
-  session,
-  questions,
-  result,
-}: {
-  session: PracticeSession;
+function StaticResultPhase({ questions, result }: { session: PracticeSession; questions: QuestionDTO[]; result: PracticeResult }): React.JSX.Element {
+  return <ResultView questions={questions} result={result} elapsedMs={result.elapsedMs} />;
+}
+
+function timerStyle(): React.CSSProperties {
+  return {
+    display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16,
+    padding: "8px 12px", background: "var(--bg-panel, #f5f5f5)", borderRadius: 4,
+  };
+}
+
+function questionCardStyle(): React.CSSProperties {
+  return { padding: 12, border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 12 };
+}
+
+function ResultView({ questions, result, elapsedMs, showSubmittedButton = false }: {
   questions: QuestionDTO[];
   result: PracticeResult;
+  elapsedMs: number;
+  showSubmittedButton?: boolean;
 }): React.JSX.Element {
   return (
     <TabContainer>
-      {/* 结果摘要 */}
-      <div
-        style={{
-          padding: 16,
-          background: "var(--bg-panel, #f5f5f5)",
-          borderRadius: 4,
-          marginBottom: 16,
-          textAlign: "center",
-        }}
-      >
+      <div style={{ padding: 16, background: "var(--bg-panel, #f5f5f5)", borderRadius: 4, marginBottom: 16, textAlign: "center" }}>
         <h2 style={{ fontSize: 16, margin: "0 0 8px 0" }}>练习结果</h2>
-        <div style={{ fontSize: 24, fontWeight: 700, color: "#1976d2" }}>
-          {result.totalScore} / {result.maxScore}
-        </div>
-        <div style={{ fontSize: 13, color: "var(--text-muted, #888)", marginTop: 4 }}>
-          正确：{result.correctCount} / {questions.length} 题
-        </div>
-        <button
-          type="button"
-          style={{
-            marginTop: 12,
-            padding: "4px 12px",
-            fontSize: 12,
-            cursor: "pointer",
-            border: "1px solid var(--border, #e0e0e0)",
-            background: "var(--bg-panel, #f5f5f5)",
-            borderRadius: 4,
-          }}
-        >
-          朗读
-        </button>
+        <div style={{ fontSize: 24, fontWeight: 700, color: "#1976d2" }}>{result.totalScore} / {result.maxScore}</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted, #888)", marginTop: 4 }}>正确：{result.correctCount} / {questions.length} 题　用时：{formatElapsed(elapsedMs)}</div>
+        {showSubmittedButton && <button type="button" disabled style={{ ...buttonStyle(true), marginTop: 12 }}>已提交</button>}
       </div>
-
-      {/* 逐题回顾（含正确答案和解析） */}
       {result.items.map((item, idx) => (
-        <div
-          key={item.question.id}
-          style={{
-            padding: 12,
-            border: "1px solid var(--border, #e0e0e0)",
-            borderRadius: 4,
-            marginBottom: 12,
-            borderLeft: `4px solid ${item.isCorrect ? "#2e7d32" : "#c62828"}`,
-          }}
-        >
+        <div key={item.question.id} style={{ ...questionCardStyle(), borderLeft: `4px solid ${item.isCorrect ? "#2e7d32" : "#c62828"}` }}>
           <div style={{ marginBottom: 4 }}>
-            <strong>
-              {idx + 1}. [{questionTypeLabel(item.question.questionType)}]
-            </strong>
-            <span
-              style={{
-                marginLeft: 8,
-                fontSize: 12,
-                color: item.isCorrect ? "#2e7d32" : "#c62828",
-                fontWeight: 600,
-              }}
-            >
-              {item.isCorrect ? "正确" : "错误"}
-            </span>
+            <strong>{idx + 1}. [{questionTypeLabel(item.question.questionType)}]</strong>
+            <span style={{ marginLeft: 8, fontSize: 12, color: item.isCorrect ? "#2e7d32" : "#c62828", fontWeight: 600 }}>{item.isCorrect ? "正确" : "错误"}</span>
           </div>
           <div style={{ marginBottom: 8, fontSize: 13 }}>{item.question.questionStem}</div>
-          {/* 正确答案（防泄露结束） */}
-          <div style={{ fontSize: 13, marginBottom: 4 }}>
-            <strong>正确答案：</strong>
-            {String(item.correctAnswer)}
-          </div>
-          {/* 解析（防泄露结束） */}
-          {item.explanation && (
-            <div style={{ fontSize: 12, color: "var(--text-muted, #888)" }}>
-              <strong>解析：</strong>
-              {item.explanation}
-            </div>
-          )}
+          <div style={{ fontSize: 13, marginBottom: 4 }}><strong>正确答案：</strong>{String(item.correctAnswer)}</div>
+          {item.explanation && <div style={{ fontSize: 12, color: "var(--text-muted, #888)" }}><strong>解析：</strong>{item.explanation}</div>}
         </div>
       ))}
     </TabContainer>
   );
 }
 
-export function PracticeTab({
-  session,
-  questions,
-  result,
-  phase = "idle",
-  rpc,
-  courseId,
-  academicContext,
-}: Props): React.JSX.Element {
+function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Props, "rpc">> & Pick<Props, "courseId" | "academicContext">): React.JSX.Element {
   const effectiveCourseId = academicContext?.courseId ?? courseId;
-  const resource = useTabData({
+  const isReadOnly = academicContext?.isReadOnly === true;
+  const moduleResource = useTabData<KnowledgeModule[]>({
     rpc,
-    key: `practice:${effectiveCourseId ?? ""}`,
-    enabled: Boolean(rpc && effectiveCourseId),
+    key: `practice-modules:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(effectiveCourseId),
     initialData: [],
-    load: (client) => client.call("practice.listSessions", { courseId: effectiveCourseId }),
+    load: (client) => client.call("modules.list", { courseId: effectiveCourseId! }),
   });
+  const [selectedModuleIds, setSelectedModuleIds] = React.useState<string[]>([]);
+  const [questionCount, setQuestionCount] = React.useState(5);
+  const [phase, setPhase] = React.useState<RuntimePhase>("idle");
+  const [session, setSession] = React.useState<PracticeSession | undefined>();
+  const [questions, setQuestions] = React.useState<QuestionDTO[]>([]);
+  const [answersByQuestionId, setAnswersByQuestionId] = React.useState<Record<string, unknown>>({});
+  const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
+  const [result, setResult] = React.useState<PracticeResult | undefined>();
+  const [elapsedMs, setElapsedMs] = React.useState(0);
+  const [actionError, setActionError] = React.useState<string | undefined>();
+  const mountedRef = React.useRef(true);
+  const contextVersionRef = React.useRef(0);
 
-  if (rpc && resource.status === "loading") {
-    return <TabContainer><div role="status">正在加载练习…</div></TabContainer>;
-  }
-  if (rpc && resource.status === "error") {
-    return <TabContainer><div role="alert">暂时无法加载练习，请稍后重试。</div></TabContainer>;
+  React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      contextVersionRef.current += 1;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    contextVersionRef.current += 1;
+    setSelectedModuleIds([]);
+    setPhase("idle");
+    setSession(undefined);
+    setQuestions([]);
+    setAnswersByQuestionId({});
+    setCurrentQuestionIndex(0);
+    setResult(undefined);
+    setElapsedMs(0);
+    setActionError(undefined);
+  }, [effectiveCourseId]);
+
+  React.useEffect(() => {
+    if (phase !== "answering" || !session) return;
+    const startedAt = Date.now() - elapsedMs;
+    const timer = window.setInterval(() => {
+      if (!mountedRef.current) return;
+      setElapsedMs(Math.max(0, Date.now() - startedAt));
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [phase, session?.id]);
+
+  React.useEffect(() => {
+    if (phase !== "answering" || !session) return;
+    return rpc.subscribe("practice.timer", session.id, (payload) => {
+      if (!mountedRef.current || !isTimerPayload(payload, session.id)) return;
+      setElapsedMs(Math.max(0, payload.elapsedMs));
+    });
+  }, [rpc, phase, session?.id]);
+
+  const timeLimitMs = (session?.timeLimit ?? 0) * 1_000;
+  const remainingSeconds = session?.timeLimit === undefined ? 0 : Math.ceil(Math.max(0, timeLimitMs - elapsedMs) / 1_000);
+  const timedOut = session?.timeLimit !== undefined && elapsedMs >= timeLimitMs;
+
+  function updateAnswer(question: QuestionDTO, value: unknown): void {
+    setAnswersByQuestionId((current) => ({ ...current, [question.id]: value }));
   }
 
-  // idle 阶段
-  if (phase === "idle" || !session || !questions) {
-    return <IdlePhase />;
+  function toggleMultipleAnswer(question: QuestionDTO, option: string, checked: boolean): void {
+    const current = answersByQuestionId[question.id];
+    const selected = Array.isArray(current) ? current.filter((value): value is string => typeof value === "string") : [];
+    const next = checked ? [...new Set([...selected, option])] : selected.filter((value) => value !== option);
+    updateAnswer(question, next);
   }
 
-  // result 阶段（防泄露结束）
-  if (phase === "result" && result) {
-    return <ResultPhase session={session} questions={questions} result={result} />;
+  function loadQuestionsForSession(sessionToLoad: PracticeSession, contextVersion: number): void {
+    setPhase("questions_loading");
+    void rpc.call("practice.getQuestions", { sessionId: sessionToLoad.id })
+      .then((loadedQuestions) => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setQuestions(loadedQuestions);
+        setAnswersByQuestionId({});
+        setCurrentQuestionIndex(0);
+        setElapsedMs(0);
+        setActionError(undefined);
+        setPhase("answering");
+      })
+      .catch(() => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setActionError(practiceErrorText("questions"));
+        setPhase("questions_loading");
+      });
   }
 
-  // answering 阶段（防泄露铁律）
-  return <AnsweringPhase session={session} questions={questions} />;
+  function loadResultForSession(sessionToLoad: PracticeSession, contextVersion: number): void {
+    setPhase("result_loading");
+    void rpc.call("practice.getResult", { sessionId: sessionToLoad.id })
+      .then((loadedResult) => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setResult(loadedResult);
+        setActionError(undefined);
+        setPhase("result");
+      })
+      .catch(() => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setActionError(practiceErrorText("result"));
+        setPhase("result_loading");
+      });
+  }
+
+  function startPractice(): void {
+    if (!effectiveCourseId || selectedModuleIds.length === 0 || isReadOnly || phase === "creating" || phase === "questions_loading" || phase === "submitting" || phase === "result_loading") return;
+    const contextVersion = contextVersionRef.current;
+    setPhase("creating");
+    setActionError(undefined);
+    void rpc.call("practice.createSession", { courseId: effectiveCourseId, moduleIds: selectedModuleIds, questionCount })
+      .then((createdSession) => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setSession(createdSession);
+        loadQuestionsForSession(createdSession, contextVersion);
+      })
+      .catch(() => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setPhase("idle");
+        setActionError(practiceErrorText("create"));
+      });
+  }
+
+  function submitAnswers(): void {
+    if (!session || phase !== "answering" || isReadOnly) return;
+    const contextVersion = contextVersionRef.current;
+    const answers: Answer[] = questions
+      .filter((question) => Object.prototype.hasOwnProperty.call(answersByQuestionId, question.id))
+      .map((question) => ({ questionId: question.id, value: answersByQuestionId[question.id] }));
+    setPhase("submitting");
+    setActionError(undefined);
+    void rpc.call("practice.submit", { sessionId: session.id, answers })
+      .then(() => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        loadResultForSession(session, contextVersion);
+      })
+      .catch(() => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setPhase("answering");
+        setActionError(practiceErrorText("submit"));
+      });
+  }
+
+  if (!effectiveCourseId) {
+    return <TabContainer><div role="status">请先在左侧选择课程，再开始练习。</div></TabContainer>;
+  }
+  if (moduleResource.status === "loading") {
+    return <TabContainer><div role="status">正在加载知识模块…</div></TabContainer>;
+  }
+  if (moduleResource.status === "error") {
+    return <TabContainer><div role="alert">{practiceErrorText("modules")}</div></TabContainer>;
+  }
+
+  if (phase === "result") {
+    if (!result) return <TabContainer><div role="alert">{practiceErrorText("result")}</div></TabContainer>;
+    return <ResultView questions={questions} result={result} elapsedMs={elapsedMs || result.elapsedMs} showSubmittedButton />;
+  }
+
+  if (phase === "result_loading") {
+    return (
+      <TabContainer>
+        <h2 style={{ fontSize: 16 }}>读取练习结果</h2>
+        {actionError ? <p role="alert">{actionError}</p> : <p role="status">正在读取练习结果…</p>}
+        {session && actionError && <button type="button" style={buttonStyle(false)} onClick={() => loadResultForSession(session, contextVersionRef.current)}>重试读取结果</button>}
+      </TabContainer>
+    );
+  }
+
+  if (phase === "questions_loading") {
+    return (
+      <TabContainer>
+        <h2 style={{ fontSize: 16 }}>加载练习题</h2>
+        {actionError ? <p role="alert">{actionError}</p> : <p role="status">正在加载练习题…</p>}
+        {session && actionError && <button type="button" style={buttonStyle(false)} onClick={() => loadQuestionsForSession(session, contextVersionRef.current)}>重试加载题目</button>}
+      </TabContainer>
+    );
+  }
+
+  if (phase === "answering" || phase === "submitting") {
+    const currentQuestion = questions[currentQuestionIndex];
+    if (!session || !currentQuestion) {
+      return <TabContainer><div role="alert">{practiceErrorText("questions")}</div></TabContainer>;
+    }
+    const currentAnswer = answersByQuestionId[currentQuestion.id];
+    const isSubmitting = phase === "submitting";
+    const selectedModuleLabels = selectedModuleIds.map((id) => moduleResource.data.find((item) => item.id === id)?.moduleName).filter((value): value is string => Boolean(value)).map((value) => safeAcademicDisplayText(value, "当前模块"));
+    return (
+      <TabContainer>
+        <div style={timerStyle()}>
+          <span style={{ fontSize: 13 }}>模块：{selectedModuleLabels.join("、") || "当前模块"}</span>
+          <span style={{ fontSize: 13 }}>第 {currentQuestionIndex + 1} / {questions.length} 题</span>
+          <span style={{ fontSize: 13, color: timedOut ? "#c62828" : "#d32f2f", fontWeight: 600 }}>{session.timeLimit === undefined ? `用时：${formatElapsed(elapsedMs)}` : `${timedOut ? "已超时" : "剩余"}：${formatTime(remainingSeconds)}`}</span>
+        </div>
+        {timedOut && <p role="status" style={{ color: "#c62828" }}>已超时，仍可提交当前答案。</p>}
+        {actionError && <p role="alert">{actionError}</p>}
+        <div style={questionCardStyle()}>
+          <div style={{ marginBottom: 8 }}><strong>{currentQuestionIndex + 1}. [{questionTypeLabel(currentQuestion.questionType)}]</strong> <span style={{ fontSize: 12, color: "var(--text-muted, #888)" }}>（{currentQuestion.score} 分）</span></div>
+          <div style={{ marginBottom: 12, fontSize: 13 }}>{currentQuestion.questionStem}</div>
+          {currentQuestion.questionType === "single_choice" && currentQuestion.options?.map((option, optionIndex) => (
+            <label key={option} style={{ display: "block", fontSize: 13, lineHeight: 1.9 }}>
+              <input type="radio" name={`practice-question-${currentQuestionIndex}`} aria-label={`题目 ${currentQuestionIndex + 1} 选项 ${String.fromCharCode(65 + optionIndex)}`} checked={currentAnswer === option} disabled={isSubmitting} onChange={() => updateAnswer(currentQuestion, option)} /> {String.fromCharCode(65 + optionIndex)}. {option}
+            </label>
+          ))}
+          {currentQuestion.questionType === "multiple_choice" && currentQuestion.options?.map((option, optionIndex) => {
+            const selected = Array.isArray(currentAnswer) && currentAnswer.includes(option);
+            return <label key={option} style={{ display: "block", fontSize: 13, lineHeight: 1.9 }}>
+              <input type="checkbox" aria-label={`题目 ${currentQuestionIndex + 1} 选项 ${String.fromCharCode(65 + optionIndex)}`} checked={selected} disabled={isSubmitting} onChange={(event) => toggleMultipleAnswer(currentQuestion, option, event.currentTarget.checked)} /> {String.fromCharCode(65 + optionIndex)}. {option}
+            </label>;
+          })}
+          {currentQuestion.questionType === "fill_blank" && <input type="text" aria-label={`题目 ${currentQuestionIndex + 1} 答案`} value={typeof currentAnswer === "string" ? currentAnswer : ""} disabled={isSubmitting} onChange={(event) => updateAnswer(currentQuestion, event.currentTarget.value)} />}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+          <button type="button" disabled={isSubmitting || currentQuestionIndex === 0} style={buttonStyle(isSubmitting || currentQuestionIndex === 0)} onClick={() => setCurrentQuestionIndex((index) => Math.max(0, index - 1))}>上一题</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" disabled={isSubmitting || currentQuestionIndex >= questions.length - 1} style={buttonStyle(isSubmitting || currentQuestionIndex >= questions.length - 1)} onClick={() => setCurrentQuestionIndex((index) => Math.min(questions.length - 1, index + 1))}>下一题</button>
+            <button type="button" disabled={isSubmitting} style={buttonStyle(isSubmitting)} onClick={submitAnswers}>{isSubmitting ? "正在提交…" : "提交"}</button>
+          </div>
+        </div>
+      </TabContainer>
+    );
+  }
+
+  const cannotStart = isReadOnly || selectedModuleIds.length === 0 || moduleResource.data.length === 0 || phase === "creating";
+  return (
+    <TabContainer>
+      <h2 style={{ fontSize: 16 }}>限时练习</h2>
+      {isReadOnly && <p role="status">当前学期已归档，只读查看，不能创建或提交练习。</p>}
+      {actionError && <p role="alert">{actionError}</p>}
+      {moduleResource.data.length === 0 ? (
+        <p role="status">当前课程暂无可练习的知识模块，请先在笔记中生成模块。</p>
+      ) : (
+        <>
+          <label htmlFor="practice-module" style={{ display: "block", marginBottom: 6 }}>选择知识模块（可多选）</label>
+          <select id="practice-module" aria-label="选择知识模块" multiple size={Math.min(5, Math.max(2, moduleResource.data.length))} value={selectedModuleIds} disabled={isReadOnly || phase === "creating"} onChange={(event) => setSelectedModuleIds(Array.from(event.currentTarget.selectedOptions, (option) => option.value))}>
+            {moduleResource.data.map((module) => <option key={module.id} value={module.id}>{safeAcademicDisplayText(module.moduleName, "未命名模块")}</option>)}
+          </select>
+          <label htmlFor="practice-count" style={{ display: "block", margin: "16px 0 6px" }}>题目数量</label>
+          <select id="practice-count" aria-label="题目数量" value={questionCount} disabled={isReadOnly || phase === "creating"} onChange={(event) => setQuestionCount(Number(event.currentTarget.value))}>
+            {[5, 10, 15, 20].map((count) => <option key={count} value={count}>{count} 题</option>)}
+          </select>
+          <div style={{ marginTop: 16 }}><button type="button" disabled={cannotStart} style={buttonStyle(cannotStart)} onClick={startPractice}>{phase === "creating" ? "正在创建…" : "开始练习"}</button></div>
+        </>
+      )}
+    </TabContainer>
+  );
+}
+export function PracticeTab({ session, questions, result, phase = "idle", rpc, courseId, academicContext }: Props): React.JSX.Element {
+  if (rpc) return <RuntimePracticeTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
+  if (phase === "result" && session && questions && result) return <StaticResultPhase session={session} questions={questions} result={result} />;
+  if (phase === "answering" && session && questions) return <StaticAnsweringPhase session={session} questions={questions} />;
+  return <IdlePhase />;
 }

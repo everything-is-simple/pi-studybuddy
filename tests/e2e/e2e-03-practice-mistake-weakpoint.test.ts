@@ -17,6 +17,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
 import { RpcDriver } from "./helpers/rpc-driver";
+import { S2Context } from "../../src/agent-host/handlers/s2/context";
 import {
   SEMESTER_FIXTURE,
   PRACTICE_FIXTURE,
@@ -60,6 +61,14 @@ describe("E2E-03 练习→错题→薄弱点全链", () => {
       subject: "数学",
     });
     courseId = course.id;
+
+    // T-M4-013 host module ownership guard：为本 E2E 夹具落地当前课程的真实模块。
+    const s2 = new S2Context(app.dataRoot);
+    const db = s2.semesterDb(semesterId);
+    const now = new Date().toISOString();
+    db.prepare("INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at) VALUES ('e2e-03-material', @courseId, 'e2e-03.pdf', 'pdf', 1, 'application/pdf', 'e2e-03.pdf', 'upload', 'completed', 1, @now, @now, @now)").run({ courseId, now });
+    db.prepare("INSERT INTO knowledge_modules (id, course_instance_id, material_id, module_name, importance, learn_status, source_evidence_json, ai_generated, created_at, updated_at) VALUES ('mock-module-1', @courseId, 'e2e-03-material', 'E2E-03 模块', 3, 'not_started', '[]', 0, @now, @now)").run({ courseId, now });
+    s2.dispose();
   }, 60_000);
 
   afterAll(async () => {

@@ -5,11 +5,33 @@
  */
 import type { S3Context } from "./context";
 import type { DatabaseSync } from "../../../data/sqlite";
-import { notFound } from "./errors";
+import { badRequest, notFound } from "./errors";
 
 export interface SemDbRef {
   db: DatabaseSync;
   semesterId: string;
+}
+
+/** 归档学期仍可读，但 S3 创建/提交等写操作必须在 host 侧拒绝。 */
+export function assertSemesterWritable(ctx: S3Context, semesterId: string): void {
+  const row = ctx.globalDb
+    .prepare("SELECT status FROM semesters WHERE id = @id AND deleted_at IS NULL")
+    .get({ id: semesterId }) as { status?: string } | undefined;
+  if (row?.status === "archived") {
+    throw badRequest("归档学期为只读，不能创建或提交练习");
+  }
+}
+
+/** 所有 moduleIds 必须属于当前 courseId，避免跨课程事实写入。 */
+export function assertModulesBelongToCourse(db: DatabaseSync, courseId: string, moduleIds: string[]): void {
+  for (const moduleId of moduleIds) {
+    const row = db
+      .prepare("SELECT 1 FROM knowledge_modules WHERE id = @moduleId AND course_instance_id = @courseId AND deleted_at IS NULL")
+      .get({ moduleId, courseId });
+    if (!row) {
+      throw badRequest("知识模块不属于当前课程，无法创建练习");
+    }
+  }
 }
 
 function activeSemesterIds(ctx: S3Context): string[] {

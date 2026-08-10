@@ -28,6 +28,7 @@ describe("T-M1-004 S4 registerTool 工具单件测试", () => {
   let s1Handlers: ReturnType<typeof createS1Handlers>;
   let s3Handlers: ReturnType<typeof createS3Handlers>;
   let tools: ToolDefinition[];
+  let semesterId: string;
   let courseId: string;
   let practiceAnswerId: string;
   let mistakeId: string;
@@ -50,12 +51,29 @@ describe("T-M1-004 S4 registerTool 工具单件测试", () => {
       endDate: "2027-01-31",
       timezone: "Asia/Shanghai",
     }) as { id: string };
+    semesterId = sem.id;
     const course = (s1Handlers["courses.create"] as (p: unknown) => unknown)({
       semesterId: sem.id,
       courseName: "S4工具测试课程",
       subject: "数学",
     }) as { id: string };
     courseId = course.id;
+
+    // T-M4-013：practice.createSession 校验 module→course 归属，预置 S4 工具测试使用的真实模块。
+    const fixtureDb = s1Ctx.semesterDb(semesterId);
+    const ts = new Date().toISOString();
+    fixtureDb.prepare(
+      `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes,
+        mime_type, storage_key, source_type, status, permission_confirmed,
+        uploaded_at, created_at, updated_at)
+       VALUES ('s4-mat-1', @cid, 'test.pdf', 'pdf', 1000, 'application/pdf',
+               'test/material.pdf', 'upload', 'completed', 1, @ts, @ts, @ts)`,
+    ).run({ cid: courseId, ts });
+    fixtureDb.prepare(
+      `INSERT INTO knowledge_modules (id, course_instance_id, material_id, module_name,
+        importance, learn_status, source_evidence_json, ai_generated, created_at, updated_at)
+       VALUES ('s4-mod-1', @cid, 's4-mat-1', 'S4工具测试模块', 3, 'not_started', '[]', 0, @ts, @ts)`,
+    ).run({ cid: courseId, ts });
 
     // 夹具：S3 练习 session + submit（空答案 → 全错 → is_correct=0）
     const session = (s3Handlers["practice.createSession"] as (p: unknown) => unknown)({

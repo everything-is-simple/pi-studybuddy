@@ -23,7 +23,7 @@ import type {
 import type { S3Context } from "./context";
 import { mapQuestionForStudent, mapQuestionWithAnswer, mapSession, mapResult } from "./dto";
 import { notFound, badRequest, internalError } from "./errors";
-import { findSemesterByCourseId, findSemesterBySessionId } from "./lookup";
+import { assertModulesBelongToCourse, assertSemesterWritable, findSemesterByCourseId, findSemesterBySessionId } from "./lookup";
 import { writePracticeSubmittedEvent, writePracticeGradedEvent } from "./events";
 import { gradeAnswer } from "./grader";
 import type { GeneratedQuestion } from "./question-generator";
@@ -63,6 +63,8 @@ export function createPracticeHandlers(ctx: S3Context) {
       }
 
       const { db, semesterId } = findSemesterByCourseId(ctx, courseId);
+      assertSemesterWritable(ctx, semesterId);
+      assertModulesBelongToCourse(db, courseId, moduleIds);
 
       // 调用 QuestionGenerator 生成题目（可注入，默认 mock）
       let generated: GeneratedQuestion[];
@@ -162,6 +164,7 @@ export function createPracticeHandlers(ctx: S3Context) {
     "practice.submit": (params: unknown): PracticeResult => {
       const { sessionId, answers } = params as { sessionId: string; answers: Answer[] };
       const { db, semesterId } = findSemesterBySessionId(ctx, sessionId);
+      assertSemesterWritable(ctx, semesterId);
 
       const session = db.prepare("SELECT * FROM practice_sessions WHERE id = @id").get({ id: sessionId }) as
         | Record<string, unknown>

@@ -45,8 +45,39 @@ describe("T-M1-003 S3 handler 集成测试", () => {
   let semesterId: string;
   let courseId: string;
 
+  function ensurePracticeModules(params: unknown): void {
+    const value = params as { courseId?: string; moduleIds?: string[] };
+    if (!value.courseId || !Array.isArray(value.moduleIds)) return;
+    const db = ctx.semesterDb(semesterId);
+    const now = new Date().toISOString();
+    for (const moduleId of value.moduleIds) {
+      const materialId = `fixture-material-${moduleId}`;
+      db.prepare(
+        "INSERT OR IGNORE INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at) VALUES (@materialId, @courseId, 'fixture.pdf', 'pdf', 1, 'application/pdf', @storageKey, 'upload', 'completed', 1, @now, @now, @now)",
+      ).run({ materialId, courseId: value.courseId, storageKey: `${materialId}.pdf`, now });
+      db.prepare(
+        "INSERT OR IGNORE INTO knowledge_modules (id, course_instance_id, material_id, module_name, importance, learn_status, source_evidence_json, ai_generated, created_at, updated_at) VALUES (@moduleId, @courseId, @materialId, @moduleName, 3, 'not_started', '[]', 0, @now, @now)",
+      ).run({ moduleId, courseId: value.courseId, materialId, moduleName: `fixture-${moduleId}`, now });
+    }
+  }
+
   function call<M extends keyof typeof handlers>(method: M, params: unknown): unknown {
+    if (method === "practice.createSession") ensurePracticeModules(params);
     return (handlers[method] as (p: unknown) => unknown)(params);
+  }
+
+  function seedModulesForContext(targetCtx: S3Context, targetCourseId: string, moduleIds: string[]): void {
+    const db = targetCtx.semesterDb(semesterId);
+    const now = new Date().toISOString();
+    for (const moduleId of moduleIds) {
+      const materialId = `fixture-material-${moduleId}`;
+      db.prepare(
+        "INSERT OR IGNORE INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at) VALUES (@materialId, @courseId, 'fixture.pdf', 'pdf', 1, 'application/pdf', @storageKey, 'upload', 'completed', 1, @now, @now, @now)",
+      ).run({ materialId, courseId: targetCourseId, storageKey: `${materialId}.pdf`, now });
+      db.prepare(
+        "INSERT OR IGNORE INTO knowledge_modules (id, course_instance_id, material_id, module_name, importance, learn_status, source_evidence_json, ai_generated, created_at, updated_at) VALUES (@moduleId, @courseId, @materialId, @moduleName, 3, 'not_started', '[]', 0, @now, @now)",
+      ).run({ moduleId, courseId: targetCourseId, materialId, moduleName: `fixture-${moduleId}`, now });
+    }
   }
 
   function callS1<M extends keyof typeof s1Handlers>(method: M, params: unknown): unknown {
@@ -196,6 +227,7 @@ describe("T-M1-003 S3 handler 集成测试", () => {
       };
       const failCtx = new S3Context(ISOLATION_DIR, failGen);
       const failHandlers = createS3Handlers(failCtx);
+      seedModulesForContext(failCtx, courseId, ["fail-mod"]);
       try {
         (failHandlers["practice.createSession"] as (p: unknown) => unknown)({
           courseId,
@@ -222,6 +254,7 @@ describe("T-M1-003 S3 handler 集成测试", () => {
       };
       const emptyCtx = new S3Context(ISOLATION_DIR, emptyGen);
       const emptyHandlers = createS3Handlers(emptyCtx);
+      seedModulesForContext(emptyCtx, courseId, ["empty-mod"]);
       try {
         (emptyHandlers["practice.createSession"] as (p: unknown) => unknown)({
           courseId,

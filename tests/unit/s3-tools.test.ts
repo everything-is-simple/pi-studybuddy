@@ -48,6 +48,49 @@ describe("T-M1-003 S3 registerTool 工具单件测试", () => {
       subject: "数学",
     }) as { id: string };
     courseId = course.id;
+
+    // T-M4-013：host 现在校验 moduleIds 必须属于当前 course；旧工具测试使用合成 ID，
+    // 因此在隔离 semester.db 中为每个合成模块预置合法 material/module 夹具。
+    const db = ctx.semesterDb(semesterId);
+    const fixtureTs = new Date().toISOString();
+    const fixtureModuleIds = [
+      "module-1",
+      "module-2",
+      "module-3",
+      "submit-mod",
+      "sp3-mod",
+      "result-mod",
+      "gr4-mod",
+    ];
+    const insertMaterial = db.prepare(
+      `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes,
+        mime_type, storage_key, source_type, status, permission_confirmed,
+        uploaded_at, created_at, updated_at)
+       VALUES (@id, @cid, @fn, 'pdf', 1000, 'application/pdf', @sk, 'upload',
+               'completed', 1, @ts, @ts, @ts)`,
+    );
+    const insertModule = db.prepare(
+      `INSERT INTO knowledge_modules (id, course_instance_id, material_id, module_name,
+        importance, learn_status, source_evidence_json, ai_generated, created_at, updated_at)
+       VALUES (@id, @cid, @mid, @name, 3, 'not_started', '[]', 0, @ts, @ts)`,
+    );
+    for (const moduleId of fixtureModuleIds) {
+      const materialId = `${moduleId}-material`;
+      insertMaterial.run({
+        id: materialId,
+        cid: courseId,
+        fn: `${moduleId}.pdf`,
+        sk: `test/${moduleId}.pdf`,
+        ts: fixtureTs,
+      });
+      insertModule.run({
+        id: moduleId,
+        cid: courseId,
+        mid: materialId,
+        name: `测试模块 ${moduleId}`,
+        ts: fixtureTs,
+      });
+    }
     tools = createS3Tools(ctx);
   });
 

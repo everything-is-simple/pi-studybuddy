@@ -19,6 +19,7 @@ import fs from "node:fs";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
 import { RpcDriver } from "./helpers/rpc-driver";
 import { stageTestMaterial } from "../helpers/material-import";
+import { S2Context } from "../../src/agent-host/handlers/s2/context";
 import { SEMESTER_FIXTURE, PRACTICE_FIXTURE, isRpcError } from "./helpers/fixtures";
 import type {
   Semester,
@@ -60,6 +61,23 @@ describe("E2E-08 备份与恢复全链", () => {
       file: stageTestMaterial(app.dataRoot, path.join(app.dataRoot, "fixtures"), "backup-chapter.pdf", "application/pdf", "backup chapter fixture"),
     });
     materialId = material.id;
+
+    // T-M4-013 host module ownership guard：E2E-08 的练习夹具使用固定 module ID，
+    // 在当前课程下显式落地真实 knowledge_modules 行，避免跨课程/幽灵模块。
+    const s2 = new S2Context(app.dataRoot);
+    const db = s2.semesterDb(semesterId);
+    const now = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO knowledge_modules (id, course_instance_id, material_id, module_name,
+        importance, learn_status, source_evidence_json, ai_generated, created_at, updated_at)
+       VALUES (@id, @courseId, @materialId, 'E2E-08 练习模块', 3, 'not_started', '[]', 0, @now, @now)`,
+    ).run({
+      id: PRACTICE_FIXTURE.moduleIds[0],
+      courseId,
+      materialId,
+      now,
+    });
+    s2.dispose();
 
     await rpc.call<PracticeSession>("practice.createSession", {
       courseId,

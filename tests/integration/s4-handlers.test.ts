@@ -91,8 +91,48 @@ describe("T-M1-004 S4 handler 集成测试", () => {
     return { sessionId: session.id, answerIds: rows.map((r) => r.id) };
   }
 
+  /**
+   * T-M4-013：practice.createSession 现在强制校验 module→course 归属。
+   * S4 历史测试使用合成 module ID，因此按需在同一 course 下补齐合法夹具。
+   */
+  function ensurePracticeModule(moduleId: string): void {
+    const db = s1Ctx.semesterDb(semesterId);
+    const existing = db
+      .prepare("SELECT id FROM knowledge_modules WHERE id = @id")
+      .get({ id: moduleId }) as { id?: string } | undefined;
+    if (existing?.id) return;
+
+    const materialId = `${moduleId}-material`;
+    const ts = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes,
+        mime_type, storage_key, source_type, status, permission_confirmed,
+        uploaded_at, created_at, updated_at)
+       VALUES (@id, @cid, @fn, 'pdf', 1000, 'application/pdf', @sk, 'upload',
+               'completed', 1, @ts, @ts, @ts)`,
+    ).run({
+      id: materialId,
+      cid: courseId,
+      fn: `${moduleId}.pdf`,
+      sk: `test/${moduleId}.pdf`,
+      ts,
+    });
+    db.prepare(
+      `INSERT INTO knowledge_modules (id, course_instance_id, material_id, module_name,
+        importance, learn_status, source_evidence_json, ai_generated, created_at, updated_at)
+       VALUES (@id, @cid, @mid, @name, 3, 'not_started', '[]', 0, @ts, @ts)`,
+    ).run({
+      id: moduleId,
+      cid: courseId,
+      mid: materialId,
+      name: `测试模块 ${moduleId}`,
+      ts,
+    });
+  }
+
   /** 创建练习 session 并提交全错答案（空 answers → 全错） */
   function createSessionWithAllWrong(moduleId: string): { sessionId: string; wrongAnswerIds: string[] } {
+    ensurePracticeModule(moduleId);
     const session = callS3("practice.createSession", {
       courseId,
       moduleIds: [moduleId],
