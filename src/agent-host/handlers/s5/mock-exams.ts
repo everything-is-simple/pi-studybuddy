@@ -32,6 +32,7 @@ import {
   findSemesterByAssessmentAttemptId,
   findSemesterByPaperId,
   findSemesterByAttemptId,
+  assertSemesterWritable,
 } from "./lookup";
 import { writeMockExamCompletedEvent } from "./events";
 import { gradeAnswer } from "../s3/grader";
@@ -59,6 +60,9 @@ export function createMockExamHandlers(ctx: S5Context) {
       }
 
       const { db, semesterId } = findSemesterByAssessmentAttemptId(ctx, assessmentAttemptId);
+
+      // host 侧归档写防线：归档学期禁止生成模拟卷（renderer 已禁用，host 双层拒绝）
+      assertSemesterWritable(ctx, semesterId);
 
       // 查 assessment_attempt（必须 confirmed）
       const attemptRow = db
@@ -210,7 +214,10 @@ export function createMockExamHandlers(ctx: S5Context) {
 
     "mockExams.startAttempt": (params: unknown): MockExamAttempt => {
       const { paperId } = params as { paperId: string };
-      const { db } = findSemesterByPaperId(ctx, paperId);
+      const { db, semesterId } = findSemesterByPaperId(ctx, paperId);
+
+      // host 侧归档写防线：归档学期禁止开始模拟考
+      assertSemesterWritable(ctx, semesterId);
 
       const paperRow = db
         .prepare("SELECT * FROM mock_exam_papers WHERE id = @id")
@@ -244,6 +251,9 @@ export function createMockExamHandlers(ctx: S5Context) {
         answers: Answer[];
       };
       const { db, semesterId } = findSemesterByAttemptId(ctx, attemptId);
+
+      // host 侧归档写防线：归档学期禁止提交模拟考
+      assertSemesterWritable(ctx, semesterId);
 
       const attemptRow = db
         .prepare("SELECT * FROM mock_exam_attempts WHERE id = @id")

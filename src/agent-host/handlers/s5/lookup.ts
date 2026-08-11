@@ -5,11 +5,21 @@
  */
 import type { S5Context } from "./context";
 import type { DatabaseSync } from "../../../data/sqlite";
-import { notFound } from "./errors";
+import { badRequest, notFound } from "./errors";
 
 export interface SemDbRef {
   db: DatabaseSync;
   semesterId: string;
+}
+
+/** 归档学期仍可读，但模拟卷生成/开始/提交等写操作必须在 host 侧拒绝（对齐 S3 模式）。 */
+export function assertSemesterWritable(ctx: S5Context, semesterId: string): void {
+  const row = ctx.globalDb
+    .prepare("SELECT status FROM semesters WHERE id = @id AND deleted_at IS NULL")
+    .get({ id: semesterId }) as { status?: string } | undefined;
+  if (row?.status === "archived") {
+    throw badRequest("归档学期为只读，不能生成或提交模拟卷");
+  }
 }
 
 function activeSemesterIds(ctx: S5Context): string[] {
