@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.135
+**版本**：v0.1.138
 **日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.131 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 60 任务，T-M4-016 done（S6 报告 Tab RPC 接线），T-M4-017 done（S7 采集 Tab RPC 接线：Git 收口完成，master=origin/master=87afbe0），T-M4-018~021 pending；T-M4-024 完成 agnes 模型 provider 接入 + utilityProcess 凭证委托修复（真实对话可用）；不自动启动 T-M4-018~021。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.134 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 60 任务，T-M4-016~018 done（S6 报告/S7 采集/TTS 控制条 RPC 接线），T-M4-019~021 pending；T-M4-024 完成 agnes 模型 provider 接入 + utilityProcess 凭证委托修复（真实对话可用）；不自动启动 T-M4-019~021。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -47,6 +47,9 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.138 T-M4-018 Git 收口同步：04-Todo v0.1.134；功能 `dd4b909`（feat(tts)）与治理登记提交已由 `agent/T-M4-018-tts-control-rpc` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 117 files/1119 tests、真实 Electron E2E 23 files/129 tests），origin/master 已推送并核验，任务登记 done，不启动 T-M4-019~021。
+> v0.1.137 T-M4-018 本地实施与验收证据同步：04-Todo v0.1.133；TtsControlBar RPC 接线完成（useTtsPlayback + tts.state 订阅 + NotesTab/MistakesTab 内嵌朗读 + agent-host Streams["tts.state"] 生产推送接入）；全量 unit/integration 117 files/1119 tests、真实 Electron E2E 23 files/129 tests、verify full 通过；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-019~021。
+> v0.1.136 T-M4-018 开工登记同步：04-Todo v0.1.132；用户明确选择并批准 TTS 控制条 RPC 接线（tts.speak/control/switchEngine/getStatus + tts.state 订阅 + 既有内嵌朗读按钮 NotesTab/MistakesTab）；§7.6.1 pending→in_progress（M4 1 pending/1 in_progress/21 done，合计 1/1/57）；唯一计划 `.plan/T-M4-018-tts-control-rpc.md` 已建立（📝 待审查），隔离分支待计划批准后建立；范围仅既有 TTS RPC 接线，不新增 API/handler/schema（contract 127/127）；不启动 T-M4-019~021。
 > v0.1.135 T-M4-017 Git 收口同步：04-Todo v0.1.131；功能 `c059571` + 治理 `c7a6c92` 已快进进入 master，Node24 master 完整 `verify --stage=full` 通过，origin/master 已推送并核验 `master=origin/master=87afbe0`，任务登记 done，不启动 T-M4-018~021。
 > v0.1.134 T-M4-017 远端收口中间事实同步：04-Todo v0.1.130；功能提交 `c059571` + 治理登记提交 `c7a6c92` 已快进合并进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过；但 3 次 `git push origin master` 因 GitHub 连接不可达失败，origin/master 尚未核验到新提交，任务按 §8.4 保持 in_progress，待网络恢复后推送。
 > v0.1.133 T-M4-017 本地实施与验收证据同步：04-Todo v0.1.129；CaptureTab 接通既有 classCapture.transcribe/saveTranscription，desktop dialog rawPath capability（shell 层，contract 保持 127/127）；RED 初次 8/9 失败后 GREEN 9/9；全量 unit/integration/security 116 files/1105 tests、真实 Electron E2E 22 files/128 tests、`verify --stage=full` 通过；`.record/T-M4-017-实施记录.md` 已创建；任务保持 in_progress，Git 收口待用户单独授权；不启动 T-M4-018~021。
@@ -99,6 +102,9 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
+- [x] 04-Todo v0.1.134 ✅ 已审查批准：T-M4-018 Git 收口完成（功能 `dd4b909` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；T-M4-019~021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.133 ✅ 已审查批准：T-M4-018 本地实施与验收证据同步完成（TtsControlBar RPC 接线 + useTtsPlayback + 内嵌朗读 + tts.state 生产推送；全量 117/1119 + 真实 Electron E2E 23/129 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-019~021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.132 ✅ 已审查批准：T-M4-018 已开工登记（用户明确选择并批准 TTS 控制条 RPC 接线；唯一计划 `.plan/T-M4-018-tts-control-rpc.md` 已建 📝 待审查，任务 pending→in_progress，contract 保持 127/127）；T-M4-019~021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.131 ✅ 已审查批准：T-M4-017 Git 收口完成（功能 `c059571` + 治理 `c7a6c92` 已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验 `master=origin/master=87afbe0`，任务登记 done）；T-M4-018~021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.130 ✅ 已审查批准：T-M4-017 远端收口中间事实（本地 master 完成 + 推送待网络恢复）。
 - [x] 04-Todo v0.1.129 ✅ 已审查批准：T-M4-017 本地实施与验收证据同步（CaptureTab 接通 classCapture.transcribe/saveTranscription，desktop dialog rawPath capability；RED 8/9→GREEN 9/9，全量 116/1105，真实 Electron E2E 22/128，verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-018~021 保持 pending，不自动启动。
@@ -188,6 +194,9 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.138 | 2026-08-11 | T-M4-018 Git 收口同步：04-Todo v0.1.134；功能 `dd4b909`（feat(tts) TTS 控制条 RPC 接线与 tts.state 生产推送）与治理登记提交已由 `agent/T-M4-018-tts-control-rpc` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 117 files/1119 tests、真实 Electron E2E 23 files/129 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check），origin/master 已推送并核验，任务登记 done，不启动 T-M4-019~021。依据：用户明确 Git 收口授权（2026-08-11）+ AGENTS.md §4.5、§7、§8.2、§8.4。 |
+| v0.1.137 | 2026-08-11 | T-M4-018 本地实施与验收证据同步：04-Todo v0.1.133；TtsControlBar 静态壳 → 受控 RPC 接线（09-UI §5 + 06-API §3.10/§4 + 07-WF §4，裁决 1A/2A/3A/4A）；AppShell useTtsPlayback 局部持有播放态；NotesTab/MistakesTab 内嵌朗读接线；agent-host 生产接入 Streams["tts.state"] 推送（TtsContext.emit → server.pushEvent，contract 127/127 不变）；全量 unit/integration 117 files/1119 tests、真实 Electron E2E 23 files/129 tests、verify full 通过；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-019~021。依据：用户批准计划（2026-08-11）+ AGENTS.md §4.5、§5、§7、§8.4、§11.1、§11.2。 |
+| v0.1.136 | 2026-08-11 | T-M4-018 开工登记同步：04-Todo v0.1.132；用户明确选择并批准 TTS 控制条 RPC 接线（09-UI §5.1-§5.5 + 06-API §3.10/§4 + 07-WF §4 + 03-Arch §6.7）；§7.6.1 T-M4-018 pending→in_progress（M4 1 pending/1 in_progress/21 done，合计 1/1/57）；唯一计划 `.plan/T-M4-018-tts-control-rpc.md` 已建立（📝 待审查），隔离分支待计划批准后建立；范围仅既有 TTS RPC 接线（tts.speak/control/switchEngine/getStatus + tts.state 订阅 + 既有内嵌朗读按钮 NotesTab/MistakesTab），不新增 API/handler/schema（contract 127/127）；不启动 T-M4-019~021，Git 收口另需授权。依据：用户明确选择 + AGENTS.md §4.4/§4.5/§11.1/§11.2。 |
 | v0.1.135 | 2026-08-11 | T-M4-017 Git 收口同步：04-Todo v0.1.131；功能 `c059571` + 治理 `c7a6c92`（及中间事实 `130f8e5`/`87afbe0`）已快进进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 116 files/1105 tests、真实 Electron E2E 22 files/128 tests），origin/master 已推送并核验 `master=origin/master=87afbe0`（远端 refs/heads/master 一致），任务登记 done，不启动 T-M4-018~021。 |
 | v0.1.134 | 2026-08-11 | T-M4-017 远端收口中间事实同步：04-Todo v0.1.130；功能 `c059571` + 治理 `c7a6c92` 已快进合并进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过（unit/integration 116 files/1105 tests、真实 Electron E2E 22 files/128 tests）；3 次 `git push origin master` 因 GitHub 连接不可达失败，origin/master 仍为 8daa20e；任务按 §8.4 保持 in_progress，待网络恢复后推送。 |
 | v0.1.133 | 2026-08-11 | T-M4-017 本地实施与验收证据同步：04-Todo v0.1.129；CaptureTab 接通既有 S7 RPC（transcribe/saveTranscription）；desktop dialog rawPath capability（shell 层，对齐 T-M4-011 importToken 先例，contract 保持 127/127）；RED 初次 8/9 失败后 GREEN 9/9；unit 12/12、全量 unit/integration/security 116 files/1105 tests、真实 Electron E2E 22 files/128 tests、`verify --stage=full` 通过（contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）；`.record/T-M4-017-实施记录.md` 已创建；任务保持 in_progress，Git 收口待用户单独授权；不启动 T-M4-018~021。 |
