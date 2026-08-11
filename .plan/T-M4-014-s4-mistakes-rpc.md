@@ -5,7 +5,7 @@
 - 任务类型：M4 业务接线
 - 优先级：P1
 - 治理阶段：阶段 4（系统组装）
-- 状态：done（本地实施、独立审查、质量门与 Git 收口完成）
+- 状态：done（本地实施、独立审查、质量门与 Git 收口完成；v0.1.99 验收缺口补做：全部/需复习/已掌握筛选已实现并复验）
 - 日期：2026-08-11
 - 用户授权：用户明确选择本任务（本轮不启动 T-M4-015~T-M4-021）；2026-08-11 明确授权 Git 收口“提交 推送”
 - 集成基线：master=origin/master=cb7d62d（T-M4-014 Git 收口事实核验）
@@ -79,6 +79,8 @@
 所有运行数据、Electron user-data、SQLite、日志和结果只能写入 `H:\pi-studybuddy-tmp\runs\T-M4-014\`，禁止写 `%LOCALAPPDATA%\PiStudyBuddy`；不连接真实 AI/SMTP/飞书/WPS/whisper.cpp。
 
 ## 七、已完成证据（截至 2026-08-11）
+
+- v0.1.99 验收缺口补做：按用户裁决实现 09-UI §4.7 状态筛选（全部/需复习/已掌握），MistakesTab 局部 `statusFilter` 前端过滤；integration 新增筛选用例（RED 初次失败后 GREEN），定向 26 tests + 真实 Electron E2E 2 tests 通过；完整质量门复验通过。
 
 - RED：新增 T-M4-014 integration 失败用例，初次 5/5 失败。
 - GREEN/REFACTOR：MistakesTab 已接通六个既有 RPC，保留静态 props 兼容，不改 API/handler/schema/AppShell。

@@ -277,6 +277,37 @@ describe("T-M4-014 MistakesTab RPC 接线", () => {
     expect(redo).not.toHaveBeenCalled();
     expect(host.innerHTML).not.toContain("C:\\private");
   });
+
+  it("可按全部/需复习/已掌握筛选错题列表（09-UI §4.7 筛选控件）", async () => {
+    const reviewB: Mistake = { ...mistakeB, errorCause: "粗心看错" };
+    const mastered: Mistake = { ...mistakeA, id: "mistake-9", status: "mastered", errorCause: "已掌握错因" };
+    const rpc = createMockRpcClient({
+      "mistakes.list": () => [mistakeA, reviewB, mastered], "weakPoints.list": () => [],
+      "mistakes.get": () => detailA, "mistakes.suggestErrorCause": () => ({ suggestion: "建议", confidence: "medium" as const }),
+    });
+    host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+    await act(async () => root?.render(React.createElement(MistakesTab, { rpc, courseId: "course-1" })));
+    await flush();
+
+    // 默认“全部”：三个错题都展示
+    expect(buttons(host, "查看详情")).toHaveLength(3);
+
+    // 点击“需复习”：只剩两个 needs_review，mastered 的错题隐藏
+    await act(async () => button(host, "需复习").click()); await flush();
+    expect(buttons(host, "查看详情")).toHaveLength(2);
+    expect(host.textContent).toContain("粗心看错");
+    expect(host.textContent).not.toContain("已掌握错因");
+
+    // 点击“已掌握”：只剩一个 mastered
+    await act(async () => button(host, "已掌握").click()); await flush();
+    expect(buttons(host, "查看详情")).toHaveLength(1);
+    expect(host.textContent).toContain("已掌握错因");
+    expect(host.textContent).not.toContain("粗心看错");
+
+    // 点击“全部”：恢复三个
+    await act(async () => button(host, "全部").click()); await flush();
+    expect(buttons(host, "查看详情")).toHaveLength(3);
+  });
 });
 
 

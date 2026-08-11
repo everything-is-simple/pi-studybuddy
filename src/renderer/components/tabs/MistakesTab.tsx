@@ -77,6 +77,7 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
   const isReadOnly = academicContext?.isReadOnly === true;
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [selection, setSelection] = useState<{ id: string; courseId: string }>();
+  const [statusFilter, setStatusFilter] = useState<"all" | Mistake["status"]>("all");
   const [detail, setDetail] = useState<MistakeWithEvidence | undefined>(rpc ? undefined : selectedMistake);
   const [detailStatus, setDetailStatus] = useState<"idle" | "loading" | "ready" | "error">(selectedMistake ? "ready" : "idle");
   const [selectedCategory, setSelectedCategory] = useState<ErrorCategory | undefined>(selectedMistake?.errorCategory);
@@ -103,6 +104,7 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
     isEmpty: (value) => value.mistakes.length === 0,
   });
   const visibleMistakes = rpc ? resource.data.mistakes : mistakes;
+  const filteredMistakes = (visibleMistakes ?? []).filter((mistake) => statusFilter === "all" || mistake.status === statusFilter);
   const visibleWeakPoints = rpc ? resource.data.weakPoints : weakPoints;
   const selectedId = selection && selection.courseId === effectiveCourseId ? selection.id : undefined;
   const visibleDetail = rpc ? detail : selectedMistake;
@@ -121,6 +123,7 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
     detailRequestRef.current += 1;
     mutationRequestRef.current += 1;
     setSelection(undefined);
+    setStatusFilter("all");
     setDetail(undefined);
     setDetailStatus("idle");
     setSelectedCategory(undefined);
@@ -225,16 +228,27 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
       {isReadOnly && <div role="status" style={{ marginBottom: 12 }}>当前学期已归档，只读浏览，不能确认错因或重做。</div>}
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 16, margin: "0 0 8px 0" }}>错题列表</h2>
-        {visibleMistakes.map((mistake) => (
-          <div key={mistake.id} style={{ padding: "8px 12px", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 4 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12 }}>#<ShortId id={mistake.id} /></span>
-              <span style={{ fontSize: 12, color: mistake.status === "mastered" ? "#2e7d32" : "#f57c00", fontWeight: 600 }}>{mistakeStatusLabel(mistake.status)}</span>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          {(["all", "needs_review", "mastered"] as const).map((value) => (
+            <button key={value} type="button" disabled={statusFilter === value} onClick={() => setStatusFilter(value)} style={{ padding: "4px 12px", fontSize: 12, cursor: "pointer", border: "1px solid var(--border, #e0e0e0)", background: statusFilter === value ? "#e3f2fd" : "transparent", borderRadius: 4 }}>
+              {value === "all" ? "全部" : value === "needs_review" ? "需复习" : "已掌握"}
+            </button>
+          ))}
+        </div>
+        {filteredMistakes.length === 0 ? (
+          <div style={{ fontSize: 13, color: "var(--text-muted, #888)", padding: "8px 0" }}>当前筛选下暂无错题</div>
+        ) : (
+          filteredMistakes.map((mistake) => (
+            <div key={mistake.id} style={{ padding: "8px 12px", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 12 }}>#<ShortId id={mistake.id} /></span>
+                <span style={{ fontSize: 12, color: mistake.status === "mastered" ? "#2e7d32" : "#f57c00", fontWeight: 600 }}>{mistakeStatusLabel(mistake.status)}</span>
+              </div>
+              {mistake.errorCause && <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4 }}>错因：{safeRendererText(mistake.errorCause, "错因内容已隐藏。")}</div>}
+              {rpc && <button type="button" onClick={() => selectMistake(mistake)} style={{ marginTop: 8 }}>查看详情</button>}
             </div>
-            {mistake.errorCause && <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4 }}>错因：{safeRendererText(mistake.errorCause, "错因内容已隐藏。")}</div>}
-            {rpc && <button type="button" onClick={() => selectMistake(mistake)} style={{ marginTop: 8 }}>查看详情</button>}
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {detailStatus === "loading" && <div role="status">正在加载错题详情…</div>}
