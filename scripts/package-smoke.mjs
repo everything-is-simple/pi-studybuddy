@@ -13,15 +13,15 @@ import net from "node:net";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-const TASK_ID = "T-M4-009";
+const TASK_ID = process.env.PI_STUDYBUDDY_PACKAGE_TASK_ID ?? "T-M4-009";
 const RUN_DIR = process.env.PI_STUDYBUDDY_PACKAGE_RUN_DIR
-  ?? "H:\\pi-studybuddy-tmp\\runs\\T-M4-009";
+  ?? `H:\\pi-studybuddy-tmp\\runs\\${TASK_ID}`;
 const APP_PATH = process.env.PI_STUDYBUDDY_PACKAGE_APP;
 const DATA_ROOT = path.join(RUN_DIR, "package-data-root");
 const PROFILE_ROOT = path.join(RUN_DIR, "package-profile");
 // Chromium profile 必须显式落在任务临时目录，避免隔离环境的默认 profile 路径启动失败。
 const ELECTRON_USER_DATA_ROOT = path.join(PROFILE_ROOT, "electron-user-data");
-const PING_MESSAGE = "T-M4-009-package-smoke";
+const PING_MESSAGE = `${TASK_ID}-package-smoke`;
 
 /** 输出固定中文错误，避免把命令行、密钥或调试载荷写入日志。 */
 function fail(message) {
@@ -232,31 +232,30 @@ async function connectCdp(webSocketDebuggerUrl) {
   };
 }
 
-/** 在已安装 renderer 中经受控桥接执行 system.ping，不暴露额外生产接口。 */
+/** 在已安装 renderer 中经受控桥接执行 system.ping + 代表性业务 RPC（semesters.create），不暴露额外生产接口。 */
 async function pingInstalledRenderer(cdp) {
   const expression = `
     (async () => {
       const bridge = window.piBridge;
       if (!bridge) return { ok: false, reason: "bridge_missing" };
       const port = await bridge.connectHost();
-      const id = "package-smoke";
-      return await new Promise((resolve) => {
-        const timer = setTimeout(() => resolve({ ok: false, reason: "rpc_timeout" }), 15000);
+      const call = (id, method, args) => new Promise((resolve) => {
+        const timer = setTimeout(() => resolve({ ok: false, reason: "rpc_timeout:" + method }), 15000);
         port.addEventListener("message", (event) => {
           const message = event.data;
           if (message?.kind !== "response" || message.id !== id) return;
           clearTimeout(timer);
-          if (message.error) resolve({ ok: false, reason: "rpc_error" });
+          if (message.error) resolve({ ok: false, reason: "rpc_error:" + method });
           else resolve({ ok: true, result: message.result });
         });
         port.start?.();
-        port.postMessage({
-          kind: "request",
-          id,
-          method: "system.ping",
-          args: [{ message: "${PING_MESSAGE}" }],
-        });
+        port.postMessage({ kind: "request", id, method, args });
       });
+      const ping = await call("${TASK_ID}-ping", "system.ping", [{ message: "${PING_MESSAGE}" }]);
+      if (!ping.ok || ping.result?.pong !== "${PING_MESSAGE}") return { ok: false, reason: "ping_failed" };
+      const created = await call("${TASK_ID}-sem", "semesters.create", [{ label: "${TASK_ID} package smoke", startDate: "2026-09-01", endDate: "2027-01-31", timezone: "Asia/Shanghai" }]);
+      if (!created.ok || !created.result?.id) return { ok: false, reason: "business_rpc_failed" };
+      return { ok: true, semesterId: created.result.id };
     })()
   `;
   const evaluation = await cdp.command("Runtime.evaluate", {
@@ -265,8 +264,8 @@ async function pingInstalledRenderer(cdp) {
     returnByValue: true,
   });
   const value = evaluation?.result?.value;
-  if (!value?.ok || value.result?.pong !== PING_MESSAGE) {
-    throw new Error("已安装 renderer 的 system.ping 未通过");
+  if (!value?.ok || !value.semesterId) {
+    throw new Error("已安装 renderer 的 system.ping 或业务 RPC 未通过");
   }
 }
 
@@ -333,7 +332,7 @@ if (!APP_PATH || !path.isAbsolute(APP_PATH) || !fs.existsSync(APP_PATH)) {
   try {
     await verifyOneLaunch("first-launch");
     await verifyOneLaunch("second-launch");
-    console.log("[package-smoke] ✅ 两次隔离启动、global.db 与 system.ping 全部通过");
+    console.log("[package-smoke] ✅ 两次隔离启动、global.db、system.ping 与业务 RPC 全部通过");
   } catch (error) {
     fail(error instanceof Error ? error.message : "安装包启动验证异常");
   }
