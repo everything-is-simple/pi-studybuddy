@@ -220,7 +220,7 @@ interface TtsUiState {
 - [x] 步骤 13：更新 04-Todo（v0.1.133）+ 文档（00-索引 v0.1.137）
 - [x] 步骤 14：文档治理检查（OK）
 - [x] 步骤 15：diff 检查（git diff --check 通过）
-- [ ] 步骤 16：提交交付（★ 用户 Git 收口授权）
+- [x] 步骤 16：提交交付（★ 用户 Git 收口授权 2026-08-11；网络恢复后推送完成）
 
 ## 10. 质量门与数据隔离
 
@@ -256,7 +256,7 @@ interface TtsUiState {
 ## 完成记录
 
 （步骤 5 收尾时填写）
-- 完成日期：2026-08-11（本地实施与验收；Git 收口待授权）
+- 完成日期：2026-08-11（Git 收口完成：功能 `dd4b909` + 治理 `e92c567` + 中间事实 `3dfef67` 已推送 origin/master 并核验 `master=origin/master=3dfef67`）
 - 实施记录：.record/T-M4-018-实施记录.md
-- 状态：✅ 已批准并实施完成（本地）；Git 收口待用户单独授权
+- 状态：✅ 已完成（docs/04 v0.1.136 登记 done；master=origin/master=3dfef67 核验通过）
 - 验收证据：RED 初次失败（4 项）→ GREEN；定向 integration 10 tests + unit 17 tests；真实 Electron E2E t-m4-018-tts-renderer 1 test；全量 unit/integration 117 files/1119 tests；真实 Electron E2E 23 files/129 tests；`verify --stage=full` 通过（contract 127/127 + 8 PiBridge + 35 tools、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）
