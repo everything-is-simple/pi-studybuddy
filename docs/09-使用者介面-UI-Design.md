@@ -1,8 +1,8 @@
 # 09 使用者介面设计
 
-**版本**：v0.1.4
-**日期**：2026-08-09
-**状态**：✅ 已审查批准（完整性 + 上游一致性 + 铁律落实 + E2E 覆盖四项通过）
+**版本**：v0.1.5
+**日期**：2026-08-11
+**状态**：✅ 已审查批准（完整性 + 上游一致性 + 铁律落实 + E2E 覆盖四项通过；v0.1.5 T-M4-019 同步：TabBar 新增"💾 备份"Tab（10th），BackupPanel 可达，04-Todo §6.6 退出门槛）
 **上游**：[02-PRD v0.1.4 §2/§3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §6](./03-架构设计-Architecture-Design.md)、[06-API v0.1.6 §3](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.2 §2-§5](./07-工作流-Workflow.md)、[08-Test v0.1.4 §6/§7](./08-测试验收-Test-Plan.md)
 **下游**：04-Todo
 **架构依据**：pi-desktop 五件骨架（Apache-2.0，搬运改名）+ 学习场景业务化
@@ -165,6 +165,7 @@ pi-studybuddy 的 UI 是学生每天打开的桌面学习工作台。它必须�
 | 🎯 冲刺 | S5 期末冲刺 | confirmed 考试+距考≤N天 | `mockExams.*` / `cramCards.*` / `cramPlan.*` |
 | 📋 报告 | S6 家长报告（学生侧） | 学生触发/调度自动 | `reports.*` / `deliveries.*` |
 | 🎤 采集 | S7 课堂采集 | 学生选课程后 | `classCapture.*` |
+| 💾 备份 | 备份恢复面板（T-M4-019 增补，04-Todo §6.6"BackupPanel 可达"） | 切换到该 Tab | `backup.*` + `backup.progress` |
 
 **设计意图**（响应用户反馈）：
 - pi 本身就是 AI coding agent，**天生自带对话能力**——这是 pi-studybuddy 作为"专属 studybuddy"的根基，不能废弃
@@ -924,6 +925,7 @@ UI 层**绝不展示**：
 ## 15. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.5 | 2026-08-11 | §4.1 标签页总览增补"💾 备份"Tab（第 10 个，T-M4-019 决策 1A）：备份恢复面板入口，主要 RPC `backup.*` + `backup.progress`；使 BackupPanel 可达（04-Todo §6.6 退出门槛）。依据：T-M4-019 任务标题"TabBar 入口" + 用户批准计划（2026-08-11）+ AGENTS.md §11.1/§11.2。影响：TabBar 由 9 Tab 增为 10 Tab（对话/S1-S7/备份），无 supersedes，渲染实现同步 src/renderer/tabs.ts。 |
 | v0.1.4 | 2026-08-09 | 交叉审查修订：修正早期“打开即进入 S1 首页”表述，与实现 `DEFAULT_TAB_ID=chat`、PRD/Workflow/Test 的对话默认主入口统一。 |
 | v0.1.3 | 2026-08-08 | §4.2 多模型切换 + §9.2 模型选择持久化落点修订：`~/.pi/agent/models.json` → `<dataRoot>/config/models.json`（T-M3-005 裁决 1，AGENTS.md §9.5 物理隔离；supersedes 注记见 §9.2 后）。上游 06-API v0.1.5 同步 |
 | v0.1.2 | 2026-08-07 | 审查定案：§4 子章节编号修正（4.3 重号→4.4-4.10 连续）；§12 Streams 与 06-API §4 对齐（material.status→jobs.progress，context.usage 归入 agent.events，补 toolchains.changed）；§4.4 Stream 引用同步；§14.1 补充 E2E-10~13 对话 Tab UI 断言；上游版本号同步。审查结论：完整性/上游一致性/铁律落实/E2E 覆盖四项通过 |
