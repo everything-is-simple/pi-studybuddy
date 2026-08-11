@@ -163,7 +163,7 @@ const s2Ctx = new S2Context(dataRoot, undefined, createRealTextExtractor());
 - [x] 步骤 13：更新 04-Todo（v0.1.144）+ 文档（00-索引 v0.1.148）
 - [x] 步骤 14：文档治理检查（OK）
 - [x] 步骤 15：diff 检查（git diff --check 通过）
-- [ ] 步骤 16：提交交付（★ 用户 Git 收口授权）
+- [x] 步骤 16：提交交付（★ 用户 Git 收口授权 2026-08-11；网络恢复后 `master=origin/master=5359d17` 已核验）
 
 ## 10. 质量门与数据隔离
 
@@ -189,6 +189,7 @@ const s2Ctx = new S2Context(dataRoot, undefined, createRealTextExtractor());
 ## 完成记录
 
 （步骤 5 收尾时填写）
-- 完成日期：
+- 完成日期：2026-08-11（Git 收口完成：功能 `00b7579` + 治理 `22ecdde` + 中间事实 `5359d17` 已推送 origin/master 并核验 `master=origin/master=5359d17`）
 - 实施记录：.record/T-M4-025-实施记录.md
-- 状态：📝 待审查
+- 状态：✅ 已完成（docs/04 v0.1.147 登记 done；master=origin/master=5359d17 核验通过）
+- 验收证据：RED（materials E2E converted 断言失败）→ 装配修复 + pdfjs utilityProcess 环境补齐 → GREEN；真实 Electron E2E materials 2/2（converted 真实断言）；全量 unit/integration 118 files/1130 tests；真实 Electron E2E 28 files/136 tests；`verify --stage=full` 通过（contract 127/127 + 8 PiBridge + 35 tools、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）

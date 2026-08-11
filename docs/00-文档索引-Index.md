@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.150
+**版本**：v0.1.151
 **日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -47,7 +47,8 @@
 
 ## 四、组件治理流程（强制）
 
-> v0.1.150 T-M4-025 远端收口中间事实同步：04-Todo v0.1.146；功能 `00b7579` + 治理 `22ecdde` 已快进进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests）；但 4 次 `git push origin master` 因 GitHub 连接不可达（443 超时）失败，origin/master 尚未核验到新提交（仍为 329b83d），按 §8.4 任务保持 in_progress，待网络恢复后推送；不启动 T-M4-021。
+> v0.1.151 T-M4-025 Git 收口完成同步：04-Todo v0.1.147；网络恢复后 `git push origin master` 成功并核验 `master=origin/master=5359d17`（远端 refs/heads/master 一致）；Node24 master 完整 `verify --stage=full` 复验通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests），任务登记 done，不启动 T-M4-021。
+> v0.1.150 T-M4-025 远端收口中间事实同步：04-Todo v0.1.146；功能 `00b7579` + 治理 `22ecdde` 已快进进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过；但 4 次 `git push origin master` 因 GitHub 连接不可达（443 超时）失败，origin/master 尚未核验到新提交（仍为 329b83d），按 §8.4 任务保持 in_progress，待网络恢复后推送；不启动 T-M4-021。
 > v0.1.149 T-M4-025 Git 收口完成同步：04-Todo v0.1.145；功能 `00b7579`（fix(s2)）与治理登记提交已由 `agent/T-M4-025-s2-extractor-prod` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests），origin/master 推送结果见 v0.1.150 修正，任务登记 done 待推送核验；不启动 T-M4-021。
 > v0.1.148 T-M4-025 本地实施与验收证据同步：04-Todo v0.1.144；生产 S2Context 注入 createRealTextExtractor + pdfjs utilityProcess 环境补齐（DOMMatrix shim + pdfjsWorker handler）；materials E2E converted 真实断言；全量 unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、verify full 通过；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-021。
 > v0.1.147 T-M4-025 开工登记同步：04-Todo v0.1.143；用户明确指令解决生产 S2Context extractor 缺口（T-M4-020 回归审查发现登记）；新增任务 T-M4-025（M4 24→25，合计 60→61）in_progress；唯一计划 `.plan/T-M4-025-s2-extractor-prod.md` 已建立（📝 待审查）；范围仅生产注入 createRealTextExtractor + materials E2E 升级 converted 断言；不注入 WPS/OCR（§5.4 mock 边界）；不启动 T-M4-021。
@@ -114,7 +115,8 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
-- [x] 04-Todo v0.1.146 ✅ 已审查批准：T-M4-025 远端收口中间事实（功能 `00b7579` + 治理 `22ecdde` 已快进进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过；但 4 次 `git push origin master` 因 GitHub 连接不可达失败，origin/master 尚未核验到新提交，按 §8.4 任务保持 in_progress，待网络恢复后推送）；T-M4-021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.147 ✅ 已审查批准：T-M4-025 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=5359d17`，Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done）；T-M4-021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.146 ✅ 已审查批准：T-M4-025 远端收口中间事实（功能与治理提交已快进进入本地 master + master verify full 通过；origin/master 推送因 GitHub 不可达待网络恢复，按 §8.4 任务保持 in_progress）；T-M4-021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.145 ✅ 已审查批准：T-M4-025 Git 收口本地完成事实（功能与治理提交已快进进入本地 master + master verify full 通过；推送结果由 v0.1.146 修正）；T-M4-021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.144 ✅ 已审查批准：T-M4-025 本地实施与验收证据同步完成（生产 S2Context 注入 createRealTextExtractor + pdfjs utilityProcess 环境补齐；materials E2E converted 真实断言；全量 118/1130 + 真实 Electron E2E 28/136 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.143 ✅ 已审查批准：T-M4-025 已开工登记（用户明确指令解决生产 S2Context extractor 缺口；唯一计划 `.plan/T-M4-025-s2-extractor-prod.md` 已建 📝 待审查，任务 pending→in_progress，contract 保持 127/127）；T-M4-021 保持 pending，不自动启动。
@@ -218,6 +220,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.151 | 2026-08-11 | T-M4-025 Git 收口完成同步：04-Todo v0.1.147；网络恢复后 `git push origin master` 成功并核验 `master=origin/master=5359d17`（远端 refs/heads/master 一致；功能 `00b7579` + 治理 `22ecdde` + 中间事实 `5359d17` 一并推送）；Node24 master 完整 `verify --stage=full` 复验通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）；任务登记 done，不启动 T-M4-021。依据：用户明确 Git 收口授权（2026-08-11）+ 网络恢复后继续执行 + AGENTS.md §4.5、§7、§8.2、§8.4。 |
 | v0.1.150 | 2026-08-11 | T-M4-025 远端收口中间事实同步：04-Todo v0.1.146；功能 `00b7579` + 治理 `22ecdde` 已快进进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests）；但 4 次 `git push origin master` 因 GitHub 连接不可达（443 超时）失败，origin/master 尚未核验到新提交（仍为 329b83d），按 §8.4 任务保持 in_progress，待网络恢复后推送；不启动 T-M4-021。依据：用户明确 Git 收口授权 + AGENTS.md §4.5、§7、§8.4 + 远端网络错误证据。 |
 | v0.1.149 | 2026-08-11 | T-M4-025 Git 收口完成同步：04-Todo v0.1.145；功能 `00b7579`（fix(s2) 生产注入 TextExtractor 与 pdfjs utilityProcess 环境补齐）与治理登记提交已由 `agent/T-M4-025-s2-extractor-prod` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）；origin/master 推送结果由 v0.1.150 修正（网络不可达待恢复）；任务登记 done 待推送核验，不启动 T-M4-021。依据：用户明确 Git 收口授权（2026-08-11）+ AGENTS.md §4.5、§7、§8.2、§8.4。 |
 | v0.1.148 | 2026-08-11 | T-M4-025 本地实施与验收证据同步：04-Todo v0.1.144；生产 S2Context 注入 createRealTextExtractor（src/agent-host/index.ts）；修复 pdfjs-dist 在 Electron utilityProcess 下提取失败的深层根因（Node 检测对 process.type!=='browser' 判 false → 无默认 workerSrc + 缺 DOMMatrix）；text-extractor.ts 新增 ensurePdfParseEnvironment（DOMMatrix 2D shim + pdfjsWorker fake worker handler + Function 构造保留真实动态 import 加载 pdf-parse 自带 pdf.worker.mjs）；materials E2E 升级为受控 PDF 夹具 + "已转换"真实断言；全量 unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、verify full 通过；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-021。依据：用户明确指令 + 用户批准计划（2026-08-11）+ AGENTS.md §4.5、§5、§7、§8.4、§11.1、§11.2。 |
