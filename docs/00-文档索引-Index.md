@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.133
+**版本**：v0.1.134
 **日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -47,6 +47,7 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.134 T-M4-017 远端收口中间事实同步：04-Todo v0.1.130；功能提交 `c059571` + 治理登记提交 `c7a6c92` 已快进合并进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过；但 3 次 `git push origin master` 因 GitHub 连接不可达失败，origin/master 尚未核验到新提交，任务按 §8.4 保持 in_progress，待网络恢复后推送。
 > v0.1.133 T-M4-017 本地实施与验收证据同步：04-Todo v0.1.129；CaptureTab 接通既有 classCapture.transcribe/saveTranscription，desktop dialog rawPath capability（shell 层，contract 保持 127/127）；RED 初次 8/9 失败后 GREEN 9/9；全量 unit/integration/security 116 files/1105 tests、真实 Electron E2E 22 files/128 tests、`verify --stage=full` 通过；`.record/T-M4-017-实施记录.md` 已创建；任务保持 in_progress，Git 收口待用户单独授权；不启动 T-M4-018~021。
 > v0.1.132 T-M4-017 开工登记同步：04-Todo v0.1.128；用户明确选择并批准 S7 采集 Tab RPC 接线（classCapture.transcribe + saveTranscription）；唯一计划 `.plan/T-M4-017-s7-capture-rpc.md` 已建立（📝 待审查），任务 pending→in_progress；范围仅既有 RPC 接线 + desktop dialog rawPath capability（shell 层，contract 保持 127/127）；待用户批准计划与三项设计决策后实施；不启动 T-M4-018~021，Git 收口另需授权。
 > v0.1.131 T-M4-016 Git 收口事实同步：04-Todo v0.1.127；功能提交 `eb4becb` 与治理登记提交 `62fa21d` 已由 `agent/T-M4-016-s6-report-rpc` 快进合并进入 `master`；Node24 master 完整 `verify --stage=full` 通过（unit/integration 115 files/1096 tests、真实 Electron E2E 21 files/126 tests）；`git push origin master` 成功并核验 `master=origin/master=62fa21d`，任务登记为 done，不启动 T-M4-017~021。
@@ -184,6 +185,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.134 | 2026-08-11 | T-M4-017 远端收口中间事实同步：04-Todo v0.1.130；功能 `c059571` + 治理 `c7a6c92` 已快进合并进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过（unit/integration 116 files/1105 tests、真实 Electron E2E 22 files/128 tests）；3 次 `git push origin master` 因 GitHub 连接不可达失败，origin/master 仍为 8daa20e；任务按 §8.4 保持 in_progress，待网络恢复后推送。 |
 | v0.1.133 | 2026-08-11 | T-M4-017 本地实施与验收证据同步：04-Todo v0.1.129；CaptureTab 接通既有 S7 RPC（transcribe/saveTranscription）；desktop dialog rawPath capability（shell 层，对齐 T-M4-011 importToken 先例，contract 保持 127/127）；RED 初次 8/9 失败后 GREEN 9/9；unit 12/12、全量 unit/integration/security 116 files/1105 tests、真实 Electron E2E 22 files/128 tests、`verify --stage=full` 通过（contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）；`.record/T-M4-017-实施记录.md` 已创建；任务保持 in_progress，Git 收口待用户单独授权；不启动 T-M4-018~021。 |
 | v0.1.132 | 2026-08-11 | T-M4-017 开工登记同步：04-Todo v0.1.128；用户明确选择并批准 S7 采集 Tab RPC 接线（classCapture.transcribe + saveTranscription）；§7.6.1 状态 pending→in_progress（M4 3 pending/1 in_progress/20 done，合计 3/1/56）；唯一计划 `.plan/T-M4-017-s7-capture-rpc.md` 已建立（📝 待审查），隔离分支待计划批准后建立；范围仅既有 RPC 接线 + desktop dialog rawPath capability（shell 层扩展，对齐 T-M4-011 importToken 先例，contract 保持 127/127）；待用户批准计划与三项设计决策（文件获取方式/E2E 文件选择 seam/保存标题来源）；不启动 T-M4-018~021，Git 收口另需授权。 |
 | v0.1.131 | 2026-08-11 | T-M4-016 Git 收口同步：04-Todo v0.1.127；功能 `eb4becb` + 治理 `62fa21d` 已快进进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 115 files/1096 tests、真实 Electron E2E 21 files/126 tests），origin/master 已推送并核验 `master=origin/master=62fa21d`，任务登记 done，不启动 T-M4-017~021。 |
