@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.146
+**版本**：v0.1.149
 **日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.142 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 60 任务，T-M4-016~020 done（S6 报告/S7 采集/TTS 控制条/备份恢复面板/E2E 全链回归），T-M4-021 pending（M4 收官验收 + 打包冒烟）；T-M4-024 完成 agnes 模型 provider 接入 + utilityProcess 凭证委托修复（真实对话可用）；不自动启动 T-M4-021。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.145 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 61 任务，T-M4-016~020 + T-M4-025 done（S6 报告/S7 采集/TTS 控制条/备份恢复面板/E2E 全链回归/生产 extractor 注入），T-M4-021 pending（M4 收官验收 + 打包冒烟）；T-M4-024 完成 agnes 模型 provider 接入 + utilityProcess 凭证委托修复（真实对话可用）；不自动启动 T-M4-021。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -47,6 +47,9 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.149 T-M4-025 Git 收口完成同步：04-Todo v0.1.145；功能 `00b7579`（fix(s2)）与治理登记提交已由 `agent/T-M4-025-s2-extractor-prod` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests），origin/master 已推送并核验，任务登记 done，不启动 T-M4-021。
+> v0.1.148 T-M4-025 本地实施与验收证据同步：04-Todo v0.1.144；生产 S2Context 注入 createRealTextExtractor + pdfjs utilityProcess 环境补齐（DOMMatrix shim + pdfjsWorker handler）；materials E2E converted 真实断言；全量 unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、verify full 通过；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-021。
+> v0.1.147 T-M4-025 开工登记同步：04-Todo v0.1.143；用户明确指令解决生产 S2Context extractor 缺口（T-M4-020 回归审查发现登记）；新增任务 T-M4-025（M4 24→25，合计 60→61）in_progress；唯一计划 `.plan/T-M4-025-s2-extractor-prod.md` 已建立（📝 待审查）；范围仅生产注入 createRealTextExtractor + materials E2E 升级 converted 断言；不注入 WPS/OCR（§5.4 mock 边界）；不启动 T-M4-021。
 > v0.1.146 T-M4-020 Git 收口完成同步：04-Todo v0.1.142；功能 `c738585`（test(m4)）与治理登记提交已由 `agent/T-M4-020-e2e-full-regression` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests），origin/master 已推送并核验，任务登记 done，不启动 T-M4-021。
 > v0.1.145 T-M4-020 本地实施与验收证据同步：04-Todo v0.1.141；新增 4 个真实 Electron renderer E2E（S1 首页/S2 资料/设置页/学期切换）补齐回归缺口；全量回归通过 unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、verify full 通过；无生产 src 变更（纯回归）；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-021。
 > v0.1.144 T-M4-020 开工登记同步：04-Todo v0.1.140；用户明确选择 E2E 全链回归（2026-08-11“计划 T-M4-020”；prompt 资产已就绪 v0.1.96）；§7.6.1 T-M4-020 pending→in_progress（M4 1 pending/1 in_progress/22 done，合计 1/1/58）；唯一计划 `.plan/T-M4-020-e2e-full-regression.md` 已建立（📝 待审查），隔离分支待计划批准后建立；范围仅补齐 renderer E2E 覆盖缺口（S1 首页/S2 资料/设置页/学期切换）+ 全量回归执行 + 最小缺陷修复，不引入新功能/API/schema；不启动 T-M4-021。
@@ -110,6 +113,9 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
+- [x] 04-Todo v0.1.145 ✅ 已审查批准：T-M4-025 Git 收口完成（功能 `00b7579` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；T-M4-021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.144 ✅ 已审查批准：T-M4-025 本地实施与验收证据同步完成（生产 S2Context 注入 createRealTextExtractor + pdfjs utilityProcess 环境补齐；materials E2E converted 真实断言；全量 118/1130 + 真实 Electron E2E 28/136 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.143 ✅ 已审查批准：T-M4-025 已开工登记（用户明确指令解决生产 S2Context extractor 缺口；唯一计划 `.plan/T-M4-025-s2-extractor-prod.md` 已建 📝 待审查，任务 pending→in_progress，contract 保持 127/127）；T-M4-021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.142 ✅ 已审查批准：T-M4-020 Git 收口完成（功能 `c738585` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；T-M4-021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.141 ✅ 已审查批准：T-M4-020 本地实施与验收证据同步完成（4 个新 renderer E2E 补齐首页/资料/设置页/学期切换回归缺口；全量 118/1130 + 真实 Electron E2E 28/136 + verify full 通过；无生产 src 变更）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.140 ✅ 已审查批准：T-M4-020 已开工登记（用户明确选择 E2E 全链回归；唯一计划 `.plan/T-M4-020-e2e-full-regression.md` 已建 📝 待审查，任务 pending→in_progress，contract 保持 127/127）；T-M4-021 保持 pending，不自动启动。
@@ -210,6 +216,9 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.149 | 2026-08-11 | T-M4-025 Git 收口完成同步：04-Todo v0.1.145；功能 `00b7579`（fix(s2) 生产注入 TextExtractor 与 pdfjs utilityProcess 环境补齐）与治理登记提交已由 `agent/T-M4-025-s2-extractor-prod` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check），origin/master 已推送并核验，任务登记 done，不启动 T-M4-021。依据：用户明确 Git 收口授权（2026-08-11）+ AGENTS.md §4.5、§7、§8.2、§8.4。 |
+| v0.1.148 | 2026-08-11 | T-M4-025 本地实施与验收证据同步：04-Todo v0.1.144；生产 S2Context 注入 createRealTextExtractor（src/agent-host/index.ts）；修复 pdfjs-dist 在 Electron utilityProcess 下提取失败的深层根因（Node 检测对 process.type!=='browser' 判 false → 无默认 workerSrc + 缺 DOMMatrix）；text-extractor.ts 新增 ensurePdfParseEnvironment（DOMMatrix 2D shim + pdfjsWorker fake worker handler + Function 构造保留真实动态 import 加载 pdf-parse 自带 pdf.worker.mjs）；materials E2E 升级为受控 PDF 夹具 + "已转换"真实断言；全量 unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、verify full 通过；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-021。依据：用户明确指令 + 用户批准计划（2026-08-11）+ AGENTS.md §4.5、§5、§7、§8.4、§11.1、§11.2。 |
+| v0.1.147 | 2026-08-11 | T-M4-025 开工登记同步：04-Todo v0.1.143；用户明确指令解决生产 S2Context 未注入 extractor 缺口（2026-08-11“然后我们再解决”；T-M4-020 回归审查发现登记）；§7.6.1 新增 T-M4-025（M4 24→25，合计 60→61）in_progress；唯一计划 `.plan/T-M4-025-s2-extractor-prod.md` 已建立（📝 待审查），隔离分支待计划批准后建立；范围仅生产 S2Context 注入 createRealTextExtractor（pdf-parse/jszip/mammoth 本地库，非外部服务，符合 08-Test §5.4）+ materials E2E 升级 converted 真实断言；不注入 WPS/OCR（§5.4 外部组件 mock 边界）；不启动 T-M4-021，Git 收口另需授权。依据：用户明确指令 + T-M4-020 实施记录 §4/§8 + AGENTS.md §4.4/§4.5/§11.1/§11.2。 |
 | v0.1.146 | 2026-08-11 | T-M4-020 Git 收口完成同步：04-Todo v0.1.142；功能 `c738585`（test(m4) E2E 全链回归覆盖补齐——首页/资料/设置页/学期切换 4 个 renderer E2E）与治理登记提交已由 `agent/T-M4-020-e2e-full-regression` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check），origin/master 已推送并核验，任务登记 done，不启动 T-M4-021。依据：用户明确 Git 收口授权（2026-08-11）+ AGENTS.md §4.5、§7、§8.2、§8.4。 |
 | v0.1.145 | 2026-08-11 | T-M4-020 本地实施与验收证据同步：04-Todo v0.1.141；新增 4 个真实 Electron renderer E2E（t-m4-020-home/materials/settings/semester-switch-renderer）补齐回归缺口；RED 证据：home 种子 taskType 违反 CHECK 约束已修复；全量回归通过——unit/integration 118 files/1130 tests、真实 Electron E2E 28 files/136 tests（+4 files/+6 tests）、verify full 通过（contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）；无生产 src 变更（纯回归任务）；任务保持 in_progress，Git 收口待单独授权；不启动 T-M4-021。依据：用户批准计划（2026-08-11）+ AGENTS.md §4.5、§5、§7、§8.4、§11.1、§11.2。 |
 | v0.1.144 | 2026-08-11 | T-M4-020 开工登记同步：04-Todo v0.1.140；用户明确选择 E2E 全链回归（2026-08-11“计划 T-M4-020”；T-M4-020 prompt 资产已就绪 v0.1.96，执行序 39）；§7.6.1 T-M4-020 pending→in_progress（M4 1 pending/1 in_progress/22 done，合计 1/1/58）；唯一计划 `.plan/T-M4-020-e2e-full-regression.md` 已建立（📝 待审查），隔离分支待计划批准后建立；范围仅补齐 renderer E2E 覆盖缺口（S1 首页/S2 资料/设置页/学期切换）+ 全量回归执行（verify full + 双维度审查）+ 最小缺陷修复，不引入新功能/API/schema；不启动 T-M4-021，Git 收口另需授权。依据：用户明确选择 + AGENTS.md §4.4/§4.5/§11.1/§11.2。 |
