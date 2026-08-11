@@ -45,13 +45,17 @@ describe("CaptureTab 合规确认（09-UI §4.10 + §7.2 强制）", () => {
     expect(html).toContain("disabled");
   });
 
-  it("勾选合规确认后转写按钮可用（§7.2）", () => {
+  it("合规确认 + 课程 + 文件齐备时转写按钮可用（§7.2 + 09-UI §4.10 完整门控）", () => {
     const html = renderToStaticMarkup(
-      React.createElement(CaptureTab, { permissionConfirmed: true }),
+      React.createElement(CaptureTab, {
+        permissionConfirmed: true,
+        selectedFile: fixtureFile,
+        courseId: "course-1",
+      }),
     );
-    // 不应包含 disabled（转写按钮启用）
-    // 注意：可能会有其他 disabled 元素，但转写按钮本身不应 disabled
-    expect(html).toContain("转写");
+    // 转写按钮本身不应 disabled（课程门控/文件门控/合规确认齐备）
+    const beforeTranscribe = html.split("开始转写")[0].slice(-120);
+    expect(beforeTranscribe).not.toContain("disabled");
   });
 
   it("渲染合规确认提示文案", () => {

@@ -860,6 +860,12 @@ export interface DialogOptions {
   defaultPath?: string;
   filters?: Array<{ name: string; extensions: string[] }>;
   message?: string;
+  /**
+   * S7 课堂采集：true 时 open 对话框返回本地文件原始绝对路径（rawPath），
+   * whisper.cpp 直接读取该文件（FileMeta.path 注释见 §3.4）。
+   * S2 上传场景不传此字段，仍走 main 签发的一次性导入 capability（importToken）。
+   */
+  rawPath?: boolean;
 }
 
 export interface DialogResult {
@@ -870,4 +876,6 @@ export interface DialogResult {
   importToken?: string;
   fileName?: string;
   fileSize?: number;
+  /** S7 课堂采集（DialogOptions.rawPath）模式下 main 返回的本地文件绝对路径。 */
+  rawPath?: string;
 }

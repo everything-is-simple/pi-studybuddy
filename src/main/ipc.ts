@@ -6,6 +6,7 @@
  * renderer 端经 sender.postMessage + transferList 接收 renderer 端口。
  */
 import { BrowserWindow, dialog, ipcMain, MessageChannelMain, utilityProcess, type MessagePortMain } from "electron";
+import fs from "node:fs";
 import path from "node:path";
 import { resolveDataRoot } from "../agent-host/allowed-roots";
 import { stageMaterialImport } from "../shared/material-import";
@@ -110,6 +111,22 @@ async function showDesktopDialog(options: DialogOptions): Promise<DialogResult> 
       properties: ["openFile"],
     });
     if (result.canceled || !result.filePaths[0]) return { canceled: true };
+    // S7 课堂采集（T-M4-017）：rawPath 模式返回本地绝对路径（whisper.cpp 直接读文件），
+    // 不做 S2 staging、不签发 importToken；文件不可读时视为取消，不向 renderer 暴露源路径。
+    if (options.rawPath) {
+      try {
+        const source = result.filePaths[0];
+        const stat = fs.statSync(source);
+        return {
+          canceled: false,
+          rawPath: source,
+          fileName: path.basename(source),
+          fileSize: stat.size,
+        };
+      } catch {
+        return { canceled: true };
+      }
+    }
     try {
       const staged = stageMaterialImport(resolveDataRoot(), result.filePaths[0]);
       return {
