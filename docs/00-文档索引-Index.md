@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.123
+**版本**：v0.1.126
 **日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -47,6 +47,9 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.126 T-M4-015 双维度独立审查闭环：04-Todo v0.1.122；审查者 A 发现 S5 写 handler 缺 host 侧 archived 防线，补齐 `assertSemesterWritable`（三写入口调用，方法签名不变）；host-boundaries 2 tests；完整质量门复验 unit/integration 112 files/1079 tests、真实 Electron E2E 20 files/124 tests；`.record/T-M4-015-实施记录.md` 已创建；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。
+> v0.1.125 T-M4-015 本地实施与验收证据同步：04-Todo v0.1.121；CramTab 接通既有 S5 RPC（已确认考试门控 + mockExams.* + cramCards.get + cramPlan.get），RED 初次 8/8 失败后 GREEN，定向 renderer 14 tests + integration 8 tests、真实 Electron E2E 2 tests、Node24 `verify --stage=full` 通过（unit/integration 111 files/1077 tests、真实 Electron E2E 20 files/124 tests）；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。
+> v0.1.124 T-M4-015 开工登记同步：用户明确选择并批准 S5 冲刺 Tab RPC 接线（mockExams + cramCards + cramPlan）；04-Todo v0.1.120 已登记 pending→in_progress，M4 6 pending/1 in_progress/16 done；唯一计划 `.plan/T-M4-015-s5-cram-rpc.md` 与隔离分支 `agent/T-M4-015-s5-cram-rpc` 已建立，测试运行根 `H:\pi-studybuddy-tmp\runs\T-M4-015\`；不新增 API/handler/schema，不启动 T-M4-016~021，Git 收口另需授权。
 > v0.1.123 T-M4-014 验收缺口补做同步：用户裁决将 09-UI §4.7 状态筛选纳入 T-M4-014；MistakesTab 新增三档前端筛选；同步 `.pi/prompts/task-execution/00-标准任务执行提示词.md` 新增 §2.5/§2.6。
 > v0.1.122 T-M4-014 Git 收口事实同步：功能提交 `cb7d62d` 已由 `agent/T-M4-014-s4-mistakes-rpc` 快进合并进入 `master`；Node24 master 完整 `verify --stage=full` 通过（unit/integration 110 files/1068 tests、真实 Electron E2E 19 files/122 tests）；origin/master 已推送并核验；任务登记为 done，不启动 T-M4-015~021。
 > v0.1.121 T-M4-014 本地实施与验收证据同步：MistakesTab 已接通六个既有 S4 RPC；RED 初次 5/5 失败后 GREEN；定向 renderer/integration、真实 Electron E2E、Node24 `verify --stage=full` 与双维度独立审查通过；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-015~021。
@@ -87,6 +90,9 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
+- [x] 04-Todo v0.1.122 ✅ 已审查批准：T-M4-015 本地实施、双维度独立审查闭环与完整质量门全部通过（S5 host 归档防线补齐）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-016~021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.121 ✅ 已审查批准：T-M4-015 本地实施与验收证据同步完成（CramTab 接通 S5 RPC、RED→GREEN、定向与完整质量门通过）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-016~021 保持 pending，不自动启动。
+- [x] 04-Todo v0.1.120 ✅ 已审查批准：T-M4-015 已开工（in_progress）：用户明确批准 S5 冲刺 Tab RPC 接线；唯一计划与隔离分支已建立，RED 测试待跑；T-M4-016~021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.114 ✅ 已审查批准：T-M4-013 已完成两名独立审查者交叉复核、P1/P2 修复复验、实施记录和完整质量门；任务仍 in_progress，仅 Git 收口待单独授权；T-M4-014~021 保持 pending，不自动启动。
 - [x] 提示词资产：`.pi/prompts/task-execution/` 已建立标准执行提示词、README 与 T-M4-014~021 八份受控任务启动提示词；其只提供标准化开发过程、验收主题、范围与停止条件，实际任务仍须通过 AGENTS.md §4.4 门禁、04-Todo 登记和唯一 `.plan/`。
 
@@ -167,6 +173,9 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.126 | 2026-08-11 | T-M4-015 双维度独立审查闭环：04-Todo v0.1.122；S5 host 归档防线补齐（assertSemesterWritable）；host-boundaries 2 tests；完整质量门复验 unit/integration 112 files/1079 tests、真实 Electron E2E 20 files/124 tests；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。 |
+| v0.1.125 | 2026-08-11 | T-M4-015 本地实施与验收证据同步：04-Todo v0.1.121；RED 初次 8/8 失败后 GREEN；定向 renderer 14 tests + integration 8 tests、真实 Electron E2E 2 tests、Node24 `verify --stage=full` 通过（unit/integration 111 files/1077 tests、真实 Electron E2E 20 files/124 tests）；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。 |
+| v0.1.124 | 2026-08-11 | T-M4-015 开工登记同步：04-Todo v0.1.120 pending→in_progress（M4 6 pending/1 in_progress/16 done，合计 6/1/52）；唯一计划与隔离分支已建立，测试运行根 `H:\pi-studybuddy-tmp\runs\T-M4-015\`；不新增 API/handler/schema，不启动 T-M4-016~021，Git 收口另需授权。 |
 | v0.1.123 | 2026-08-11 | T-M4-014 验收缺口补做：按用户裁决实现 09-UI §4.7 状态筛选（全部/需复习/已掌握），MistakesTab 局部前端过滤；integration 12 tests、renderer 14 tests、真实 Electron E2E 2 tests 通过；00-标准任务执行提示词.md 新增工程进度基线 §2.5 与标准验收清单 §2.6。依据：用户明确裁决 + AGENTS.md §4.5、§5、§11.1、§11.2。 |
 | v0.1.122 | 2026-08-11 | T-M4-014 Git 收口完成：功能提交 `cb7d62d` 已由 `agent/T-M4-014-s4-mistakes-rpc` 快进合并进入 `master`；Node24.14.0/pnpm11.20.0 master 完整 `verify --stage=full` 通过（unit/integration 110 files/1068 tests、真实 Electron E2E 19 files/122 tests、contract 127/127、安全 6/6、smoke、docs 治理通过）；origin/master 已推送并核验 `master=origin/master=cb7d62d`；T-M4-014 由 in_progress 更新为 done，不启动 T-M4-015~021。依据：用户明确 Git 收口授权 + AGENTS.md §4.5、§7、§8.2、§8.4、§11.1、§11.2。 |
 | v0.1.119 | 2026-08-10 | 用户明确授权建立 `.pi/prompts/task-execution/` 提示词资产：新增标准执行提示词、README 与 T-M4-014~021 八份任务启动提示词，统一权威入口、开工门禁、TDD、质量门、独立审查、受控收尾和各任务验收主题；明确它们不是 `.plan/`，不改变任务状态或 Git 授权。同步目录治理与当前状态索引。依据：用户明确指令 + AGENTS.md §4.4、§5、§7、§8、§11。 |
