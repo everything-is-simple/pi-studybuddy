@@ -1,6 +1,6 @@
 # 12 目录治理
 
-**版本**：v0.1.2
+**版本**：v0.1.3
 **日期**：2026-08-09
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[AGENTS.md §9.5](../AGENTS.md)、[01-TRD §7 决策 3](./01-TRD-技术需求-Technical-Requirements.md)、[04-Todo §4](./04-任务清单-Todo-List.md)、[11-组件装配 §3](./11-组件装配-Component-Assembly.md)
@@ -122,7 +122,7 @@ H:\pi-studybuddy-backup\             ← 只读阶段备份（可选）
 |---|---|---|
 | `docs/` | 设计文档（00-12）+ 治理文档 | ✅ 已创建 |
 | `.pi/skills/` | 治理用 Skill（task-complete / component-assembly） | 📝 待创建 |
-| `.pi/prompts/` | 工作流模板（wr / plan） | 📝 待创建 |
+| `.pi/prompts/` | 工作流模板（wr / plan）+ `task-execution/` 任务启动提示词资产；后者只统一范围、过程与验收主题，不得替代唯一 `.plan/` | ✅ 已创建 |
 | `scripts/` | 自动化门禁（verify / check-docs / check-contract） | 📝 待创建 |
 | `.plan/` | 任务计划（唯一执行中） | 📝 待创建 |
 | `.record/` | 实施记录（每任务一份） | 📝 待创建 |
@@ -431,6 +431,7 @@ pi 会话流：
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.3 | 2026-08-10 | `.pi/prompts/task-execution/` 目录登记为受控治理资产：保存标准执行提示词、README 与 T-M4-014~021 任务启动提示词；职责仅为统一任务范围、过程与验收主题，不能作为执行计划或绕过单一 `.plan/`、04-Todo 和用户授权。原因：用户明确要求建立剩余任务提示词并让治理系统可发现。影响：目录职责同步，不改运行数据/API/任务状态。依据：用户明确指令 + AGENTS.md §4.4、§11.1、§11.2。 |
 | v0.1.2 | 2026-08-09 | 交叉审查修订：业务数据根 `config/` 补记实际的 credential-vault 文件 `credentials.json`；保持 `~/.pi` 与业务数据根物理隔离。 |
 |---|---|---|
 | v0.1.1 | 2026-08-08 | §6.2 业务数据根结构补 `config/models.json`（默认模型选型，`__studybuddy_managed` 标记）+ §7.2/§7.3/§12.1 models.json 标记异位修订（T-M3-005 裁决 1：默认模型选型落业务数据根 `<dataRoot>/config/models.json`，`~/.pi/agent/models.json` 归 pi 自管不标记；AGENTS.md §9.5 物理隔离，与 03-Arch v0.1.2 supersedes 同步） |

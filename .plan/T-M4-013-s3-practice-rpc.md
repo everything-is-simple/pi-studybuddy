@@ -5,10 +5,10 @@
 - 任务类型：M4 业务接线
 - 优先级：P1（核心：出题/作答/批改）
 - 治理阶段：阶段 4（系统组装）
-- 状态：in_progress（开工登记完成，RED 前置）
+- 状态：done（本地实施、独立审查、复验、master 集成与 origin/master 核验完成）
 - 日期：2026-08-10
 - 用户授权：已明确批准 T-M4-013 开工（2026-08-10）
-- 集成基线：master=origin/master=f4e54c2（T-M4-012 功能与治理收官）
+- 集成基线：master=origin/master=7d93560（T-M4-013 Git 收口事实核验）
 - 实施分支：agent/T-M4-013-s3-practice-rpc
 - 集成分支：master
 - 测试运行根：H:\pi-studybuddy-tmp\runs\T-M4-013\
@@ -23,7 +23,7 @@
 | M1 核心闭环 | ✅ 完成 | 10/10（S1-S7 工具注册 + OCR/WPS/转换管道 + 跨切钩子 + S1-S4 UI + E2E） |
 | M2 完整闭环 | ✅ 完成 | 9/9（S5-S7/TTS/备份 + UUID 泄漏检测 + whisper 真实 Adapter + UI + E2E） |
 | M3 对话打磨 | ✅ 完成 | 8/8（对话主入口 + pi 原生能力 + 学习场景 + 工具跳转 + 模型钩子 + 会话 UI + E2E） |
-| M4 业务接线+打包 | 🔄 进行中 | 23 任务：done 14 / in_progress 1（T-M4-013）/ pending 8（014~021） |
+| M4 业务接线+打包 | 🔄 进行中 | 23 任务：done 15 / in_progress 0 / pending 8（014~021） |
 
 ### M4 已完成（14 个）
 

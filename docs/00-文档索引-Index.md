@@ -1,6 +1,6 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.118
-**日期**：2026-08-10
+**版本**：v0.1.121
+**日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.114 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-001~012/T-M4-022/T-M4-023 done，T-M4-013 in_progress，T-M4-014~021 pending；T-M4-013 已完成独立交叉审查、问题修复、实施记录与完整质量门，Git 收口另待授权；不新增 AppShell 跨 Tab 模块状态/API/handler/schema；不自动启动 T-M4-014~021。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.117 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-001~013/T-M4-022/T-M4-023 done，T-M4-014 in_progress，T-M4-015~021 pending；T-M4-013 Git 收口提交 `7d93560` 已核验存在于 master 与 origin/master；T-M4-014 已获用户选择并建立唯一执行计划；不新增 AppShell 跨 Tab 模块状态/API/handler/schema；不自动启动 T-M4-015~021。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -47,6 +47,8 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.121 T-M4-014 本地实施与验收证据同步：MistakesTab 已接通六个既有 S4 RPC；RED 初次 5/5 失败后 GREEN；定向 renderer/integration、真实 Electron E2E、Node24 `verify --stage=full` 与双维度独立审查通过；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-015~021。
+> v0.1.120 T-M4-013 Git 收口事实同步：提交 `7d93560` 已进入当前 `master`，`git ls-remote origin refs/heads/master` 核验为同一提交；Node24 `pnpm verify -- --stage=full` 返回成功。T-M4-014 已在用户选择下登记为 in_progress，唯一计划与隔离分支已建立；不启动 T-M4-015~021。
 > v0.1.118 T-M4-013 独立交叉审查与本地收尾证据同步：审查者 A/B 已覆盖 RPC 参数、范围、防泄露、竞态/卸载、归档只读、真实 Electron E2E、隐私展示和未授权改动边界；P1/P2 已修复并复验；实施记录已创建；Node24 `verify --stage=full` 通过（109 files/1057 tests、真实 Electron E2E 18 files/120 tests）；Git 收口待单独授权。
 > v0.1.117 T-M4-013 本地实现与质量门证据同步：PracticeTab 已接通模块选择 + createSession/getQuestions/submit/getResult；Node24 `verify --stage=full` 通过（unit/integration 108 files/1052 tests、真实 Electron E2E 18 files/120 tests），独立审查/实施记录/Git 收口待后续授权。
 > v0.1.116 T-M4-013 开工登记同步：用户明确批准 S3 练习 Tab RPC 接线；任务 pending→in_progress，唯一计划 `.plan/T-M4-013-s3-practice-rpc.md` 与隔离分支 `agent/T-M4-013-s3-practice-rpc` 已建立；live 集成基线为 `master=origin/master=f4e54c2`；不新增 API/handler/schema，不启动 T-M4-014~021，Git 收口另需授权。
@@ -73,6 +75,7 @@
 - `H:\pi-references\*`：参考仓库只读区，不加入 workspace。
 - 运行数据必须隔离：E2E/冒烟使用 `H:\pi-studybuddy-tmp\runs\<task-id>`。
 - 不提交：真实密钥、`.env.local`、资料原文、完整 UUID、node_modules。
+- `.pi/prompts/task-execution/`：T-M4-014~021 的受控任务启动提示词资产；统一过程与验收主题，但不替代 `.plan/`、04-Todo、用户开工授权或 Git 收口授权。
 
 ## 六、文档门禁
 
@@ -83,6 +86,7 @@
 
 ## 七、当前状态
 - [x] 04-Todo v0.1.114 ✅ 已审查批准：T-M4-013 已完成两名独立审查者交叉复核、P1/P2 修复复验、实施记录和完整质量门；任务仍 in_progress，仅 Git 收口待单独授权；T-M4-014~021 保持 pending，不自动启动。
+- [x] 提示词资产：`.pi/prompts/task-execution/` 已建立标准执行提示词、README 与 T-M4-014~021 八份受控任务启动提示词；其只提供标准化开发过程、验收主题、范围与停止条件，实际任务仍须通过 AGENTS.md §4.4 门禁、04-Todo 登记和唯一 `.plan/`。
 
 - [x] 初始化仓库（git init + 关联远端 `https://github.com/everything-is-simple/pi-studybuddy.git`）
 - [x] 下载四参考仓库到 `H:\pi-references`（pi / pi-skills / inno-agent / pi-desktop）
@@ -127,6 +131,7 @@
 - [x] 治理资产：AGENTS.md v0.1.0 + README.md v0.1.0 ✅ 已审查批准
 - [x] 治理 Skills：studybuddy-task-complete / studybuddy-component-assembly ✅ 已创建
 - [x] 工作流模板：.pi/prompts/wr.md / plan.md ✅ 已创建
+- [x] 任务启动提示词：.pi/prompts/task-execution/README.md + 00-标准任务执行提示词.md + T-M4-014~021.md ✅ 已创建（受控参考资产，非执行计划）
 - [x] 治理脚本：scripts/verify.mjs + check-docs-governance.mjs + check-contract-coverage.mjs ✅ 已创建
 - [x] 04-Todo v0.1.37：登记 T-M1-010 完成（E2E-01~03 学生主路径端到端测试：3 E2E 文件 36 测试 + vitest + child_process.fork + Node.js IPC + 防泄露铁律 assertNoLeakage 双重检查 + 幂等归档 UNIQUE(question_id) + 薄弱点 evidence_count≥2 + 规则批改可证伪全错0分/全对满分 + AI 降级 mock 不连真实服务 + 运行数据隔离 H:\pi-studybuddy-tmp\runs\T-M1-010\；722 单元/集成 + 36 E2E 测试全绿，verify full 阶段全通过；§6.3 M1 退出门槛全勾选 + §9 统计 M1 6 done）—— M1 核心闭环 MVP 退出门槛达成
 - [x] 08-Test v0.1.2：§6 E2E 框架由 Playwright 改为 vitest + Electron 启动（pi-studybuddy 是 Electron 单体无独立后端，ai-studybuddy Playwright webServer 模式不适用；参考 pi-desktop 范式，不引入新依赖）
@@ -160,6 +165,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.119 | 2026-08-10 | 用户明确授权建立 `.pi/prompts/task-execution/` 提示词资产：新增标准执行提示词、README 与 T-M4-014~021 八份任务启动提示词，统一权威入口、开工门禁、TDD、质量门、独立审查、受控收尾和各任务验收主题；明确它们不是 `.plan/`，不改变任务状态或 Git 授权。同步目录治理与当前状态索引。依据：用户明确指令 + AGENTS.md §4.4、§5、§7、§8、§11。 |
 | v0.1.118 | 2026-08-10 | T-M4-013 独立交叉审查、问题修复、实施记录与治理质量门同步：审查者 A/B 复核无遗留 P0/P1；Node24 `verify --stage=full` 通过（unit/integration 109 files/1057 tests、真实 Electron E2E 18 files/120 tests）；T-M4-013 仍 in_progress，Git 收口待单独授权。 |
 | v0.1.117 | 2026-08-10 | T-M4-013 本地实现与质量门证据同步：PracticeTab 已接通既有 `modules.list` 与 `practice.createSession/getQuestions/submit/getResult`，覆盖显式模块选择、作答前防泄露、计时、提交后结果、归档只读、课程竞态/卸载保护与错误净化；Node24 `verify --stage=full` 通过（unit/integration 108 files/1052 tests、真实 Electron E2E 18 files/120 tests），contract/security/smoke/UUID/docs/diff 均通过。任务仍 in_progress，独立审查、实施记录与 Git 收口待授权；不启动 T-M4-014~021。原因：用户批准实施后完成本地验证。影响：索引状态同步，不改设计/API。依据：AGENTS.md §4.5、§5、§7、§8.4、§11.1、§11.2 + 用户明确授权。 |
 | v0.1.116 | 2026-08-10 | T-M4-013 开工登记同步：用户明确批准 S3 练习 Tab RPC 接线；04-Todo pending→in_progress，唯一计划 `.plan/T-M4-013-s3-practice-rpc.md` 与隔离分支 `agent/T-M4-013-s3-practice-rpc` 已建立；基线核正为 `master=origin/master=f4e54c2`，不新增 API/handler/schema，不启动 T-M4-014~021，Git 收口另需授权。原因：用户明确批准并消除预登记中的旧基线歧义。影响：仅任务状态、计划与索引同步。依据：用户明确指令 + AGENTS.md §2、§4.4、§4.5、§8、§11.1、§11.2。 |
