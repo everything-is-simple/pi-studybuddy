@@ -11,7 +11,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { S6Context } from "./context";
-import { findSemesterByReportKey } from "./lookup";
+import { findSemesterByReportKey, assertSemesterWritable } from "./lookup";
 import { writeReportDeliveredEvent } from "./events";
 import { mapDelivery } from "./dto";
 import { badRequest, notFound, internalError } from "./errors";
@@ -39,6 +39,7 @@ export function handleDeliveriesDeliver(ctx: S6Context): (params: unknown) => Re
     validateChannel(p.channel);
 
     const { db, semesterId } = findSemesterByReportKey(ctx, p.reportKey);
+    assertSemesterWritable(ctx, semesterId);
 
     // 按 report_key+channel 去重（PK 冲突拒绝重复投递）
     const existing = db
@@ -133,6 +134,7 @@ export function handleDeliveriesRetry(ctx: S6Context): (params: unknown) => Repo
     validateChannel(p.channel);
 
     const { db, semesterId } = findSemesterByReportKey(ctx, p.reportKey);
+    assertSemesterWritable(ctx, semesterId);
     const existing = db
       .prepare("SELECT * FROM report_deliveries WHERE report_key = @rk AND channel = @ch")
       .get({ rk: p.reportKey, ch: p.channel }) as Record<string, unknown> | undefined;

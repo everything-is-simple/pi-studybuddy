@@ -9,7 +9,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { S6Context } from "./context";
-import { assertSemesterExists } from "./lookup";
+import { assertSemesterExists, assertSemesterWritable } from "./lookup";
 import { mapTarget } from "./dto";
 import { badRequest, notFound } from "./errors";
 import type { ParentReportTarget, ReportChannel } from "../../../contract/types";
@@ -61,6 +61,7 @@ export function handleReportTargetsCreate(
     }
     validateChannelType(p.channelType);
     assertSemesterExists(ctx, p.semesterId);
+    assertSemesterWritable(ctx, p.semesterId);
 
     // 验证 channelConfigJson 是合法 JSON
     try {
@@ -106,6 +107,7 @@ export function handleReportTargetsUpdate(
       .prepare("SELECT * FROM parent_report_targets WHERE id = @id AND deleted_at IS NULL")
       .get({ id: p.id }) as Record<string, unknown> | undefined;
     if (!existing) throw notFound("未找到该报告目标");
+    assertSemesterWritable(ctx, existing.semester_id as string);
 
     const updates: string[] = [];
     const values: Record<string, string | number | null> = { id: p.id };
@@ -163,6 +165,10 @@ export function handleReportTargetsDelete(
       .prepare("SELECT 1 FROM parent_report_targets WHERE id = @id AND deleted_at IS NULL")
       .get({ id: p.id });
     if (!existing) throw notFound("未找到该报告目标");
+    const targetRow = ctx.globalDb
+      .prepare("SELECT semester_id FROM parent_report_targets WHERE id = @id AND deleted_at IS NULL")
+      .get({ id: p.id }) as { semester_id: string };
+    assertSemesterWritable(ctx, targetRow.semester_id);
 
     ctx.globalDb
       .prepare("UPDATE parent_report_targets SET deleted_at = @ts, updated_at = @ts WHERE id = @id")

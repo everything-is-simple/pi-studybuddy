@@ -9,7 +9,7 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import type { S6Context } from "./context";
-import { assertSemesterExists, findSemesterByReportKey } from "./lookup";
+import { assertSemesterExists, assertSemesterWritable, findSemesterByReportKey } from "./lookup";
 import { generateRuleReport } from "./report-generator";
 import { assertNoSensitiveLeak } from "./leak-detector";
 import { writeReportGeneratedEvent } from "./events";
@@ -43,6 +43,7 @@ export function handleReportsGenerate(ctx: S6Context): (params: unknown) => Pare
     }
     validateReportType(p.reportType);
     assertSemesterExists(ctx, p.semesterId);
+    assertSemesterWritable(ctx, p.semesterId);
 
     const db = ctx.semesterDb(p.semesterId);
     const ruleReport = generateRuleReport(db, p.semesterId, p.periodStart, p.periodEnd);
