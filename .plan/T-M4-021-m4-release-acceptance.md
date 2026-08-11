@@ -156,7 +156,7 @@ M4 里程碑最后一个任务。T-M4-009 完成首次打包验证，但其后 m
 - [x] 步骤 13：更新 04-Todo（v0.1.149 + §6.6 门槛全勾选）+ 文档（00-索引 v0.1.153）
 - [x] 步骤 14：文档治理检查（OK）
 - [x] 步骤 15：diff 检查（git diff --check 通过）
-- [ ] 步骤 16：提交交付（★ 用户 Git 收口授权）
+- [x] 步骤 16：提交交付（★ 用户 Git 收口授权 2026-08-11；`master=origin/master=b86caed` 已核验，M4 收官）
 
 ## 10. 质量门与数据隔离
 
@@ -190,7 +190,7 @@ M4 里程碑最后一个任务。T-M4-009 完成首次打包验证，但其后 m
 ## 完成记录
 
 （步骤 5 收尾时填写）
-- 完成日期：2026-08-11（本地实施与验收；Git 收口待授权）
+- 完成日期：2026-08-11（Git 收口完成：功能 `82738f9` + 治理 `cce49e0` + 健壮性 `b86caed` 已推送 origin/master 并核验 `master=origin/master=b86caed`；M4 全部 25 任务完成，v0.1 里程碑收官）
 - 实施记录：.record/T-M4-021-实施记录.md
-- 状态：✅ 已批准并实施完成（本地）；Git 收口待用户单独授权
-- 验收证据：验收 E2E 通过——x64 setup `Pi StudyBuddy Setup 0.1.0.exe` SHA-256 `540AF6C715E8F946CD72D543BBED613AE7ED7E8BAAAF466AD82B42EA9245C617` + 隔离静默安装 + 两次启动 + CDP 全链验证（system.ping/global.db/业务 RPC）；§6.6 M4 退出门槛 8 项全勾选；全量 unit/integration 118 files/1130 tests；真实 Electron E2E 29 files/137 tests；`verify --stage=full` 通过（contract 127/127 + 8 PiBridge + 35 tools、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）
+- 状态：✅ 已完成（docs/04 v0.1.150 登记 done；master=origin/master=b86caed 核验通过；M4 收官）
+- 验收证据：验收 E2E 通过——x64 setup `Pi StudyBuddy Setup 0.1.0.exe` + 隔离静默安装 + 两次启动 + CDP 全链验证（system.ping/global.db/业务 RPC）；§6.6 M4 退出门槛 8 项全勾选；全量 unit/integration 118 files/1130 tests；真实 Electron E2E 29 files/137 tests；`verify --stage=full` 通过（contract 127/127 + 8 PiBridge + 35 tools、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）
