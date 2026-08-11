@@ -39,10 +39,12 @@ import { createRealWhisperAdapter } from "./handlers/s7/whisper-adapter";
 import { TtsContext, createTtsHandlers } from "./handlers/tts";
 import { BackupContext, createBackupHandlers } from "./handlers/backup";
 // T-M4-003 credentials.*/settings.* handler 装配（断裂5修复，06-API §3.14/§3.15）
-import { CredentialVault } from "../main/credential-vault";
+// 2026-08-11：agent-host 运行于 utilityProcess（无 electron safeStorage），
+// 生产凭证经 parentPort 委托 main 主进程 DPAPI vault（credential-client）。
 import { createCredentialHandlers } from "./handlers/credentials";
 import { createSettingsHandlers } from "./handlers/settings";
 import { createSkillHandlers } from "./handlers/skills";
+import { createParentPortCredentialClient, type CredentialService } from "./credential-client";
 
 export interface AgentHost {
   dispose(): void;
@@ -52,9 +54,9 @@ export interface AgentHost {
  * 只从 DPAPI vault 获取运行时 key。任一读取/键名/加密不可用错误都不向 UI 泄漏，
  * 由 agent.send 的 MODEL_NOT_CONFIGURED 固定错误统一呈现。
  */
-function safeReadModelCredential(vault: CredentialVault, provider: string): string | null {
+async function safeReadModelCredential(service: CredentialService, provider: string): Promise<string | null> {
   try {
-    const key = vault.get(`modelProvider:${provider}`);
+    const key = await service.get(`modelProvider:${provider}`);
     return key?.trim() ? key : null;
   } catch {
     return null;
@@ -116,24 +118,33 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   const sessionStore = createSessionStore(defaultSessionFixture());
 
   // T-M4-023：生产模型只来自业务数据根 models.json + DPAPI credential-vault。
+  // 2026-08-11：agent-host（utilityProcess）无 electron safeStorage，凭证经
+  // process.parentPort 委托 main 主进程 DPAPI vault（credential-client）。
   // 不读取 ~/.pi 认证信息；没有可用配置或初始化失败时，agent.send 返回固定安全错误，
   // 不得静默产生 fixture 回复。测试夹具仅在 VITEST 显式注入。
-  const vault = new CredentialVault(path.join(dataRoot, "config", "credentials.json"));
+  const credentialService: CredentialService = createParentPortCredentialClient() ?? {
+    // 无 parentPort（非 utilityProcess）时凭证服务不可用：生产由 main 委托，测试由调用方注入 mock。
+    get: async () => null,
+    set: async () => undefined,
+    delete: async () => undefined,
+    listKeys: async () => [],
+  };
   const studyBuddySessionRef: StudyBuddySessionRef = { current: null };
   if (process.env.VITEST === undefined) {
     const modelConfig = readModelConfig(dataRoot);
-    const apiKey = modelConfig ? safeReadModelCredential(vault, modelConfig.provider) : null;
-    if (modelConfig && apiKey) {
-      studyBuddySessionRef.ready = createStudyBuddySession({
-        dataRoot,
-        modelConfig: { provider: modelConfig.provider, model: modelConfig.model, apiKey },
-      })
-        .then((session) => {
-          studyBuddySessionRef.current = session;
-        })
-        .catch(() => {
+    if (modelConfig) {
+      studyBuddySessionRef.ready = (async () => {
+        const apiKey = await safeReadModelCredential(credentialService, modelConfig.provider);
+        if (!apiKey) return;
+        try {
+          studyBuddySessionRef.current = await createStudyBuddySession({
+            dataRoot,
+            modelConfig: { provider: modelConfig.provider, model: modelConfig.model, apiKey },
+          });
+        } catch {
           // 错误细节可能包含 provider/运行时信息，不记录；agent.send 统一返回安全配置错误。
-        });
+        }
+      })();
     }
   }
 
@@ -150,7 +161,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     // T-M4-002 S1-S7/TTS/Backup 业务 handler（断裂1修复，03-Arch §6.2）
     ...createBusinessHandlers(dataRoot),
     // T-M4-003 credentials.*/settings.* handler（断裂5修复，06-API §3.14/§3.15）
-    ...createCredentialHandlers(vault),
+    ...createCredentialHandlers(credentialService),
     ...createSettingsHandlers(dataRoot),
   });
 

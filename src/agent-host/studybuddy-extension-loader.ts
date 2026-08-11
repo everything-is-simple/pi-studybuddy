@@ -32,6 +32,8 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { createStudyBuddyExtension } from "../agent/studybuddy-extension";
 import { modelNotConfiguredError } from "./model-errors";
+import fs from "node:fs";
+import path from "node:path";
 
 /** createStudyBuddySession 可选配置 */
 export interface StudyBuddySessionOptions {
@@ -63,6 +65,52 @@ const RUNTIME_MODEL_ID_ALIASES: Readonly<Record<string, Readonly<Record<string, 
     "DeepSeek V4 Pro": "deepseek-v4-pro",
   },
 };
+
+/**
+ * 自定义 OpenAI 兼容 provider 的运行时定义（pi-ai ModelConfig 文件）。
+ *
+ * 落点：<dataRoot>/config/pi-models.json（业务数据根，AGENTS.md §9.5 物理隔离，不侵入 ~/.pi）。
+ * 本文件只含 provider 别名 / baseUrl / api 形态（非敏感，与 03-Arch §2.3 的 models.json
+ * 契约一致）；API key 仍走 credential-vault（DPAPI，modelProvider:<provider>）。
+ *
+ * pi ModelRuntime 内置 provider catalog 不含 agnes；通过该文件以 ModelConfig 方式
+ * 注册自定义 provider（composeModelProvider 用 baseUrl + api + models 组合，请求时
+ * auth 从 RuntimeCredentials override——即 setRuntimeApiKey 注入的内存 key——解析）。
+ */
+const RUNTIME_PROVIDERS_FILE_NAME = "pi-models.json";
+
+const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
+  providers: Record<string, { name: string; baseUrl: string; api: string; models: Array<{ id: string; name: string }> }>;
+}> = {
+  providers: {
+    agnes: {
+      name: "Agnes 多媒体模型",
+      baseUrl: "https://apihub.agnes-ai.com/v1",
+      api: "openai-completions",
+      models: [
+        { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash" },
+        { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro" },
+        { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash" },
+        { id: "agnes-video-v2.0", name: "Agnes Video 2.0" },
+      ],
+    },
+  },
+};
+
+/**
+ * 确保 pi 运行时自定义 provider 定义文件存在（原子写 tmp + rename，单写进程）。
+ * 返回文件路径；文件已存在则原样返回（不覆盖用户已有定义）。
+ */
+export function ensureRuntimeProviderConfig(dataRoot: string): string {
+  const dir = path.join(dataRoot, "config");
+  const file = path.join(dir, RUNTIME_PROVIDERS_FILE_NAME);
+  if (fs.existsSync(file)) return file;
+  fs.mkdirSync(dir, { recursive: true });
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(DEFAULT_RUNTIME_PROVIDERS, null, 2), "utf8");
+  fs.renameSync(tmp, file);
+  return file;
+}
 
 function resolveRuntimeModelId(provider: string, configuredModel: string): string {
   const normalizedProvider = provider.trim().toLowerCase();
@@ -132,7 +180,9 @@ export async function createStudyBuddySession(
   });
 
   // 2. 模型运行时不使用 ~/.pi 的磁盘 models/auth；凭证只以内存 runtime key 注入。
-  const modelRuntime = await ModelRuntime.create({ modelsPath: null, allowModelNetwork: false });
+  //    自定义 OpenAI 兼容 provider（agnes 等）通过业务数据根 config/pi-models.json 注册。
+  const runtimeModelsPath = ensureRuntimeProviderConfig(dataRoot);
+  const modelRuntime = await ModelRuntime.create({ modelsPath: runtimeModelsPath, allowModelNetwork: false });
   const provider = modelConfig.provider.trim();
   const runtimeModelId = resolveRuntimeModelId(provider, modelConfig.model);
   await modelRuntime.setRuntimeApiKey(provider, modelConfig.apiKey);
@@ -143,9 +193,12 @@ export async function createStudyBuddySession(
 
   // 3. 创建 cwd-bound 运行时服务（inno-agent pi-runner.ts:176-187 范式）
   //    extensionFactories 注入 studybuddy-extension，resourceLoader.reload() 时调用工厂
+  //    必须传入同一个 modelRuntime（含已注入的 runtime key 与自定义 provider），
+  //    AgentSession._modelRuntime 请求时 auth 才能从 RuntimeCredentials override 解析 key。
   const services = await createAgentSessionServices({
     cwd,
     ...(agentDir !== undefined ? { agentDir } : {}),
+    modelRuntime,
     resourceLoaderOptions: {
       extensionFactories: [studyBuddyExtension],
       noSkills: true,

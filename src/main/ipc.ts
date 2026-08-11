@@ -11,6 +11,7 @@ import { resolveDataRoot } from "../agent-host/allowed-roots";
 import { stageMaterialImport } from "../shared/material-import";
 import { IPC_CHANNELS } from "../shared/constants";
 import { createHostManager, type AgentHostHandle } from "./host-manager";
+import { CredentialVault } from "./credential-vault";
 import type { AnyMessagePort } from "../contract/rpc";
 import type { DialogOptions, DialogResult, ToolchainStatus } from "../contract/types";
 import { createToolchainManager } from "./toolchains";
@@ -22,12 +23,51 @@ function forkAgent(): AgentHostHandle {
   const send = (port: MessagePortMain) => {
     child.postMessage({ type: "connect" }, [port]);
   };
-  // utilityProcess 的 spawn 早于 agent-host 模块监听；收到 ready 后再转交端口。
+  // 2026-08-11：agent-host（utilityProcess）无 electron safeStorage，DPAPI vault 只在
+  // main 主进程持有；agent-host 经 parentPort 发 credential-request，此处执行加解密并回传。
+  // forkAgent 在 renderer 首次 connectHost 时惰性调用（main 已 whenReady，safeStorage 可用）。
+  const vault = new CredentialVault(path.join(resolveDataRoot(), "config", "credentials.json"));
+  // utilityProcess 的 message 事件可能携带 { data } 包装；两种格式都兼容。
   child.on("message", (message: unknown) => {
-    const data = (message as { data?: unknown } | null)?.data ?? message;
-    if ((data as { type?: string } | null)?.type === "ready") {
+    const data = ((message as { data?: unknown } | null)?.data ?? message) as
+      | { type?: string; [key: string]: unknown }
+      | null;
+    if (!data || typeof data !== "object") return;
+    if (data.type === "ready") {
       ready = true;
       for (const port of pendingPorts.splice(0)) send(port);
+      return;
+    }
+    if (data.type === "credential-request") {
+      const { id, op, key, value, prefix } = data as {
+        id?: string; op?: string; key?: string; value?: string; prefix?: string;
+      };
+      try {
+        let result: unknown;
+        switch (op) {
+          case "get":
+            result = vault.get(key ?? "");
+            break;
+          case "set":
+            vault.set(key ?? "", value ?? "");
+            result = undefined;
+            break;
+          case "delete":
+            vault.delete(key ?? "");
+            result = undefined;
+            break;
+          case "listKeys":
+            result = vault.listKeys(prefix);
+            break;
+          default:
+            throw new Error("未知凭证操作");
+        }
+        child.postMessage({ type: "credential-result", id, ok: true, result });
+      } catch (error) {
+        // 不回传底层错误详情（可能含路径/密钥信息）；agent-host 统一按固定错误处理。
+        child.postMessage({ type: "credential-result", id, ok: false, error: "凭证库操作失败" });
+      }
+      return;
     }
   });
   return {

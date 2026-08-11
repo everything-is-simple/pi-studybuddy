@@ -148,6 +148,22 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
     expect(session.session.model?.id).toBe("deepseek-v4-flash");
   }, 30_000);
 
+  it("agnes 自定义 OpenAI 兼容 provider（pi-models.json）可创建 session（不连网）", async () => {
+    const agnesSession = await createStudyBuddySession({
+      dataRoot: DATA_ROOT,
+      agentDir: AGENT_DIR,
+      cwd: DATA_ROOT,
+      modelConfig: { provider: "agnes", model: "agnes-2.5-flash", apiKey: "test-key" },
+    });
+    try {
+      expect(agnesSession).toBeDefined();
+      expect(agnesSession.session.model?.id).toBe("agnes-2.5-flash");
+      expect(agnesSession.session.model?.provider).toBe("agnes");
+    } finally {
+      await agnesSession.dispose();
+    }
+  }, 30_000);
+
   it("session.getAllTools() 包含 35 个 studybuddy_* 工具（S1-S7 + TTS + 备份恢复）", () => {
     const allTools: ToolInfo[] = session!.session.getAllTools();
     const studybuddyTools = allTools.filter((t) => t.name.startsWith("studybuddy_"));

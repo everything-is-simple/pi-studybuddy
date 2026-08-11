@@ -12,6 +12,9 @@
  *   - SET-03 settings.getSimpleMode / setSimpleMode
  *   - SET-04 持久化：重读文件值一致
  *
+ * 2026-08-11：credentials.* handler 改为 async CredentialService（生产 parentPort 委托
+ * main DPAPI vault；测试用 mock vault）。RPC server 支持 Promise 结果。
+ *
  * 数据隔离（AGENTS.md §5.3）：仅写 H:\pi-studybuddy-tmp\runs\T-M4-003\。
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
@@ -31,10 +34,10 @@ function safeRmSync(p: string): void {
 
 const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M4-003\\unit";
 
-// ── credentials handler 测试：用 mock vault 避免依赖 electron safeStorage ──
+// ── credentials handler 测试：用 mock CredentialService 避免依赖 electron safeStorage ──
 
-/** Mock CredentialVault（模拟 T-M0-003 的加密存储，不依赖 electron） */
-function createMockVault() {
+/** Mock CredentialService（模拟 main DPAPI vault 委托，不依赖 electron） */
+function createMockCredentialService() {
   const store = new Map<string, string>();
   const KEY_PATTERN = /^(modelProvider|parentContact):[a-z0-9._-]{1,160}$/i;
   function validateKey(key: string): string {
@@ -45,14 +48,14 @@ function createMockVault() {
     return trimmed;
   }
   return {
-    get: (key: string): string | null => store.get(validateKey(key)) ?? null,
-    set: (key: string, value: string): void => {
+    get: async (key: string): Promise<string | null> => store.get(validateKey(key)) ?? null,
+    set: async (key: string, value: string): Promise<void> => {
       store.set(validateKey(key), value);
     },
-    delete: (key: string): void => {
+    delete: async (key: string): Promise<void> => {
       store.delete(validateKey(key));
     },
-    listKeys: (prefix?: string): string[] => {
+    listKeys: async (prefix?: string): Promise<string[]> => {
       const keys = Array.from(store.keys());
       return prefix ? keys.filter((k) => k.startsWith(prefix)) : keys;
     },
@@ -62,45 +65,45 @@ function createMockVault() {
 import { createCredentialHandlers } from "../../src/agent-host/handlers/credentials";
 
 describe("T-M4-003 credentials.* handler", () => {
-  const vault = createMockVault();
-  const handlers = createCredentialHandlers(vault as any);
+  const vault = createMockCredentialService();
+  const handlers = createCredentialHandlers(vault);
 
-  beforeEach(() => {
-    vault.set("modelProvider:deepseek", "sk-test-123");
-    vault.set("parentContact:mom_email", "mom@example.com");
+  beforeEach(async () => {
+    await vault.set("modelProvider:deepseek", "sk-test-123");
+    await vault.set("parentContact:mom_email", "mom@example.com");
   });
 
-  it("CRED-01 credentials.set/get 往返", () => {
-    handlers["credentials.set"]({ key: "modelProvider:agnes", value: "sk-agnes-456" });
-    const result = handlers["credentials.get"]({ key: "modelProvider:agnes" }) as { value: string };
+  it("CRED-01 credentials.set/get 往返", async () => {
+    await handlers["credentials.set"]({ key: "modelProvider:agnes", value: "sk-agnes-456" });
+    const result = await handlers["credentials.get"]({ key: "modelProvider:agnes" });
     expect(result.value).toBe("sk-agnes-456");
   });
 
-  it("CRED-02 credentials.get 不存在 → { value: '' }", () => {
-    const result = handlers["credentials.get"]({ key: "modelProvider:nonexistent" }) as { value: string };
+  it("CRED-02 credentials.get 不存在 → { value: '' }", async () => {
+    const result = await handlers["credentials.get"]({ key: "modelProvider:nonexistent" });
     expect(result.value).toBe("");
   });
 
-  it("CRED-03 credentials.delete", () => {
-    handlers["credentials.delete"]({ key: "modelProvider:deepseek" });
-    const result = handlers["credentials.get"]({ key: "modelProvider:deepseek" }) as { value: string };
+  it("CRED-03 credentials.delete", async () => {
+    await handlers["credentials.delete"]({ key: "modelProvider:deepseek" });
+    const result = await handlers["credentials.get"]({ key: "modelProvider:deepseek" });
     expect(result.value).toBe("");
   });
 
-  it("CRED-04 credentials.listKeys + prefix 过滤", () => {
-    const all = handlers["credentials.listKeys"]({}) as string[];
+  it("CRED-04 credentials.listKeys + prefix 过滤", async () => {
+    const all = await handlers["credentials.listKeys"]({});
     expect(all).toContain("modelProvider:deepseek");
     expect(all).toContain("parentContact:mom_email");
 
-    const filtered = handlers["credentials.listKeys"]({ prefix: "modelProvider:" }) as string[];
+    const filtered = await handlers["credentials.listKeys"]({ prefix: "modelProvider:" });
     expect(filtered.every((k) => k.startsWith("modelProvider:"))).toBe(true);
     expect(filtered).toContain("modelProvider:deepseek");
     expect(filtered).not.toContain("parentContact:mom_email");
   });
 
-  it("CRED-05 非法键名抛错", () => {
-    expect(() => handlers["credentials.set"]({ key: "invalid:bad", value: "x" })).toThrow();
-    expect(() => handlers["credentials.get"]({ key: "nope" })).toThrow();
+  it("CRED-05 非法键名抛错", async () => {
+    await expect(handlers["credentials.set"]({ key: "invalid:bad", value: "x" })).rejects.toThrow();
+    await expect(handlers["credentials.get"]({ key: "nope" })).rejects.toThrow();
   });
 });
 
