@@ -230,7 +230,7 @@ if (options.type === "open") {
 - [x] 步骤 13：更新 04-Todo（v0.1.138）+ 文档（00-索引 v0.1.142 + 09-UI v0.1.5）
 - [x] 步骤 14：文档治理检查（OK）
 - [x] 步骤 15：diff 检查（git diff --check 通过）
-- [ ] 步骤 16：提交交付（★ 用户 Git 收口授权）
+- [x] 步骤 16：提交交付（★ 用户 Git 收口授权 2026-08-11；`master=origin/master=8a6f952` 已核验）
 
 ## 10. 质量门与数据隔离
 
@@ -266,7 +266,7 @@ if (options.type === "open") {
 ## 完成记录
 
 （步骤 5 收尾时填写）
-- 完成日期：2026-08-11（本地实施与验收；Git 收口待授权）
+- 完成日期：2026-08-11（Git 收口完成：功能 `1bc68e2` + 治理 `8a6f952` 已推送 origin/master 并核验 `master=origin/master=8a6f952`）
 - 实施记录：.record/T-M4-019-实施记录.md
-- 状态：✅ 已批准并实施完成（本地）；Git 收口待用户单独授权
+- 状态：✅ 已完成（docs/04 v0.1.139 登记 done；master=origin/master=8a6f952 核验通过）
 - 验收证据：RED 初次失败（4 项）→ GREEN；定向 integration 11 tests + unit 17 tests；真实 Electron E2E t-m4-019-backup-renderer 1 test；全量 unit/integration 118 files/1130 tests；真实 Electron E2E 24 files/130 tests；`verify --stage=full` 通过（contract 127/127 + 8 PiBridge + 35 tools、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check）
