@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.126
+**版本**：v0.1.127
 **日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -47,6 +47,7 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.127 T-M4-015 Git 收口事实同步：04-Todo v0.1.123；功能提交 `7974423` 与治理登记提交 `2d63bf5` 已快进进入 `master`，Node24 master 完整 `verify --stage=full` 通过（unit/integration 112 files/1079 tests、真实 Electron E2E 20 files/124 tests）；origin/master 已推送并核验，任务登记为 done，不启动 T-M4-016~021。
 > v0.1.126 T-M4-015 双维度独立审查闭环：04-Todo v0.1.122；审查者 A 发现 S5 写 handler 缺 host 侧 archived 防线，补齐 `assertSemesterWritable`（三写入口调用，方法签名不变）；host-boundaries 2 tests；完整质量门复验 unit/integration 112 files/1079 tests、真实 Electron E2E 20 files/124 tests；`.record/T-M4-015-实施记录.md` 已创建；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。
 > v0.1.125 T-M4-015 本地实施与验收证据同步：04-Todo v0.1.121；CramTab 接通既有 S5 RPC（已确认考试门控 + mockExams.* + cramCards.get + cramPlan.get），RED 初次 8/8 失败后 GREEN，定向 renderer 14 tests + integration 8 tests、真实 Electron E2E 2 tests、Node24 `verify --stage=full` 通过（unit/integration 111 files/1077 tests、真实 Electron E2E 20 files/124 tests）；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。
 > v0.1.124 T-M4-015 开工登记同步：用户明确选择并批准 S5 冲刺 Tab RPC 接线（mockExams + cramCards + cramPlan）；04-Todo v0.1.120 已登记 pending→in_progress，M4 6 pending/1 in_progress/16 done；唯一计划 `.plan/T-M4-015-s5-cram-rpc.md` 与隔离分支 `agent/T-M4-015-s5-cram-rpc` 已建立，测试运行根 `H:\pi-studybuddy-tmp\runs\T-M4-015\`；不新增 API/handler/schema，不启动 T-M4-016~021，Git 收口另需授权。
@@ -90,6 +91,7 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
+- [x] 04-Todo v0.1.123 ✅ 已审查批准：T-M4-015 Git 收口完成（功能 `7974423` + 治理 `2d63bf5` 已快进进入 master，origin/master 已推送并核验，任务登记 done）；T-M4-016~021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.122 ✅ 已审查批准：T-M4-015 本地实施、双维度独立审查闭环与完整质量门全部通过（S5 host 归档防线补齐）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-016~021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.121 ✅ 已审查批准：T-M4-015 本地实施与验收证据同步完成（CramTab 接通 S5 RPC、RED→GREEN、定向与完整质量门通过）；任务保持 in_progress，Git 收口待用户单独授权；T-M4-016~021 保持 pending，不自动启动。
 - [x] 04-Todo v0.1.120 ✅ 已审查批准：T-M4-015 已开工（in_progress）：用户明确批准 S5 冲刺 Tab RPC 接线；唯一计划与隔离分支已建立，RED 测试待跑；T-M4-016~021 保持 pending，不自动启动。
@@ -173,6 +175,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.127 | 2026-08-11 | T-M4-015 Git 收口事实同步：04-Todo v0.1.123；功能 `7974423` + 治理 `2d63bf5` 已快进进入 master，Node24 master 完整 `verify --stage=full` 通过，origin/master 已推送并核验，任务登记 done，不启动 T-M4-016~021。 |
 | v0.1.126 | 2026-08-11 | T-M4-015 双维度独立审查闭环：04-Todo v0.1.122；S5 host 归档防线补齐（assertSemesterWritable）；host-boundaries 2 tests；完整质量门复验 unit/integration 112 files/1079 tests、真实 Electron E2E 20 files/124 tests；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。 |
 | v0.1.125 | 2026-08-11 | T-M4-015 本地实施与验收证据同步：04-Todo v0.1.121；RED 初次 8/8 失败后 GREEN；定向 renderer 14 tests + integration 8 tests、真实 Electron E2E 2 tests、Node24 `verify --stage=full` 通过（unit/integration 111 files/1077 tests、真实 Electron E2E 20 files/124 tests）；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-016~021。 |
 | v0.1.124 | 2026-08-11 | T-M4-015 开工登记同步：04-Todo v0.1.120 pending→in_progress（M4 6 pending/1 in_progress/16 done，合计 6/1/52）；唯一计划与隔离分支已建立，测试运行根 `H:\pi-studybuddy-tmp\runs\T-M4-015\`；不新增 API/handler/schema，不启动 T-M4-016~021，Git 收口另需授权。 |

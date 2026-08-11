@@ -5,10 +5,10 @@
 - 任务类型：M4 业务接线
 - 优先级：P2
 - 治理阶段：阶段 4（系统组装）
-- 状态：in_progress（本地实施进行中；Git 收口待用户单独授权）
+- 状态：done（本地实施、双维度独立审查、质量门与 Git 收口完成；master 集成与 origin/master 核验通过）
 - 日期：2026-08-11
 - 用户授权：用户明确选择并批准开工 T-M4-015（2026-08-11“现在开始 T-M4-015”）
-- 集成基线：master=origin/master=ddca0c8（T-M4-014 收口含状态筛选补做，已核验）
+- 集成基线：master=origin/master=2d63bf5（T-M4-015 Git 收口事实核验）
 - 实施分支：agent/T-M4-015-s5-cram-rpc
 - 集成分支：master
 - 测试运行根：H:\pi-studybuddy-tmp\runs\T-M4-015\
