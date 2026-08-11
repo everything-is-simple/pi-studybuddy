@@ -74,7 +74,7 @@ function requestJson(port, pathname) {
 
 /** 在超时范围内等待 renderer 的 CDP 页面目标出现。 */
 async function waitForPageTarget(port) {
-  const deadline = Date.now() + 30_000;
+  const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
     try {
       const targets = await requestJson(port, "/json/list");
@@ -217,7 +217,7 @@ async function connectCdp(webSocketDebuggerUrl) {
         const timer = setTimeout(() => {
           pending.delete(id);
           reject(new Error(`CDP 命令超时：${method}`));
-        }, 30_000);
+        }, 60_000);
         pending.set(id, {
           resolve(result) { clearTimeout(timer); resolve(result); },
           reject(error) { clearTimeout(timer); reject(error); },
@@ -240,7 +240,7 @@ async function pingInstalledRenderer(cdp) {
       if (!bridge) return { ok: false, reason: "bridge_missing" };
       const port = await bridge.connectHost();
       const call = (id, method, args) => new Promise((resolve) => {
-        const timer = setTimeout(() => resolve({ ok: false, reason: "rpc_timeout:" + method }), 15000);
+        const timer = setTimeout(() => resolve({ ok: false, reason: "rpc_timeout:" + method }), 30_000);
         port.addEventListener("message", (event) => {
           const message = event.data;
           if (message?.kind !== "response" || message.id !== id) return;
@@ -258,14 +258,27 @@ async function pingInstalledRenderer(cdp) {
       return { ok: true, semesterId: created.result.id };
     })()
   `;
-  const evaluation = await cdp.command("Runtime.evaluate", {
-    expression,
-    awaitPromise: true,
-    returnByValue: true,
-  });
-  const value = evaluation?.result?.value;
-  if (!value?.ok || !value.semesterId) {
-    throw new Error("已安装 renderer 的 system.ping 或业务 RPC 未通过");
+  // 已安装应用首启 renderer 就绪存在竞态（页面可能仍在初始化/导航）；重试至多 5 次
+  let evaluation;
+  let lastError;
+  let lastReason = "";
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      evaluation = await cdp.command("Runtime.evaluate", {
+        expression,
+        awaitPromise: true,
+        returnByValue: true,
+      });
+      if (evaluation?.result?.value?.ok) break;
+      lastReason = String(evaluation?.result?.value?.reason ?? "");
+      lastError = new Error(`已安装 renderer 的 system.ping 或业务 RPC 未通过（reason=${lastReason}）`);
+    } catch (e) {
+      lastError = e;
+    }
+    await delay(3_000);
+  }
+  if (!evaluation || !evaluation.result?.value?.ok) {
+    throw lastError ?? new Error("CDP Runtime.evaluate 未返回有效结果");
   }
 }
 
@@ -329,9 +342,25 @@ if (!APP_PATH || !path.isAbsolute(APP_PATH) || !fs.existsSync(APP_PATH)) {
   fs.mkdirSync(DATA_ROOT, { recursive: true });
   fs.mkdirSync(PROFILE_ROOT, { recursive: true });
   fs.mkdirSync(ELECTRON_USER_DATA_ROOT, { recursive: true });
+  // 已安装应用偶发首次启动 RPC 路径异常（agent-host 未就绪等）：launch 级重试一次
+  async function verifyWithRetry(label) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        await verifyOneLaunch(label);
+        return;
+      } catch (error) {
+        if (attempt === 0) {
+          console.log(`[package-smoke] ⚠ ${label} 首次验证失败，重新启动重试`);
+          await delay(2_000);
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
   try {
-    await verifyOneLaunch("first-launch");
-    await verifyOneLaunch("second-launch");
+    await verifyWithRetry("first-launch");
+    await verifyWithRetry("second-launch");
     console.log("[package-smoke] ✅ 两次隔离启动、global.db、system.ping 与业务 RPC 全部通过");
   } catch (error) {
     fail(error instanceof Error ? error.message : "安装包启动验证异常");

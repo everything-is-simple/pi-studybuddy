@@ -44,12 +44,23 @@ function sha256(file: string): string {
   return createHash("sha256").update(fs.readFileSync(file)).digest("hex").toUpperCase();
 }
 
-/** 步骤 1：pnpm package:win 重新构建 x64 NSIS setup（干净 master 当前代码） */
+/** 步骤 1：pnpm package:win 重新构建 x64 NSIS setup（干净 master 当前代码；瞬时锁/网络失败重试一次） */
 async function buildSetup(): Promise<string> {
   fs.mkdirSync(RUN_ROOT, { recursive: true });
   // ELECTRON_MIRROR：依赖下载走 npmmirror（GitHub CDN 在本机网络下极不稳定）；
   // 属构建依赖下载参数，不影响安装/启动/RPC 验收语义（验收通道仍为真实安装产物）。
-  await run(PNPM, ["package:win"], { cwd: PROJECT_ROOT, timeout: 900_000, shell: true, env: { ...process.env, ELECTRON_MIRROR: "https://npmmirror.com/mirrors/electron/" } });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await run(PNPM, ["package:win"], { cwd: PROJECT_ROOT, timeout: 900_000, shell: true, env: { ...process.env, ELECTRON_MIRROR: "https://npmmirror.com/mirrors/electron/" } });
+      break;
+    } catch (error) {
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 5_000));
+        continue;
+      }
+      throw error;
+    }
+  }
   const candidates = fs
     .readdirSync(RELEASE_DIR)
     .filter((name) => name.endsWith(".exe") && /Setup/i.test(name));
@@ -68,6 +79,17 @@ async function silentInstall(setupPath: string): Promise<string> {
 
 /** 步骤 3：已安装应用两次启动 + CDP 全链验证（scripts/package-smoke.mjs，T-M4-021 run dir） */
 async function runInstalledVerification(appPath: string): Promise<string> {
+  // 清理 package-smoke 运行子目录，避免与全量套件前序 Electron 实例的 profile/数据根锁冲突
+  for (const sub of ["package-data-root", "package-profile"]) {
+    fs.rmSync(path.join(RUN_ROOT, sub), { recursive: true, force: true });
+  }
+  // 终止可能残留的已安装应用实例（全量套件并行/串行执行边界）
+  try {
+    await execFileAsync("taskkill", ["/F", "/IM", "Pi StudyBuddy.exe"], { windowsHide: true });
+  } catch {
+    /* 无残留实例属正常 */
+  }
+  await new Promise((resolve) => setTimeout(resolve, 500));
   const { stdout } = await run("node", ["scripts/package-smoke.mjs"], {
     cwd: PROJECT_ROOT,
     env: {
