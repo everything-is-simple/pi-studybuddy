@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.121
+**版本**：v0.1.122
 **日期**：2026-08-11
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.117 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-001~013/T-M4-022/T-M4-023 done，T-M4-014 in_progress，T-M4-015~021 pending；T-M4-013 Git 收口提交 `7d93560` 已核验存在于 master 与 origin/master；T-M4-014 已获用户选择并建立唯一执行计划；不新增 AppShell 跨 Tab 模块状态/API/handler/schema；不自动启动 T-M4-015~021。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.118 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 59 任务，T-M4-001~014/T-M4-022/T-M4-023 done，T-M4-015~021 pending；T-M4-014 Git 收口提交 `cb7d62d` 已核验存在于 master 与 origin/master；不新增 AppShell 跨 Tab 模块状态/API/handler/schema；不自动启动 T-M4-015~021。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -47,6 +47,7 @@
 
 ## 四、组件治理流程（强制）
 
+> v0.1.122 T-M4-014 Git 收口事实同步：功能提交 `cb7d62d` 已由 `agent/T-M4-014-s4-mistakes-rpc` 快进合并进入 `master`；Node24 master 完整 `verify --stage=full` 通过（unit/integration 110 files/1068 tests、真实 Electron E2E 19 files/122 tests）；origin/master 已推送并核验；任务登记为 done，不启动 T-M4-015~021。
 > v0.1.121 T-M4-014 本地实施与验收证据同步：MistakesTab 已接通六个既有 S4 RPC；RED 初次 5/5 失败后 GREEN；定向 renderer/integration、真实 Electron E2E、Node24 `verify --stage=full` 与双维度独立审查通过；任务保持 in_progress，Git 收口待用户单独授权，不启动 T-M4-015~021。
 > v0.1.120 T-M4-013 Git 收口事实同步：提交 `7d93560` 已进入当前 `master`，`git ls-remote origin refs/heads/master` 核验为同一提交；Node24 `pnpm verify -- --stage=full` 返回成功。T-M4-014 已在用户选择下登记为 in_progress，唯一计划与隔离分支已建立；不启动 T-M4-015~021。
 > v0.1.118 T-M4-013 独立交叉审查与本地收尾证据同步：审查者 A/B 已覆盖 RPC 参数、范围、防泄露、竞态/卸载、归档只读、真实 Electron E2E、隐私展示和未授权改动边界；P1/P2 已修复并复验；实施记录已创建；Node24 `verify --stage=full` 通过（109 files/1057 tests、真实 Electron E2E 18 files/120 tests）；Git 收口待单独授权。
@@ -165,6 +166,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.122 | 2026-08-11 | T-M4-014 Git 收口完成：功能提交 `cb7d62d` 已由 `agent/T-M4-014-s4-mistakes-rpc` 快进合并进入 `master`；Node24.14.0/pnpm11.20.0 master 完整 `verify --stage=full` 通过（unit/integration 110 files/1068 tests、真实 Electron E2E 19 files/122 tests、contract 127/127、安全 6/6、smoke、docs 治理通过）；origin/master 已推送并核验 `master=origin/master=cb7d62d`；T-M4-014 由 in_progress 更新为 done，不启动 T-M4-015~021。依据：用户明确 Git 收口授权 + AGENTS.md §4.5、§7、§8.2、§8.4、§11.1、§11.2。 |
 | v0.1.119 | 2026-08-10 | 用户明确授权建立 `.pi/prompts/task-execution/` 提示词资产：新增标准执行提示词、README 与 T-M4-014~021 八份任务启动提示词，统一权威入口、开工门禁、TDD、质量门、独立审查、受控收尾和各任务验收主题；明确它们不是 `.plan/`，不改变任务状态或 Git 授权。同步目录治理与当前状态索引。依据：用户明确指令 + AGENTS.md §4.4、§5、§7、§8、§11。 |
 | v0.1.118 | 2026-08-10 | T-M4-013 独立交叉审查、问题修复、实施记录与治理质量门同步：审查者 A/B 复核无遗留 P0/P1；Node24 `verify --stage=full` 通过（unit/integration 109 files/1057 tests、真实 Electron E2E 18 files/120 tests）；T-M4-013 仍 in_progress，Git 收口待单独授权。 |
 | v0.1.117 | 2026-08-10 | T-M4-013 本地实现与质量门证据同步：PracticeTab 已接通既有 `modules.list` 与 `practice.createSession/getQuestions/submit/getResult`，覆盖显式模块选择、作答前防泄露、计时、提交后结果、归档只读、课程竞态/卸载保护与错误净化；Node24 `verify --stage=full` 通过（unit/integration 108 files/1052 tests、真实 Electron E2E 18 files/120 tests），contract/security/smoke/UUID/docs/diff 均通过。任务仍 in_progress，独立审查、实施记录与 Git 收口待授权；不启动 T-M4-014~021。原因：用户批准实施后完成本地验证。影响：索引状态同步，不改设计/API。依据：AGENTS.md §4.5、§5、§7、§8.4、§11.1、§11.2 + 用户明确授权。 |
