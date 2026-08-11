@@ -27,6 +27,8 @@ interface Props {
   courseId?: string;
   /** AppShell 唯一学术上下文；本 Tab 不新增跨 Tab 状态。 */
   academicContext?: SemesterCourseContext;
+  /** T-M4-018：内嵌朗读入口（09-UI §5.2 S4 错题详情 → tts.speak） */
+  onSpeakText?: (text: string, target?: { title?: string; refType?: string; refId?: string }) => void;
 }
 
 const ERROR_CATEGORIES: Array<{ value: ErrorCategory; label: string }> = [
@@ -72,7 +74,7 @@ function safeRendererText(value: string | undefined, fallback: string, maxLength
   return text.slice(0, maxLength);
 }
 
-export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, courseId, academicContext }: Props): React.JSX.Element {
+export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, courseId, academicContext, onSpeakText }: Props): React.JSX.Element {
   const effectiveCourseId = academicContext?.courseId ?? courseId;
   const isReadOnly = academicContext?.isReadOnly === true;
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -108,6 +110,10 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
   const visibleWeakPoints = rpc ? resource.data.weakPoints : weakPoints;
   const selectedId = selection && selection.courseId === effectiveCourseId ? selection.id : undefined;
   const visibleDetail = rpc ? detail : selectedMistake;
+  // T-M4-018：朗读内容 = 错因 + AI 建议（09-UI §5.2 S4 错题详情）
+  const mistakeSpeakText = visibleDetail
+    ? [visibleDetail.errorCause, visibleDetail.errorCauseAiSuggestion].filter(Boolean).join("。")
+    : "";
 
   useEffect(() => {
     mountedRef.current = true;
@@ -257,7 +263,7 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
         <div style={{ padding: 12, border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 16, background: "var(--bg-panel, #f5f5f5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, margin: 0 }}>错题详情：题目 #<ShortId id={visibleDetail.questionId} /></h3>
-            <button type="button" style={{ padding: "4px 12px", fontSize: 12 }}>朗读</button>
+            <button type="button" disabled={!mistakeSpeakText} onClick={() => onSpeakText?.(mistakeSpeakText, { title: "错题", refType: "mistake", refId: visibleDetail.id })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读</button>
           </div>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 13, marginBottom: 6 }}>错因分类：</div>

@@ -12,7 +12,7 @@
  * 原 M1-M2 仅在 AI Tool 通道（studybuddy-extension.ts registerTool）暴露业务能力，
  * 前端 RPC 调用路径断裂（E2E 用 test-main.js 独立装配，生产入口缺失）。
  */
-import { createRpcServer, type AnyMessagePort } from "../contract/rpc";
+import { createRpcServer, type AnyMessagePort, type RpcServer } from "../contract/rpc";
 import type { Api } from "../contract/api";
 import { ping } from "./handlers/ping";
 import { toolchainHandlers } from "./handlers/toolchains";
@@ -69,10 +69,14 @@ async function safeReadModelCredential(service: CredentialService, provider: str
  * 复用 studybuddy-extension.ts 的上下文创建模式：
  *   - S1-S6: new S*Context(dataRoot)
  *   - S7: new S7Context(dataRoot, { whisper 配置 }) — 有 CLI+模型路径才走真实，否则 mock
- *   - TTS: new TtsContext() — 默认 mock 双引擎（08-Test §5.4）
+ *   - TTS: new TtsContext({ emit }) — 默认 mock 双引擎（08-Test §5.4）；T-M4-018 接入
+ *     Streams["tts.state"] 推送（server.pushEvent），renderer 控制条订阅即时状态
  *   - Backup: new BackupContext(dataRoot)
  */
-function createBusinessHandlers(dataRoot: string): Record<string, (...args: unknown[]) => unknown> {
+function createBusinessHandlers(
+  dataRoot: string,
+  server?: RpcServer,
+): Record<string, (...args: unknown[]) => unknown> {
   const s1Ctx = new S1Context(dataRoot);
   const s2Ctx = new S2Context(dataRoot);
   const s3Ctx = new S3Context(dataRoot);
@@ -92,7 +96,10 @@ function createBusinessHandlers(dataRoot: string): Record<string, (...args: unkn
         : undefined, // 默认 mock（08-Test §5.4）
   });
 
-  const ttsCtx = new TtsContext();
+  const ttsCtx = new TtsContext({
+    // T-M4-018：生产接入 Streams["tts.state"] 推送（06-API §4；renderer 订阅控制条状态）
+    emit: server ? (event) => server.pushEvent("tts.state", event) : undefined,
+  });
   const backupCtx = new BackupContext(dataRoot);
 
   return {
@@ -159,7 +166,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
       ...(process.env.VITEST !== undefined ? { fixture: runMockFixture } : {}),
     }),
     // T-M4-002 S1-S7/TTS/Backup 业务 handler（断裂1修复，03-Arch §6.2）
-    ...createBusinessHandlers(dataRoot),
+    ...createBusinessHandlers(dataRoot, server),
     // T-M4-003 credentials.*/settings.* handler（断裂5修复，06-API §3.14/§3.15）
     ...createCredentialHandlers(credentialService),
     ...createSettingsHandlers(dataRoot),

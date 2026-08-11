@@ -30,6 +30,7 @@ import { CaptureTab } from "./tabs/CaptureTab";
 import { ChatTab } from "./tabs/ChatTab";
 import { SessionSidebar, type SessionSidebarItem } from "./SessionSidebar";
 import { TtsControlBar } from "./TtsControlBar";
+import { useTtsPlayback, type TtsSpeakTarget } from "../tts-playback";
 import { BackupPanel } from "./BackupPanel";
 import { SettingsPage, isSettingsShortcut } from "./SettingsPage";
 import { TabContainer } from "./common/TabContainer";
@@ -111,6 +112,7 @@ function renderTab(
   academicContext: SemesterCourseContext,
   onNavigateTab: (tabId: string) => void,
   activeSessionId: string | undefined,
+  onSpeakText: (text: string, target?: TtsSpeakTarget) => void,
 ): React.JSX.Element {
   switch (activeTabId) {
     case "home":
@@ -118,11 +120,11 @@ function renderTab(
     case "materials":
       return <MaterialsTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "notes":
-      return <NotesTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
+      return <NotesTab rpc={rpc} courseId={courseId} academicContext={academicContext} onSpeakText={onSpeakText} />;
     case "practice":
       return <PracticeTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "mistakes":
-      return <MistakesTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
+      return <MistakesTab rpc={rpc} courseId={courseId} academicContext={academicContext} onSpeakText={onSpeakText} />;
     case "cram":
       return <CramTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "report":
@@ -167,6 +169,8 @@ export function AppShell({
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [semesterLoadState, setSemesterLoadState] = useState<SemesterLoadState>("idle");
   const [courseStates, setCourseStates] = useState<Record<string, CourseLoadState>>({});
+  // T-M4-018：TTS 播放态（AppShell 局部 UI 状态，不属于学术上下文；09-UI §5）
+  const tts = useTtsPlayback(rpc);
   // 归档只读状态始终从当前学期列表派生，保持学期/课程选择只有一个状态源。
   const academicContext = deriveAcademicContext(semesterCourseState.context, semesters);
   // 请求门闩与 mounted 标记共同阻止快速切换或卸载后的异步结果污染最新 UI。
@@ -456,8 +460,23 @@ export function AppShell({
               {/* TabBar：固定 9 个学习工作台 Tab（设置不在其中）。 */}
               <TabBar tabs={TABS} activeTabId={activeTabId} onSelectTab={(tabId) => dispatchView({ type: "selectTab", tabId })} />
 
-              {/* TTS 全局控制条（T-M2-008，09-UI §5.1-§5.5） */}
-              <TtsControlBar rpc={rpc} />
+              {/* TTS 全局控制条（T-M2-008 静态壳 → T-M4-018 RPC 接线，09-UI §5.1-§5.5） */}
+              <TtsControlBar
+                status={tts.status}
+                engine={tts.engine}
+                rate={tts.rate}
+                fallbackUsed={tts.fallbackUsed}
+                title={tts.title}
+                canMarkReviewed={tts.canMarkReviewed}
+                speakBusy={tts.speakBusy}
+                error={tts.error}
+                hasPlayback={Boolean(tts.playbackId)}
+                onPlayback={() => void tts.playbackButton()}
+                onControl={(action) => void tts.control(action)}
+                onRateChange={(rate) => tts.setRateValue(rate)}
+                onSwitchEngine={(engine) => void tts.switchEngine(engine)}
+                onMarkReviewed={() => void tts.markReviewed()}
+              />
 
               {/* T-M4-007：归档上下文只读提示；具体业务写入口尚属后续 S1-S7 接线任务。 */}
               <AcademicReadOnlyNotice context={academicContext} />
@@ -469,6 +488,7 @@ export function AppShell({
                 academicContext,
                 (tabId) => dispatchView({ type: "selectTab", tabId }),
                 activeSessionId,
+                (text, target) => void tts.speak(text, target),
               )}
 
               {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
@@ -537,7 +557,7 @@ export function AppShell({
         <span>|</span>
         <span>调度：空闲</span>
         <span>|</span>
-        <span>TTS：SAPI</span>
+        <span>TTS：{tts.engine}</span>
       </footer>
     </div>
   );

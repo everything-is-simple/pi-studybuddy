@@ -18,6 +18,8 @@ interface Props {
   rpc?: TypedRpcClient;
   courseId?: string;
   academicContext?: SemesterCourseContext;
+  /** T-M4-018：内嵌朗读入口（09-UI §5.2 S2 笔记预览 → tts.speak） */
+  onSpeakText?: (text: string, target?: { title?: string; refType?: string; refId?: string }) => void;
 }
 
 function learnStatusLabel(status: LearnStatus): string {
@@ -83,7 +85,7 @@ function materialLabel(material: Material): string {
   return safeRendererText(material.fileName, "未命名资料", 80) + "（" + material.status + "）";
 }
 
-export function NotesTab({ note, modules, rpc, courseId, academicContext }: Props): React.JSX.Element {
+export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpeakText }: Props): React.JSX.Element {
   const effectiveCourseId = academicContext?.courseId ?? courseId;
   const isReadOnly = academicContext?.isReadOnly === true;
   const materials = useTabData<Material[]>({
@@ -279,7 +281,7 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext }: Prop
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <h2 style={{ margin: 0, fontSize: 16 }}>笔记预览</h2>
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" style={{ padding: "4px 12px", fontSize: 12 }}>朗读</button>
+          <button type="button" disabled={!displayedNoteMarkdown || editing} onClick={() => onSpeakText?.(displayedNoteMarkdown, { title: "笔记", refType: "note", refId: effectiveNote?.materialId ?? selectedMaterialId })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读</button>
           {rpc && !editing ? <button type="button" disabled={isReadOnly} onClick={() => setEditing(true)}>编辑</button> : null}
           {rpc && editing ? <button type="button" disabled={noteActionBusy || isReadOnly} onClick={() => void saveNote()}>保存笔记</button> : null}
           {rpc && editing ? <button type="button" disabled={noteActionBusy} onClick={() => { setDraftMarkdown(effectiveNote?.noteMarkdown ?? ""); setEditing(false); }}>取消编辑</button> : null}
