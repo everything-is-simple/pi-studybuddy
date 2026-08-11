@@ -23,6 +23,8 @@
  *     单件测试用合成夹具（jszip 构建最小 docx/pptx/xlsx）+ 受控 pdf 夹具驱动。
  */
 import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { internalError } from "./errors";
 
 /** 提取结果：仅含纯文本，不含 stdout/stderr（08-Test §3.3.2 断言） */
@@ -68,8 +70,109 @@ export function createFailingTextExtractor(): TextExtractor {
   };
 }
 
+/**
+ * T-M4-025：pdfjs-dist 环境补齐（生产 agent-host utilityProcess）。
+ *
+ * pdf-parse v2 内嵌 pdfjs-dist，其 Node 检测对 Electron 非 browser 进程（utilityProcess 的
+ * process.type !== 'browser'）判 false：
+ *   1. 不设置默认 GlobalWorkerOptions.workerSrc → 提取时抛 "No GlobalWorkerOptions.workerSrc"
+ *   2. 顶层引用浏览器全局 DOMMatrix（main 进程无此问题，utilityProcess 缺失）
+ *
+ * 修复：进程内 fake worker + 最小 DOMMatrix shim（均在 agent-host 进程内完成，不 spawn 子进程）：
+ *   - 加载 pdf-parse 自带 pdf.worker.mjs 的 WorkerMessageHandler 挂到 globalThis.pdfjsWorker
+ *     （pdfjs fake worker 优先使用该 handler，无需 workerSrc / process.type 篡改）
+ *   - DOMMatrix shim 实现 2D 仿射矩阵基本运算（文本提取所需），缺失时才注入
+ */
+class PdfMatrixShim {
+  a = 1;
+  b = 0;
+  c = 0;
+  d = 1;
+  e = 0;
+  f = 0;
+  constructor(init?: string) {
+    if (init && init.startsWith("matrix(")) {
+      const m = init.slice(7, -1).split(/[ ,]+/).map(Number);
+      if (m.length === 6) [this.a, this.b, this.c, this.d, this.e, this.f] = m;
+    }
+  }
+  multiplySelf(other: PdfMatrixShim): this {
+    const { a, b, c, d, e, f } = this;
+    this.a = a * other.a + c * other.b;
+    this.b = b * other.a + d * other.b;
+    this.c = a * other.c + c * other.d;
+    this.d = b * other.c + d * other.d;
+    this.e = a * other.e + c * other.f + e;
+    this.f = b * other.e + d * other.f + f;
+    return this;
+  }
+  translateSelf(tx: number, ty: number): this {
+    this.e += tx * this.a + ty * this.c;
+    this.f += tx * this.b + ty * this.d;
+    return this;
+  }
+  scaleSelf(sx: number, sy = sx): this {
+    this.a *= sx; this.b *= sy; this.c *= sx; this.d *= sy;
+    return this;
+  }
+  rotateSelf(rad: number): this {
+    const cos = Math.cos(rad); const sin = Math.sin(rad);
+    const { a, b, c, d, e, f } = this;
+    this.a = a * cos + c * sin; this.b = b * cos + d * sin;
+    this.c = -a * sin + c * cos; this.d = -b * sin + d * cos;
+    this.e = e; this.f = f;
+    return this;
+  }
+  flipXSelf(): this { return this.scaleSelf(-1, 1); }
+  flipYSelf(): this { return this.scaleSelf(1, -1); }
+  skewXSelf(sx: number): this {
+    const { a, b, c, d } = this; this.c = a * Math.tan(sx) + c; this.d = b * Math.tan(sx) + d;
+    return this;
+  }
+  skewYSelf(sy: number): this {
+    const { a, b, c, d } = this; this.b = a * Math.tan(sy) + b; this.d = c * Math.tan(sy) + d;
+    return this;
+  }
+  toString(): string {
+    return `matrix(${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.e}, ${this.f})`;
+  }
+}
+
+let pdfEnvReady: Promise<void> | null = null;
+/** 幂等：进程内一次性补齐 pdfjs 环境（DOMMatrix + fake worker handler） */
+function ensurePdfParseEnvironment(): Promise<void> {
+  if (!pdfEnvReady) {
+    pdfEnvReady = (async () => {
+      const g = globalThis as Record<string, unknown>;
+      if (typeof g.DOMMatrix === "undefined") {
+        g.DOMMatrix = PdfMatrixShim;
+      }
+      const existing = g.pdfjsWorker as { WorkerMessageHandler?: unknown } | undefined;
+      if (!existing?.WorkerMessageHandler) {
+        try {
+          // pdf-parse 自带 worker（与内嵌 pdfjs 同版本）：pdf-parse/dist/pdf-parse/cjs/pdf.worker.mjs
+          const entry = require.resolve("pdf-parse");
+          const pkgDir = path.resolve(path.dirname(entry), "..", "..", "..");
+          const workerFile = path.join(pkgDir, "dist", "pdf-parse", "cjs", "pdf.worker.mjs");
+          // tsc 会把 CJS 输出中的 import(x) 转为 require(x)，无法加载 file:// ESM worker；
+          // 用 Function 构造保留真实动态 import（仅此处使用，不引入 eval 用户输入）
+          const realImport = new Function("spec", "return import(spec)") as (spec: string) => Promise<{
+            WorkerMessageHandler?: unknown;
+          }>;
+          const workerMod = await realImport(pathToFileURL(workerFile).href);
+          g.pdfjsWorker = { WorkerMessageHandler: workerMod.WorkerMessageHandler };
+        } catch {
+          // worker 不可用：保持既有路径（仅影响 utilityProcess 之外的提取兜底），静默不泄漏细节
+        }
+      }
+    })();
+  }
+  return pdfEnvReady;
+}
+
 /** PDF 正文提取（pdf-parse v2，pageJoiner 置空去除页脚标记） */
 async function extractPdf(buf: Buffer): Promise<string> {
+  await ensurePdfParseEnvironment();
   const mod = await import("pdf-parse");
   const PDFParseCtor = mod.PDFParse;
   const parser = new PDFParseCtor({ data: buf });

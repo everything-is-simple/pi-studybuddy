@@ -30,6 +30,7 @@ import path from "node:path";
 // T-M4-002 S1-S7/TTS/Backup 业务 handler 装配（断裂1修复，03-Arch §6.2）
 import { S1Context, createS1Handlers } from "./handlers/s1";
 import { S2Context, createS2Handlers } from "./handlers/s2";
+import { createRealTextExtractor } from "./handlers/s2/text-extractor";
 import { S3Context, createS3Handlers } from "./handlers/s3";
 import { S4Context, createS4Handlers } from "./handlers/s4";
 import { S5Context, createS5Handlers } from "./handlers/s5";
@@ -78,7 +79,9 @@ function createBusinessHandlers(
   server?: RpcServer,
 ): Record<string, (...args: unknown[]) => unknown> {
   const s1Ctx = new S1Context(dataRoot);
-  const s2Ctx = new S2Context(dataRoot);
+  // T-M4-025：生产注入真实 TextExtractor（pdf-parse/jszip/mammoth 本地库，非外部服务，08-Test §5.4）；
+  // wps/ocr 保持未注入——WPS COM 与 OCR venv 属外部组件 mock 清单，doc/ppt/xls 的 wps_convert 与图片 ocr_image 仅登记 Job（T-M1-006/005 既有边界）。
+  const s2Ctx = new S2Context(dataRoot, undefined, createRealTextExtractor());
   const s3Ctx = new S3Context(dataRoot);
   const s4Ctx = new S4Context(dataRoot);
   const s5Ctx = new S5Context(dataRoot);
