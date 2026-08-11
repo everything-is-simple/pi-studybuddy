@@ -108,9 +108,19 @@ async function showDesktopDialog(options: DialogOptions): Promise<DialogResult> 
       title: options.title,
       defaultPath: options.defaultPath,
       filters: options.filters,
-      properties: ["openFile"],
+      properties: options.directory ? ["openDirectory"] : ["openFile"],
     });
     if (result.canceled || !result.filePaths[0]) return { canceled: true };
+    // T-M4-019 备份：directory 模式返回本地目录路径（备份目标目录），不做 S2 staging、不签发 importToken。
+    if (options.directory) {
+      try {
+        const stat = fs.statSync(result.filePaths[0]);
+        if (!stat.isDirectory()) return { canceled: true };
+        return { canceled: false, rawPath: result.filePaths[0] };
+      } catch {
+        return { canceled: true };
+      }
+    }
     // S7 课堂采集（T-M4-017）：rawPath 模式返回本地绝对路径（whisper.cpp 直接读文件），
     // 不做 S2 staging、不签发 importToken；文件不可读时视为取消，不向 renderer 暴露源路径。
     if (options.rawPath) {

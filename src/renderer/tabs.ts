@@ -21,6 +21,8 @@ export const TABS: TabDef[] = [
   { id: "cram", emoji: "🎯", label: "冲刺" },
   { id: "report", emoji: "📋", label: "报告" },
   { id: "capture", emoji: "🎤", label: "采集" },
+  // T-M4-019：备份恢复面板入口（决策 1A，09-UI §4.1 同步；BackupPanel 可达）
+  { id: "backup", emoji: "💾", label: "备份" },
 ];
 
 export const DEFAULT_TAB_ID = "chat";

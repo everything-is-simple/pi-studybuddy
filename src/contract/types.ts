@@ -866,6 +866,11 @@ export interface DialogOptions {
    * S2 上传场景不传此字段，仍走 main 签发的一次性导入 capability（importToken）。
    */
   rawPath?: boolean;
+  /**
+   * T-M4-019 备份：true 时 open 对话框以目录模式（openDirectory）返回本地目录路径（备份目标目录）。
+   * 返回值复用 rawPath 字段；S2/S7 场景不传此字段。
+   */
+  directory?: boolean;
 }
 
 export interface DialogResult {

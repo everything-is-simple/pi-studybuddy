@@ -132,7 +132,8 @@ function renderTab(
     case "capture":
       return <CaptureTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
     case "backup":
-      return <BackupPanel rpc={rpc} />;
+      // T-M4-019：BackupPanel 可达（TabBar 入口 + 学期/课程上下文）
+      return <BackupPanel rpc={rpc} semesterId={semesterId} courseId={courseId} />;
     case "chat":
       // T-M3-004：工具卡片跳转接线（09-UI §4.2 + 07-WF §2.8 步骤 3 + E2E-11）
       // AppShell 是 tab 状态持有者，setActiveTabId 注入 ChatTab onNavigateTab

@@ -19,15 +19,15 @@ import { createInitialSemesterCourseState, semesterCourseReducer } from "../../s
 // ---------- Tab 定义（09-UI §4.1） ----------
 
 describe("Tab 定义（09-UI §4.1）", () => {
-  it("应有 9 个 Tab", () => {
-    expect(TABS).toHaveLength(9);
+  it("应有 10 个 Tab（T-M4-019 新增备份入口）", () => {
+    expect(TABS).toHaveLength(10);
   });
 
   it('默认 Tab 应为 chat（对话，09-UI §4.2 铁律：对话是基础功能非可选）', () => {
     expect(DEFAULT_TAB_ID).toBe("chat");
   });
 
-  it("Tab 顺序：对话/首页/资料/笔记/练习/错题/冲刺/报告/采集", () => {
+  it("Tab 顺序：对话/首页/资料/笔记/练习/错题/冲刺/报告/采集/备份（T-M4-019）", () => {
     const ids = TABS.map((t: TabDef) => t.id);
     expect(ids).toEqual([
       "chat",
@@ -39,6 +39,7 @@ describe("Tab 定义（09-UI §4.1）", () => {
       "cram",
       "report",
       "capture",
+      "backup",
     ]);
   });
 

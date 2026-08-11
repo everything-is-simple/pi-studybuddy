@@ -100,7 +100,10 @@ function createBusinessHandlers(
     // T-M4-018：生产接入 Streams["tts.state"] 推送（06-API §4；renderer 订阅控制条状态）
     emit: server ? (event) => server.pushEvent("tts.state", event) : undefined,
   });
-  const backupCtx = new BackupContext(dataRoot);
+  const backupCtx = new BackupContext(dataRoot, {
+    // T-M4-019：生产接入 Streams["backup.progress"] 推送（06-API §4；renderer 订阅备份进度）
+    emit: server ? (event) => server.pushEvent("backup.progress", event) : undefined,
+  });
 
   return {
     ...createS1Handlers(s1Ctx),
