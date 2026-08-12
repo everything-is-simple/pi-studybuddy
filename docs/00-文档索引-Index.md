@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.162
+**版本**：v0.1.163
 **日期**：2026-08-12
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | 📝 v0.1.162 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001/002 done，T-M5-003 in_progress，T-M5-004~008 pending；每任务用户端到端测试铁律已登记。 |
+| 04 | 任务清单-Todo-List.md | 📝 v0.1.163 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001/002/003 done，T-M5-004~008 pending；每任务用户端到端测试铁律已登记。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -121,8 +121,8 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
-- [ ] T-M5-003 对话/会话/模型/文件引用真实用户闭环修订进行中：唯一计划 `.plan/T-M5-003-chat-session-model-closure.md`，隔离分支 `agent/T-M5-003-chat-session-model-closure`；先写 RED，移除 `sess-001`/`mist-001` fixture 语义，不新增 API/schema，不启动 T-M5-004~008。
-- [x] 04-Todo v0.1.162：用户明确指令每任务必须执行真机 UAT（AGENTS.md §7 铁律 + 08-Test §6.6 + §6.7 门槛）；T-M5-001/002 done，T-M5-003 in_progress；M5 当前为 1 in_progress/2 done/5 pending。
+- [x] T-M5-003 对话/会话/模型/文件引用真实闭环修订 done：RED→GREEN→REFACTOR 完成（生产空数据无 fixture、真实会话生命周期与重启持久化、模型状态失败可见可重试、真实错题/文件引用、turn_end L3 真实会话归属、内联重命名 P1 修复）；真机 UAT 两阶段证据 + 全量 123 files/1149 tests + E2E 32 files/141 tests + verify full 通过；功能提交 `e754c78` 已推送 origin/master；不启动 T-M5-004~008。
+- [x] 04-Todo v0.1.163：T-M5-003 受控收尾完成（含真机 UAT 铁律落实）；M5 当前为 0 in_progress/3 done/5 pending。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。
@@ -232,6 +232,7 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.163 | 2026-08-12 | T-M5-003 受控收尾完成：对话/会话/模型/文件引用真实用户闭环（生产空数据无 fixture、真实会话生命周期 + sessions.json 重启持久化、模型状态失败可见可重试、真实错题选择、turn_end L3 真实会话归属、SessionSidebar 内联重命名 P1 修复）；真机 UAT 两阶段证据 21 文件落 runs/T-M5-003/uat/（不进 Git）；04-Todo v0.1.163（T-M5-003 done，M5 0/3/5）；全量 123 files/1149 tests + E2E 32 files/141 tests + verify full 通过（t-m4-021 一次环境性抖动重跑通过）；功能提交 e754c78 + 治理登记已推送 origin/master；不启动 T-M5-004~008。依据：用户明确同意 + AGENTS.md §4.5/§7/§8.4/§11.1/§11.2。 |
 | v0.1.161 | 2026-08-12 | T-M5-001 真实安装审计证据同步：10 个 Tab 逐页打开并保存 DOM/控件/截图；空数据无初始化入口、生产 fixture 会话、固定 `sess-001`/`mist-001`、静态上下文/状态和 OCR/WPS/whisper 未随包等 P0/P1 缺口经两份独立审查复核；Node24 完整 verify、NSIS 隔离安装与两次 package smoke 通过但不等于全功能 UAT；新增 `.record/T-M5-001-实施记录.md`，任务保持 in_progress，不启动 T-M5-002~008。 |
 | v0.1.160 | 2026-08-12 | 用户明确“继续”，选择 T-M5-001 全 UI/功能/依赖用户验收审计开工；04-Todo v0.1.157，唯一计划 `.plan/T-M5-001-ui-acceptance-audit.md` 与隔离分支已建立，任务 in_progress；范围仅真实安装应用逐页逐控件审计、追踪矩阵、依赖边界和 P0/P1/P2 差异，不修业务代码、不启动 M5-002~008。依据：用户明确指令 + AGENTS.md §4.4/§4.5/§5/§8/§11.1/§11.2。 |
 | v0.1.159 | 2026-08-12 | T-M4-026 Git 收口完成同步：04-Todo v0.1.155；网络恢复后 `git push origin master` 成功并核验 `master=origin/master=869de2f`（远端 refs/heads/master 一致；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f` 一并推送）；Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1133 tests、真实 Electron E2E 29 files/137 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs/diff-check）；任务登记 done，M4 26/0/26，合计 62/0/62；不启动后续任务。依据：用户明确 Git 收口授权 + 网络恢复后继续执行 + AGENTS.md §4.5/§7/§8.2/§8.4/§11.1/§11.2。 |
