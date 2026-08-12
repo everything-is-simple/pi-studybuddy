@@ -227,7 +227,7 @@ export interface Api {
     params: { id: string };
     result: { suggestion: string; confidence: "low" | "medium" | "high" };
   };
-  "mistakes.redo": { params: { id: string }; result: RedoResult };
+  "mistakes.redo": { params: { id: string; correct?: boolean }; result: RedoResult };
   "mistakes.archive": { params: { practiceAnswerId: string }; result: Mistake };
 
   /* ---- §3.6 S4：薄弱点 ---- */

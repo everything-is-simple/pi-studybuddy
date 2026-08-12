@@ -309,6 +309,19 @@ describe("T-M1-004 S4 handler 集成测试", () => {
         expect((e as RpcError).code).toBe("NOT_FOUND");
       }
     });
+
+    it("GET-03 T-M5-004 方案 A：返回 question 摘要（题干/题型/正确答案/解析）", () => {
+      const mistake = call("mistakes.archive", { practiceAnswerId: wrongAnswerId }) as Mistake;
+      const result = call("mistakes.get", { id: mistake.id }) as MistakeWithEvidence;
+      // 题干与题型来自 questions 表（08-Test 夹具为可读文本）
+      expect(result.questionStem).toBeTruthy();
+      expect(result.questionType).toBe("single_choice");
+      expect(result.correctAnswer).toBeDefined();
+      expect(result.explanation).toBeDefined();
+      // 我的答案：夹具 submit 空答 → student_answer 为 NULL，字段可为 undefined（不报错）
+      // （有真实答案时会 JSON 解析返回）
+      expect(result.studentAnswer).toBeUndefined();
+    });
   });
 
   describe("mistakes.list", () => {

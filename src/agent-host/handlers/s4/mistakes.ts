@@ -23,6 +23,7 @@ import type {
   MistakeWithEvidence,
   RedoResult,
   ErrorCategory,
+  QuestionType,
 } from "../../../contract/types";
 import type { SqlParams } from "../../../data/sqlite";
 import type { S4Context } from "./context";
@@ -122,7 +123,45 @@ export function createMistakeHandlers(ctx: S4Context) {
         .prepare("SELECT * FROM mistake_evidence WHERE mistake_id = @id ORDER BY recorded_at")
         .all({ id }) as Record<string, unknown>[];
 
-      return mapMistakeWithEvidence(mistakeRow, evidenceRows);
+      const detail = mapMistakeWithEvidence(mistakeRow, evidenceRows);
+
+      // T-M5-004 方案 A（用户裁决）：附带题目摘要（题干/题型/我的答案/正确答案/解析），
+      // S4 完整复盘；字段可选向后兼容；不新增方法。
+      const questionRow = db
+        .prepare("SELECT * FROM questions WHERE id = @qid")
+        .get({ qid: mistakeRow.question_id as string }) as Record<string, unknown> | undefined;
+      if (questionRow) {
+        detail.questionStem = (questionRow.question_stem as string) ?? undefined;
+        detail.questionType = questionRow.question_type as QuestionType | undefined;
+        detail.correctAnswer = questionRow.correct_answer;
+        const acceptRaw = questionRow.acceptable_answers_json as string | null;
+        if (acceptRaw) {
+          try {
+            detail.acceptableAnswers = JSON.parse(acceptRaw) as string[];
+          } catch {
+            detail.acceptableAnswers = undefined;
+          }
+        }
+        detail.explanation = (questionRow.explanation as string) ?? undefined;
+      }
+
+      // 我的答案：取最近一条 evidence 关联的 practice_answers.student_answer
+      const latestEvidence = evidenceRows[evidenceRows.length - 1];
+      if (latestEvidence?.source_practice_answer_id) {
+        const answerRow = db
+          .prepare("SELECT * FROM practice_answers WHERE id = @aid")
+          .get({ aid: latestEvidence.source_practice_answer_id as string }) as Record<string, unknown> | undefined;
+        if (answerRow?.student_answer != null) {
+          const ansStr = answerRow.student_answer as string;
+          try {
+            detail.studentAnswer = JSON.parse(ansStr);
+          } catch {
+            detail.studentAnswer = ansStr;
+          }
+        }
+      }
+
+      return detail;
     },
 
     "mistakes.archive": (params: unknown): Mistake => {

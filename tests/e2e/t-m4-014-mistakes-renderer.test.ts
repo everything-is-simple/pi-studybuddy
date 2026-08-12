@@ -25,12 +25,15 @@ const UI_JS = `(async () => {
   await click("查看详情");
   await waitFor(() => document.body.textContent?.includes("AI 建议（仅供参考）"), "AI suggestion marker missing");
   const before = document.body.textContent || "";
+  // T-M5-004 方案 A：S4 完整复盘（题干/我的答案/正确答案/解析）在真实 renderer 展示
+  const reviewVisible = before.includes("题干") && before.includes("正确答案") && before.includes("解析");
   const readOnly = before.includes("当前学期已归档");
   if (readOnly) {
     return {
       readOnlyVisible: true,
       confirmDisabled: Boolean(button("确认错因")?.disabled),
       redoDisabled: Boolean(button("重做")?.disabled),
+      reviewVisible,
       rawSensitiveTextInDom: /secret\.ts|stackFrame|sk-secret/i.test(before),
     };
   }
@@ -41,7 +44,7 @@ const UI_JS = `(async () => {
   await click("重做");
   await wait(400);
   const result = document.body.textContent || "";
-  return { listVisible: before.includes("错题列表"), weakPointVisible: before.includes("薄弱点"), detailVisible: before.includes("错题详情"), aiMarkedUncertain: before.includes("AI 建议（仅供参考）") && before.includes("不确定"), sanitizedFallbackVisible: before.includes("错因内容已隐藏。"), confirmed: result.includes("已确认错因"), redoVisible: result.includes("重做"), fullUuidInDom: /\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b/i.test(result), windowsPathInDom: /\\b[a-z]:[\\\\/][^\\s]*/i.test(result), posixPathInDom: /\\/(?:[^\\s/]+\\/)+[^\\s/]+/.test(result), fileUriInDom: /\\bfile:(?:\\/{1,3})?/i.test(result), stackInDom: /(?:^|\\n)\\s*(?:[A-Za-z]*Error|Exception)\\s*:/m.test(result) || /(?:^|\\n)\\s*at\\s+\\S+/m.test(result), rawSensitiveTextInDom: /secret\\.ts|stackFrame|sk-secret/i.test(result) };
+  return { listVisible: before.includes("错题列表"), weakPointVisible: before.includes("薄弱点"), detailVisible: before.includes("错题详情"), reviewVisible, aiMarkedUncertain: before.includes("AI 建议（仅供参考）") && before.includes("不确定"), sanitizedFallbackVisible: before.includes("错因内容已隐藏。"), confirmed: result.includes("已确认错因"), redoVisible: result.includes("重做"), fullUuidInDom: /\\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\b/i.test(result), windowsPathInDom: /\\b[a-z]:[\\\\/][^\\s]*/i.test(result), posixPathInDom: /\\/(?:[^\\s/]+\\/)+[^\\s/]+/.test(result), fileUriInDom: /\\bfile:(?:\\/{1,3})?/i.test(result), stackInDom: /(?:^|\\n)\\s*(?:[A-Za-z]*Error|Exception)\\s*:/m.test(result) || /(?:^|\\n)\\s*at\\s+\\S+/m.test(result), rawSensitiveTextInDom: /secret\\.ts|stackFrame|sk-secret/i.test(result) };
 })()`;
 
 function runnerSource(): string {
@@ -60,7 +63,7 @@ function seedFixture() {
  const s2 = new S2Context(dataRoot); const db = s2.semesterDb(semester.id); const ts = new Date().toISOString();
  db.prepare("INSERT INTO materials (id,course_instance_id,file_name,file_type,file_size_bytes,mime_type,storage_key,source_type,status,permission_confirmed,uploaded_at,created_at,updated_at) VALUES ('m014-material',@cid,'source.pdf','pdf',1,'application/pdf','m014.pdf','upload','completed',1,@ts,@ts,@ts)").run({cid:course.id,ts});
  db.prepare("INSERT INTO knowledge_modules (id,course_instance_id,material_id,module_name,importance,learn_status,source_evidence_json,ai_generated,created_at,updated_at) VALUES ('m014-module',@cid,'m014-material','极限定义',3,'not_started','[]',0,@ts,@ts)").run({cid:course.id,ts});
- db.prepare("INSERT INTO questions (id,course_instance_id,knowledge_module_id,question_type,question_stem,options_json,correct_answer,score,created_at) VALUES ('m014-question',@cid,'m014-module','single_choice','极限定义题','[\\\"A\\\",\\\"B\\\"]','A',1,@ts)").run({cid:course.id,ts});
+ db.prepare("INSERT INTO questions (id,course_instance_id,knowledge_module_id,question_type,question_stem,options_json,correct_answer,explanation,score,created_at) VALUES ('m014-question',@cid,'m014-module','single_choice','极限定义题','[\\\"A\\\",\\\"B\\\"]','A','x趋近于0时极限为0',1,@ts)").run({cid:course.id,ts});
  db.prepare("INSERT INTO mistakes (id,question_id,course_instance_id,knowledge_module_id,status,redo_count,created_at,updated_at) VALUES ('m014-mistake','m014-question',@cid,'m014-module','needs_review',0,@ts,@ts)").run({cid:course.id,ts});
  db.prepare("UPDATE mistakes SET error_cause = @cause, error_cause_confirmed_by = 'student' WHERE id = 'm014-mistake'").run({cause:"异常，C:\\\\private\\\\secret.ts；/home/student/private.txt；inline Error: hidden at stackFrame；api-key: sk-secret"});
  db.prepare("INSERT INTO mistake_evidence (id,mistake_id,evidence_type,recorded_at,created_at) VALUES ('m014-evidence','m014-mistake','initial_wrong',@ts,@ts)").run({ts});
@@ -83,7 +86,7 @@ describe("T-M4-014 真实 Electron renderer MistakesTab", () => {
   it("加载列表/薄弱点 → 详情 AI 不确定标记 → 确认错因 → 重做，且 DOM 无敏感内部值", async () => {
     const probe = await runProbe(); const evidence = JSON.stringify(probe, null, 2);
     expect(probe.exitCode, evidence).toBe(0); expect(probe.result?.phase, evidence).toBe("ready");
-    expect(probe.result?.result).toMatchObject({ listVisible: true, weakPointVisible: true, detailVisible: true, aiMarkedUncertain: true, sanitizedFallbackVisible: true, confirmed: true, redoVisible: true, fullUuidInDom: false, windowsPathInDom: false, posixPathInDom: false, fileUriInDom: false, stackInDom: false, rawSensitiveTextInDom: false });
+    expect(probe.result?.result).toMatchObject({ listVisible: true, weakPointVisible: true, detailVisible: true, reviewVisible: true, aiMarkedUncertain: true, sanitizedFallbackVisible: true, confirmed: true, redoVisible: true, fullUuidInDom: false, windowsPathInDom: false, posixPathInDom: false, fileUriInDom: false, stackInDom: false, rawSensitiveTextInDom: false });
   }, 60_000);
 
   it("归档学期在真实 Electron renderer 中保持只读", async () => {

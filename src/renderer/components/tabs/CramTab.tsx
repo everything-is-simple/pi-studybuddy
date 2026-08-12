@@ -155,7 +155,7 @@ function questionCardStyle(): React.CSSProperties {
   return { padding: 12, border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 12 };
 }
 
-/** 模拟考入口子组件（静态兼容） */
+/** 模拟考入口子组件（静态兼容；无 rpc 时不渲染命令按钮，避免无 action 可点击控件） */
 function MockExamPhase(): React.JSX.Element {
   return (
     <div>
@@ -171,7 +171,7 @@ function MockExamPhase(): React.JSX.Element {
         <p style={{ color: "var(--text-muted, #888)", marginBottom: 12, fontSize: 13 }}>
           基于错题和薄弱点生成模拟试卷
         </p>
-        <button type="button" style={buttonStyle(false)}>生成试卷</button>
+        <button type="button" disabled style={buttonStyle(true)}>生成试卷</button>
       </div>
     </div>
   );

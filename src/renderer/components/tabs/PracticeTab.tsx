@@ -77,7 +77,6 @@ function IdlePhase(): React.JSX.Element {
       <div style={{ textAlign: "center", padding: "32px 16px" }}>
         <h2 style={{ fontSize: 16, margin: "0 0 16px 0" }}>练习</h2>
         <p style={{ color: "var(--text-muted, #888)", marginBottom: 16 }}>选择课程和知识模块开始练习</p>
-        <button type="button" style={buttonStyle()}>开始练习</button>
       </div>
     </TabContainer>
   );
@@ -133,11 +132,13 @@ function questionCardStyle(): React.CSSProperties {
   return { padding: 12, border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 12 };
 }
 
-function ResultView({ questions, result, elapsedMs, showSubmittedButton = false }: {
+function ResultView({ questions, result, elapsedMs, showSubmittedButton = false, onArchiveMistake }: {
   questions: QuestionDTO[];
   result: PracticeResult;
   elapsedMs: number;
   showSubmittedButton?: boolean;
+  /** T-M5-004：结果页错误题目「加入错题」（无 rpc 时按钮禁用，不冒充可点击） */
+  onArchiveMistake?: (practiceAnswerId: string) => void;
 }): React.JSX.Element {
   return (
     <TabContainer>
@@ -156,6 +157,16 @@ function ResultView({ questions, result, elapsedMs, showSubmittedButton = false 
           <div style={{ marginBottom: 8, fontSize: 13 }}>{item.question.questionStem}</div>
           <div style={{ fontSize: 13, marginBottom: 4 }}><strong>正确答案：</strong>{String(item.correctAnswer)}</div>
           {item.explanation && <div style={{ fontSize: 12, color: "var(--text-muted, #888)" }}><strong>解析：</strong>{item.explanation}</div>}
+          {!item.isCorrect && item.practiceAnswerId && (
+            <button
+              type="button"
+              disabled={!onArchiveMistake}
+              onClick={() => onArchiveMistake?.(item.practiceAnswerId!)}
+              style={{ marginTop: 8, padding: "4px 12px", fontSize: 12, cursor: onArchiveMistake ? "pointer" : "not-allowed" }}
+            >
+              加入错题
+            </button>
+          )}
         </div>
       ))}
     </TabContainer>
@@ -182,6 +193,9 @@ function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Pr
   const [result, setResult] = React.useState<PracticeResult | undefined>();
   const [elapsedMs, setElapsedMs] = React.useState(0);
   const [actionError, setActionError] = React.useState<string | undefined>();
+  const [archiveResult, setArchiveResult] = React.useState<string | undefined>();
+  const [archivingAnswerId, setArchivingAnswerId] = React.useState<string | undefined>();
+  const archivingRef = React.useRef(false);
   const mountedRef = React.useRef(true);
   const contextVersionRef = React.useRef(0);
 
@@ -204,6 +218,8 @@ function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Pr
     setResult(undefined);
     setElapsedMs(0);
     setActionError(undefined);
+    setArchiveResult(undefined);
+    archivingRef.current = false;
   }, [effectiveCourseId]);
 
   React.useEffect(() => {
@@ -312,6 +328,27 @@ function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Pr
       });
   }
 
+  function archiveMistake(practiceAnswerId: string): void {
+    if (!rpc || !practiceAnswerId || isReadOnly || archivingRef.current) return;
+    const contextVersion = contextVersionRef.current;
+    archivingRef.current = true;
+    setArchivingAnswerId(practiceAnswerId);
+    setArchiveResult(undefined);
+    void rpc.call("mistakes.archive", { practiceAnswerId })
+      .then(() => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setArchiveResult("已加入错题，可在错题 Tab 查看。");
+      })
+      .catch(() => {
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setActionError("加入错题失败，请稍后重试。");
+      })
+      .finally(() => {
+        archivingRef.current = false;
+        setArchivingAnswerId(undefined);
+      });
+  }
+
   if (!effectiveCourseId) {
     return <TabContainer><div role="status">请先在左侧选择课程，再开始练习。</div></TabContainer>;
   }
@@ -324,7 +361,14 @@ function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Pr
 
   if (phase === "result") {
     if (!result) return <TabContainer><div role="alert">{practiceErrorText("result")}</div></TabContainer>;
-    return <ResultView questions={questions} result={result} elapsedMs={elapsedMs || result.elapsedMs} showSubmittedButton />;
+    return (
+      <>
+        <ResultView questions={questions} result={result} elapsedMs={elapsedMs || result.elapsedMs} showSubmittedButton onArchiveMistake={archiveMistake} />
+        {archiveResult && <div role="status" style={{ padding: "8px 12px", fontSize: 13, color: "#2e7d32" }}>{archiveResult}</div>}
+        {actionError && <div role="alert" style={{ padding: "8px 12px", fontSize: 13, color: "#c62828" }}>{actionError}</div>}
+        {archivingAnswerId && <div role="status" style={{ padding: "4px 12px", fontSize: 12 }}>正在加入错题…</div>}
+      </>
+    );
   }
 
   if (phase === "result_loading") {

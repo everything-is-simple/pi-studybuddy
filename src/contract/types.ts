@@ -469,9 +469,21 @@ export interface MistakeEvidence {
   createdAt: string;
 }
 
-/** mistakes.get 返回（含错因、重做历史证据） */
+/** mistakes.get 返回（含错因、重做历史证据、题目摘要；question 摘要 T-M5-004 方案 A 裁决） */
 export interface MistakeWithEvidence extends Mistake {
   evidence: MistakeEvidence[];
+  /** 题干摘要（mistakes.get 附带，S4 完整复盘；可选，向后兼容） */
+  questionStem?: string;
+  /** 题型（single_choice / multiple_choice / fill_blank） */
+  questionType?: QuestionType;
+  /** 最近一次作答的学生答案（JSON 解析后，脱敏由 renderer 处理） */
+  studentAnswer?: unknown;
+  /** 正确答案（S4 复盘阶段由 handler 返回；作答前不暴露的防线在 S3 保持） */
+  correctAnswer?: unknown;
+  /** 可接受答案列表 */
+  acceptableAnswers?: string[];
+  /** 题目解析 */
+  explanation?: string;
 }
 
 /**

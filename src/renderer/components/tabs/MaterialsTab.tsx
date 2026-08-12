@@ -26,7 +26,7 @@ interface Props {
   academicContext?: SemesterCourseContext;
 }
 
-type ActionKind = "upload" | "convert" | "generateNote";
+type ActionKind = "upload" | "convert" | "generateNote" | "retryAiGeneration";
 
 interface ContextToken {
   courseId?: string;
@@ -45,12 +45,14 @@ const ACTION_ERROR_MESSAGE: Record<ActionKind, string> = {
   upload: "上传资料失败，请稍后重试。",
   convert: "转换资料失败，请稍后重试。",
   generateNote: "生成笔记失败，请稍后重试。",
+  retryAiGeneration: "重试生成笔记失败，请稍后重试。",
 };
 
 const ACTION_SUCCESS_MESSAGE: Record<ActionKind, string> = {
   upload: "资料上传成功，资料列表已刷新。",
   convert: "转换任务已提交，资料列表已刷新。",
   generateNote: "笔记生成任务已提交，资料列表已刷新。",
+  retryAiGeneration: "重试生成笔记任务已提交，资料列表已刷新。",
 };
 
 const BUTTON_STYLE: React.CSSProperties = {
@@ -154,6 +156,8 @@ function actionLabel(kind: ActionKind): string {
       return "转换中…";
     case "generateNote":
       return "生成中…";
+    case "retryAiGeneration":
+      return "重试中…";
   }
 }
 
@@ -168,6 +172,8 @@ export function MaterialsTab({ materials, rpc, courseId, academicContext }: Prop
   const [activeAction, setActiveAction] = React.useState<ActiveAction | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [actionNotice, setActionNotice] = React.useState<string | null>(null);
+  const [previewState, setPreviewState] = React.useState<{ materialId: string; html?: string; status: "loading" | "ready" | "error" } | undefined>();
+  const previewRequestRef = React.useRef(0);
   const activeActionRef = React.useRef<ActiveAction | null>(null);
   const nextActionIdRef = React.useRef(0);
   const contextRef = React.useRef(contextToken);
@@ -188,6 +194,8 @@ export function MaterialsTab({ materials, rpc, courseId, academicContext }: Prop
     setActionNotice(null);
     activeActionRef.current = null;
     setActiveAction(null);
+    setPreviewState(undefined);
+    previewRequestRef.current += 1;
   }, [contextToken]);
 
   async function runAction(
@@ -262,6 +270,36 @@ export function MaterialsTab({ materials, rpc, courseId, academicContext }: Prop
     );
   }
 
+  function retryAiGeneration(mat: Material): void {
+    if (!actionsEnabled || !rpc) return;
+    void runAction("retryAiGeneration", `retryAiGeneration:${mat.id}`, () =>
+      rpc.call("materials.retryAiGeneration", { id: mat.id }),
+    );
+  }
+
+  function previewMaterial(mat: Material): void {
+    if (!rpc || !mat || !effectiveCourseId) return;
+    const requestId = ++previewRequestRef.current;
+    const materialId = mat.id;
+    const isMarkdown = mat.fileName.toLowerCase().endsWith(".md");
+    setPreviewState({ materialId, status: "loading" });
+    const call = isMarkdown
+      ? rpc.call("files.previewMarkdown", { path: mat.storageKey })
+      : rpc.call("files.read", { path: mat.storageKey });
+    void call
+      .then((result) => {
+        if (previewRequestRef.current !== requestId) return;
+        const html = isMarkdown
+          ? (result as { html: string }).html
+          : `<pre>${(result as { content: string }).content.slice(0, 20_000)}</pre>`;
+        setPreviewState({ materialId, html, status: "ready" });
+      })
+      .catch(() => {
+        if (previewRequestRef.current !== requestId) return;
+        setPreviewState({ materialId, status: "error" });
+      });
+  }
+
   function renderActionButton(mat: Material): React.JSX.Element | null {
     const active = activeAction?.key === `convert:${mat.id}`;
     if (mat.status === "pending" || mat.status === "conversion_failed") {
@@ -271,11 +309,17 @@ export function MaterialsTab({ materials, rpc, courseId, academicContext }: Prop
         </button>
       );
     }
-    if (mat.status === "converted") {
-      const noteActive = activeAction?.key === `generateNote:${mat.id}`;
+    if (mat.status === "converted" || mat.status === "note_generating") {
+      const noteActive = activeAction?.key === `generateNote:${mat.id}` || activeAction?.key === `retryAiGeneration:${mat.id}`;
       return (
-        <button style={BUTTON_STYLE} type="button" onClick={() => generateNote(mat)} disabled={!actionsEnabled || Boolean(activeAction)}>
-          {noteActive ? actionLabel("generateNote") : "生成笔记"}
+        <button style={BUTTON_STYLE} type="button" onClick={() => (mat.status === "note_generating" ? retryAiGeneration(mat) : generateNote(mat))} disabled={!actionsEnabled || Boolean(activeAction)}>
+          {noteActive
+            ? activeAction?.key === `retryAiGeneration:${mat.id}`
+              ? actionLabel("retryAiGeneration")
+              : actionLabel("generateNote")
+            : mat.status === "note_generating"
+              ? "重试生成笔记"
+              : "生成笔记"}
         </button>
       );
     }
@@ -293,7 +337,12 @@ export function MaterialsTab({ materials, rpc, courseId, academicContext }: Prop
     return <TabContainer><div role="status">正在加载资料…</div></TabContainer>;
   }
   if (rpc && resource.status === "error") {
-    return <TabContainer><div role="alert">暂时无法加载资料，请稍后重试。</div></TabContainer>;
+    return (
+      <TabContainer>
+        <div role="alert">暂时无法加载资料，请稍后重试。</div>
+        <button style={{ ...BUTTON_STYLE, marginTop: 8 }} type="button" onClick={() => setRefreshToken((token) => token + 1)}>重试</button>
+      </TabContainer>
+    );
   }
 
   if (!visibleMaterials || visibleMaterials.length === 0) {
@@ -327,7 +376,28 @@ export function MaterialsTab({ materials, rpc, courseId, academicContext }: Prop
               <span>大小：{formatFileSize(mat.fileSizeBytes)}</span>
               <span>上传：{mat.uploadedAt.slice(0, 10)}</span>
             </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>{renderActionButton(mat)}</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              {renderActionButton(mat)}
+              {rpc && mat.status !== "pending" && mat.status !== "conversion_failed" && (
+                <button style={BUTTON_STYLE} type="button" onClick={() => previewMaterial(mat)} disabled={Boolean(previewState) && previewState?.status === "loading"}>
+                  {previewState?.materialId === mat.id && previewState?.status === "loading" ? "预览中…" : "预览"}
+                </button>
+              )}
+            </div>
+            {previewState?.materialId === mat.id && previewState.status === "ready" && previewState.html && (
+              <div style={{ marginTop: 8, padding: 12, background: "var(--bg-panel, #fafafa)", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, fontSize: 12, maxHeight: 320, overflow: "auto" }}>
+                {/* 预览内容为 host 端转义后的安全 HTML（files.previewMarkdown 已 escapeHtml） */}
+                <div dangerouslySetInnerHTML={{ __html: previewState.html }} />
+                <button style={{ ...BUTTON_STYLE, marginTop: 8 }} type="button" onClick={() => setPreviewState(undefined)}>关闭预览</button>
+              </div>
+            )}
+            {previewState?.materialId === mat.id && previewState.status === "error" && (
+              <div style={{ marginTop: 8, fontSize: 12 }}>
+                <div role="alert">预览失败，请稍后重试。</div>
+                <button style={{ ...BUTTON_STYLE, marginTop: 8 }} type="button" onClick={() => previewMaterial(mat)}>重试预览</button>
+                <button style={{ ...BUTTON_STYLE, marginTop: 8, marginLeft: 8 }} type="button" onClick={() => setPreviewState(undefined)}>关闭</button>
+              </div>
+            )}
           </div>
         ))}
       </div>

@@ -110,6 +110,10 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
   const [actionKey, setActionKey] = useState<string | undefined>();
   const [actionError, setActionError] = useState<string | undefined>();
   const [moduleOverrides, setModuleOverrides] = useState<Record<string, KnowledgeModule>>({});
+  const [mindMapState, setMindMapState] = useState<{ status: "loading" | "ready" | "error"; content?: string } | undefined>();
+  const [evidenceState, setEvidenceState] = useState<{ materialId: string; content?: string; status: "loading" | "ready" | "error" } | undefined>();
+  const mindMapRequestRef = useRef(0);
+  const evidenceRequestRef = useRef(0);
   const noteRequestRef = useRef(0);
   const viewContextRef = useRef(0);
   const mountedRef = useRef(true);
@@ -120,6 +124,8 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
       mountedRef.current = false;
       viewContextRef.current += 1;
       noteRequestRef.current += 1;
+      mindMapRequestRef.current += 1;
+      evidenceRequestRef.current += 1;
     };
   }, []);
 
@@ -135,6 +141,8 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
     if (!rpc) return;
     viewContextRef.current += 1;
     noteRequestRef.current += 1;
+    mindMapRequestRef.current += 1;
+    evidenceRequestRef.current += 1;
     setSelectedMaterialId("");
     setSelectedNote(undefined);
     setDraftMarkdown("");
@@ -142,6 +150,8 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
     setNoteStatus("idle");
     setActionError(undefined);
     setModuleOverrides({});
+    setMindMapState(undefined);
+    setEvidenceState(undefined);
     return () => {
       viewContextRef.current += 1;
       noteRequestRef.current += 1;
@@ -158,11 +168,15 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
   function selectMaterial(materialId: string): void {
     const contextVersion = ++viewContextRef.current;
     const requestId = ++noteRequestRef.current;
+    mindMapRequestRef.current += 1;
+    evidenceRequestRef.current += 1;
     setSelectedMaterialId(materialId);
     setSelectedNote(undefined);
     setDraftMarkdown("");
     setEditing(false);
     setActionError(undefined);
+    setMindMapState(undefined);
+    setEvidenceState(undefined);
     if (!rpc || !materialId) {
       setNoteStatus("idle");
       return;
@@ -178,6 +192,43 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
       .catch((error: unknown) => {
         if (!mountedRef.current || contextVersion !== viewContextRef.current || requestId !== noteRequestRef.current) return;
         setNoteStatus(rpcErrorCode(error) === "NOT_FOUND" ? "notFound" : "error");
+      });
+  }
+
+  function loadMindMap(materialId: string): void {
+    if (!rpc || !materialId) return;
+    const contextVersion = viewContextRef.current;
+    const requestId = ++mindMapRequestRef.current;
+    setMindMapState({ status: "loading" });
+    void rpc.call("notes.getMindMap", { materialId })
+      .then((loadedMap) => {
+        if (!mountedRef.current || contextVersion !== viewContextRef.current || requestId !== mindMapRequestRef.current) return;
+        setMindMapState({ status: "ready", content: safeRendererText(loadedMap.markmapJson, "导图内容已隐藏。", 4_000) });
+      })
+      .catch(() => {
+        if (!mountedRef.current || contextVersion !== viewContextRef.current || requestId !== mindMapRequestRef.current) return;
+        setMindMapState({ status: "error" });
+      });
+  }
+
+  function openEvidence(materialId: string): void {
+    if (!rpc || !materialId) return;
+    const materialRow = materials.data.find((item) => item.id === materialId);
+    if (!materialRow) {
+      setEvidenceState({ materialId, status: "error" });
+      return;
+    }
+    const contextVersion = viewContextRef.current;
+    const requestId = ++evidenceRequestRef.current;
+    setEvidenceState({ materialId, status: "loading" });
+    void rpc.call("files.read", { path: materialRow.storageKey })
+      .then((result) => {
+        if (!mountedRef.current || contextVersion !== viewContextRef.current || requestId !== evidenceRequestRef.current) return;
+        setEvidenceState({ materialId, status: "ready", content: safeRendererText(result.content, "来源内容已隐藏。", 20_000) });
+      })
+      .catch(() => {
+        if (!mountedRef.current || contextVersion !== viewContextRef.current || requestId !== evidenceRequestRef.current) return;
+        setEvidenceState({ materialId, status: "error" });
       });
   }
 
@@ -282,11 +333,29 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
         <h2 style={{ margin: 0, fontSize: 16 }}>笔记预览</h2>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" disabled={!displayedNoteMarkdown || editing} onClick={() => onSpeakText?.(displayedNoteMarkdown, { title: "笔记", refType: "note", refId: effectiveNote?.materialId ?? selectedMaterialId })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读</button>
+          {rpc && !editing ? <button type="button" disabled={!selectedMaterialId} onClick={() => loadMindMap(selectedMaterialId)} style={{ padding: "4px 12px", fontSize: 12 }}>思维导图</button> : null}
           {rpc && !editing ? <button type="button" disabled={isReadOnly} onClick={() => setEditing(true)}>编辑</button> : null}
           {rpc && editing ? <button type="button" disabled={noteActionBusy || isReadOnly} onClick={() => void saveNote()}>保存笔记</button> : null}
           {rpc && editing ? <button type="button" disabled={noteActionBusy} onClick={() => { setDraftMarkdown(effectiveNote?.noteMarkdown ?? ""); setEditing(false); }}>取消编辑</button> : null}
         </div>
       </div>
+      {mindMapState && !editing && (
+        <div style={{ padding: 12, background: "var(--bg-panel, #fafafa)", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 12, fontSize: 12 }}>
+          {mindMapState.status === "loading" && <div role="status">正在加载思维导图…</div>}
+          {mindMapState.status === "ready" && (
+            <>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>思维导图</div>
+              <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>{mindMapState.content}</pre>
+            </>
+          )}
+          {mindMapState.status === "error" && (
+            <div>
+              <div role="alert">暂时无法加载思维导图，请稍后重试。</div>
+              <button type="button" style={{ marginTop: 8 }} onClick={() => loadMindMap(selectedMaterialId)}>重试</button>
+            </div>
+          )}
+        </div>
+      )}
       {editing ? (
         <textarea aria-label="笔记内容" value={draftMarkdown} onChange={(event) => setDraftMarkdown(event.target.value)} disabled={isReadOnly || noteActionBusy} style={{ width: "100%", minHeight: 220, padding: 12, boxSizing: "border-box", marginBottom: 16 }} />
       ) : (
@@ -303,7 +372,31 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
               <span style={{ fontSize: 12, color: learnStatusColor(module.learnStatus), fontWeight: 600 }}>{learnStatusLabel(module.learnStatus)}</span>
             </div>
             {module.summary ? <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4 }}>{safeRendererText(module.summary, "", 400)}</div> : null}
-            {module.sourceEvidenceJson ? <div style={{ fontSize: 11, color: "var(--text-muted, #888)", marginTop: 4 }}>来源：资料回链</div> : null}
+            {module.sourceEvidenceJson ? (() => {
+              let evidenceMaterialId: string | undefined;
+              try {
+                const parsed = JSON.parse(module.sourceEvidenceJson) as { materialId?: string };
+                evidenceMaterialId = parsed.materialId;
+              } catch {
+                evidenceMaterialId = undefined;
+              }
+              return (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                  {evidenceMaterialId ? (
+                    <button type="button" style={{ fontSize: 11 }} onClick={() => openEvidence(evidenceMaterialId!)} disabled={evidenceState?.status === "loading" && evidenceState.materialId === evidenceMaterialId}>查看来源</button>
+                  ) : null}
+                  {evidenceState?.materialId === evidenceMaterialId && evidenceState?.status === "ready" && evidenceState.content && (
+                    <pre style={{ fontSize: 11, color: "var(--text-muted, #888)", whiteSpace: "pre-wrap", margin: 0, maxHeight: 160, overflow: "auto" }}>{evidenceState.content}</pre>
+                  )}
+                  {evidenceState?.materialId === evidenceMaterialId && evidenceState?.status === "error" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span role="alert" style={{ fontSize: 11 }}>暂时无法读取来源内容，请稍后重试。</span>
+                      <button type="button" style={{ fontSize: 11 }} onClick={() => openEvidence(evidenceMaterialId!)}>重试</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })() : null}
             {rpc ? <button type="button" disabled={isReadOnly || moduleBusy} onClick={() => void updateModule(module)} style={{ marginTop: 8 }}>{nextLearnStatusLabel(module.learnStatus)}</button> : null}
           </div>;
         })}

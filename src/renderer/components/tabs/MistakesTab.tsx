@@ -44,6 +44,18 @@ function mistakeStatusLabel(status: Mistake["status"]): string {
   return status === "mastered" ? "已掌握" : "待复习";
 }
 
+/** 答案值格式化（string / string[] / 其他 JSON 值），不泄漏内部结构 */
+function formatAnswerValue(value: unknown): string {
+  if (value === undefined || value === null) return "—";
+  if (typeof value === "string") return value || "—";
+  if (Array.isArray(value)) return value.length === 0 ? "—" : value.join("、");
+  try {
+    return String(value);
+  } catch {
+    return "—";
+  }
+}
+
 function weakPointStatusLabel(status: WeakPoint["status"]): string {
   switch (status) {
     case "active": return "活跃";
@@ -85,6 +97,7 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
   const [selectedCategory, setSelectedCategory] = useState<ErrorCategory | undefined>(selectedMistake?.errorCategory);
   const [actionKey, setActionKey] = useState<"confirm" | "redo" | undefined>();
   const [actionError, setActionError] = useState<string | undefined>();
+  const [redoFeedback, setRedoFeedback] = useState<string | undefined>();
   const [detailVersion, setDetailVersion] = useState(0);
   const detailRequestRef = useRef(0);
   const actionRef = useRef<"confirm" | "redo" | undefined>(undefined);
@@ -204,7 +217,7 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
     }
   };
 
-  const redoMistake = async (): Promise<void> => {
+  const redoMistake = async (correct: boolean): Promise<void> => {
     if (!rpc || !visibleDetail || isReadOnly || actionRef.current) return;
     const mutationId = visibleDetail.id;
     const requestId = ++mutationRequestRef.current;
@@ -212,8 +225,11 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
     setActionKey("redo");
     setActionError(undefined);
     try {
-      await rpc.call("mistakes.redo", { id: mutationId });
+      const redoResult = await rpc.call("mistakes.redo", { id: mutationId, correct });
       if (mutationRequestRef.current !== requestId || !mountedRef.current || selection?.id !== mutationId || selection.courseId !== effectiveCourseId) return;
+      setDetail((current) => current && current.id === mutationId ? { ...current, status: correct ? "mastered" : "needs_review", lastRedoCorrect: correct ? 1 : 0, redoCount: (current.redoCount ?? 0) + 1 } : current);
+      // 展示重做结果反馈（RedoResult），并刷新列表与薄弱点
+      setRedoFeedback(correct ? "重做正确，已更新错题状态。" : "重做错误，继续保持待复习状态。");
       refreshCurrentCourse();
     } catch {
       if (mutationRequestRef.current === requestId && mountedRef.current && selection?.id === mutationId && selection.courseId === effectiveCourseId) {
@@ -258,13 +274,45 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
       </div>
 
       {detailStatus === "loading" && <div role="status">正在加载错题详情…</div>}
-      {detailStatus === "error" && <div role="alert">暂时无法加载错题详情，请重新选择错题。</div>}
+      {detailStatus === "error" && (
+        <div role="alert">暂时无法加载错题详情，请重新选择错题。</div>
+      )}
+      {detailStatus === "error" && (
+        <button type="button" style={{ marginTop: 8 }} onClick={() => setDetailVersion((value) => value + 1)}>重试加载详情</button>
+      )}
       {visibleDetail && detailStatus !== "loading" && (
         <div style={{ padding: 12, border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 16, background: "var(--bg-panel, #f5f5f5)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, margin: 0 }}>错题详情：题目 #<ShortId id={visibleDetail.questionId} /></h3>
             <button type="button" disabled={!mistakeSpeakText} onClick={() => onSpeakText?.(mistakeSpeakText, { title: "错题", refType: "mistake", refId: visibleDetail.id })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读</button>
           </div>
+          {/* T-M5-004 方案 A：完整复盘（题干/我的答案/正确答案/解析），safeRendererText 净化 */}
+          {visibleDetail.questionStem && (
+            <div style={{ padding: 10, background: "#fff", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>题干</div>
+              <div style={{ fontSize: 13 }}>{safeRendererText(visibleDetail.questionStem, "题干内容已隐藏。", 400)}</div>
+              {visibleDetail.questionType ? <div style={{ fontSize: 11, color: "var(--text-muted, #888)", marginTop: 4 }}>题型：{visibleDetail.questionType === "single_choice" ? "单选题" : visibleDetail.questionType === "multiple_choice" ? "多选题" : "填空题"}</div> : null}
+            </div>
+          )}
+          {(visibleDetail.studentAnswer !== undefined || visibleDetail.correctAnswer !== undefined) && (
+            <div style={{ padding: 10, background: "#fff", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>我的答案 / 正确答案</div>
+              <div style={{ fontSize: 13, marginBottom: 2 }}>
+                <strong>我的答案：</strong>
+                <span style={{ color: "#c62828" }}>{formatAnswerValue(visibleDetail.studentAnswer)}</span>
+              </div>
+              <div style={{ fontSize: 13 }}>
+                <strong>正确答案：</strong>
+                <span style={{ color: "#2e7d32" }}>{formatAnswerValue(visibleDetail.correctAnswer)}</span>
+              </div>
+            </div>
+          )}
+          {visibleDetail.explanation && (
+            <div style={{ padding: 10, background: "#fff", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>解析</div>
+              <div style={{ fontSize: 13 }}>{safeRendererText(visibleDetail.explanation, "解析内容已隐藏。", 400)}</div>
+            </div>
+          )}
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 13, marginBottom: 6 }}>错因分类：</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -279,8 +327,26 @@ export function MistakesTab({ mistakes, selectedMistake, weakPoints, rpc, course
           </div>
           {visibleDetail.errorCauseConfirmedBy === "student" && <div style={{ marginBottom: 8, fontSize: 13 }}><strong>已确认错因</strong>{visibleDetail.errorCause ? <>：{safeRendererText(visibleDetail.errorCause, "错因内容已隐藏。")}</> : null}</div>}
           {visibleDetail.errorCauseAiSuggestion && <div style={{ padding: 8, background: "#fffde7", border: "1px solid #fff9c4", borderRadius: 4, marginBottom: 8, fontSize: 12 }}><strong>AI 建议（仅供参考）：</strong>{safeRendererText(visibleDetail.errorCauseAiSuggestion, "建议内容已隐藏。")}</div>}
+          {visibleDetail.evidence && visibleDetail.evidence.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>作答历史</div>
+              {visibleDetail.evidence.map((evidence) => (
+                <div key={evidence.id} style={{ fontSize: 11, color: "var(--text-muted, #888)", marginBottom: 2 }}>
+                  {evidence.evidenceType === "initial_wrong" ? "首次错误" : "重做错误"}　{evidence.recordedAt.slice(0, 10)}
+                </div>
+              ))}
+            </div>
+          )}
           {actionError && <div role="alert" style={{ marginBottom: 8 }}>{actionError}</div>}
-          {rpc ? <button type="button" disabled={isReadOnly || Boolean(actionKey)} onClick={() => void redoMistake()} style={{ padding: "6px 16px", fontSize: 13, cursor: isReadOnly ? "not-allowed" : "pointer", border: "1px solid var(--border, #e0e0e0)", background: "#1976d2", color: "#fff", borderRadius: 4 }}>{actionKey === "redo" ? "正在提交…" : "重做"}</button> : <button type="button" style={{ padding: "6px 16px", fontSize: 13 }}>重做</button>}
+          {redoFeedback && <div role="status" style={{ marginBottom: 8, color: "#2e7d32", fontSize: 12 }}>{redoFeedback}</div>}
+          {rpc ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" disabled={isReadOnly || Boolean(actionKey)} onClick={() => void redoMistake(true)} style={{ padding: "6px 16px", fontSize: 13, cursor: isReadOnly ? "not-allowed" : "pointer", border: "1px solid var(--border, #e0e0e0)", background: "#2e7d32", color: "#fff", borderRadius: 4 }}>{actionKey === "redo" ? "正在提交…" : "重做正确"}</button>
+              <button type="button" disabled={isReadOnly || Boolean(actionKey)} onClick={() => void redoMistake(false)} style={{ padding: "6px 16px", fontSize: 13, cursor: isReadOnly ? "not-allowed" : "pointer", border: "1px solid var(--border, #e0e0e0)", background: "#c62828", color: "#fff", borderRadius: 4 }}>{actionKey === "redo" ? "正在提交…" : "重做错误"}</button>
+            </div>
+          ) : (
+            <button type="button" disabled style={{ padding: "6px 16px", fontSize: 13 }}>重做</button>
+          )}
         </div>
       )}
 
