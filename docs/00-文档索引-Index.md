@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.165
+**版本**：v0.1.166
 **日期**：2026-08-12
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | 📝 v0.1.165 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001/002/003 done，T-M5-004~008 pending；每任务用户端到端测试铁律已登记。 |
+| 04 | 任务清单-Todo-List.md | 📝 v0.1.168 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001/002/003/004 done，T-M5-005~008 pending；每任务用户端到端测试铁律已登记。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -234,6 +234,7 @@
 |---|---|---|
 | v0.1.163 | 2026-08-12 | T-M5-003 受控收尾完成
 | v0.1.164 | 2026-08-12 | 修正 T-M5-003 远端收口中间事实
+| v0.1.166 | 2026-08-13 | T-M5-004 完成（用户裁决方案 A：mistakes.get 返回 question 摘要；S1-S5 逐控件真实闭环：首页任务完成/资料预览/笔记导图与证据回链/练习加入错题/错题重做双动作与完整复盘/冲刺未确认考试拦截；静态无 action 按钮移除或禁用；真机 UAT 8 路径两阶段 + 双独立审查 PASS；Git 收口 master=origin/master=5eb4e67，功能 c4bb784 + 治理 5eb4e67）；04-Todo v0.1.168、AGENTS.md v0.1.115 同步，任务登记 done，M5 0/4/4。 |
 | v0.1.165 | 2026-08-12 | T-M5-003 Git 收口完成：网络恢复后经备用 IP 通道（140.82.116.3 + 凭据改写 helper）`git push origin master` 成功并核验 `master=origin/master=48c93e2`；master verify full 通过（仅 t-m4-021 环境性抖动，已安装应用 CDP 两启动直连验证 OK）；04-Todo v0.1.165、AGENTS.md v0.1.114 同步，任务登记 done。 |
 ：功能 `e754c78` + 治理 `ef047df` 已 ff-only 进入本地 master 且 master verify full 通过（仅 t-m4-021 环境性 second-launch ping 抖动，已安装应用 CDP 两启动直连验证 OK）；`git push origin master` 因 GitHub 443 不可达失败，origin/master 仍为 9ec9b1e，任务按 §8.4 保持 in_progress 待网络恢复推送；04-Todo v0.1.164、AGENTS.md v0.1.113 同步。 |：对话/会话/模型/文件引用真实用户闭环（生产空数据无 fixture、真实会话生命周期 + sessions.json 重启持久化、模型状态失败可见可重试、真实错题选择、turn_end L3 真实会话归属、SessionSidebar 内联重命名 P1 修复）；真机 UAT 两阶段证据 21 文件落 runs/T-M5-003/uat/（不进 Git）；04-Todo v0.1.163（T-M5-003 done，M5 0/3/5）；全量 123 files/1149 tests + E2E 32 files/141 tests + verify full 通过（t-m4-021 一次环境性抖动重跑通过）；功能提交 e754c78 + 治理登记已推送 origin/master；不启动 T-M5-004~008。依据：用户明确同意 + AGENTS.md §4.5/§7/§8.4/§11.1/§11.2。 |
 | v0.1.161 | 2026-08-12 | T-M5-001 真实安装审计证据同步：10 个 Tab 逐页打开并保存 DOM/控件/截图；空数据无初始化入口、生产 fixture 会话、固定 `sess-001`/`mist-001`、静态上下文/状态和 OCR/WPS/whisper 未随包等 P0/P1 缺口经两份独立审查复核；Node24 完整 verify、NSIS 隔离安装与两次 package smoke 通过但不等于全功能 UAT；新增 `.record/T-M5-001-实施记录.md`，任务保持 in_progress，不启动 T-M5-002~008。 |
