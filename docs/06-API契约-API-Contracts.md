@@ -275,10 +275,10 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
 | `mistakes.list` | `{ courseId?, status? }` | `Mistake[]` | |
-| `mistakes.get` | `{ id }` | `Mistake` | 含错因、重做历史 |
+| `mistakes.get` | `{ id }` | `MistakeWithEvidence` | 含错因、重做历史证据；T-M5-004 方案 A（用户裁决）补登可选 question 摘要：`questionStem/questionType/studentAnswer/correctAnswer/acceptableAnswers/explanation`（S4 完整复盘，handler 既有数据，向后兼容） |
 | `mistakes.confirmErrorCause` | `{ id, category, causeNote? }` | `Mistake` | AI 只提建议带"不确定"标记，学生必须确认 |
 | `mistakes.suggestErrorCause` | `{ id }` | `{ suggestion: string, confidence: 'low'\|'medium'\|'high' }` | AI 建议（带"不确定"标记） |
-| `mistakes.redo` | `{ id }` | `RedoResult` | MVP 原题重做；正确增加掌握证据，错误保持 needs_review |
+| `mistakes.redo` | `{ id, correct? }` | `RedoResult` | MVP 原题重做（T-M5-004 补登 contract 类型：handler 已支持 `correct?: boolean`，正确增加掌握证据，错误保持 needs_review；renderer 显式提供「重做正确/重做错误」两个动作） |
 | `mistakes.archive` | `{ practiceAnswerId }` | `Mistake` | 幂等归档（UNIQUE question_id）；重复扫描不重复建 |
 
 #### 薄弱点（weakPoints.*）

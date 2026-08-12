@@ -616,7 +616,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M5-001 | 全 UI/功能/依赖用户验收审计与追踪矩阵 | 测试/文档 | P0 | done | 阶段1-5 | 01-TRD §3/§7 + 07-WF §2-§5 + 08-Test §5-§7 + 09-UI 全文 | `.plan/T-M5-001-ui-acceptance-audit.md` + `.record/T-M5-001-实施记录.md`；逐页逐按钮矩阵、真实安装截图、P0/P1/P2 差异清单、打包依赖审计和两份独立审查已完成；审计发现不影响本任务完成，但阻止 M5/一键交付声明 |
 | T-M5-002 | 首次启动向导与学期/课程/考试/任务 UI 闭环 | 壳层/S1 | P0 | done | 阶段2-5 | 07-WF §2.2 + 09-UI §3/§4.3 | `.plan/T-M5-002-first-run-s1-ui.md` + `.record/T-M5-002-实施记录.md`；首次启动向导 + S1 管理面板（考试确认/手工课表/任务完成/学期课程编辑/状态迁移/备份确认）+ AppShell 唯一上下文刷新 + S1 host 归档写防线；真机 UAT 两阶段通过（纯 UI 创建闭环 + 重启持久化 + DOM 无敏感信息）；全量 121 files/1138 tests + 30 files/138 E2E + verify full 通过；发现并修复管理面板隐藏 TabBar 缺陷；不启动 T-M5-003~008 |
 | T-M5-003 | 对话/会话/模型/文件引用真实用户闭环修订 | 壳层/对话 | P0 | done | 阶段2-5 | 07-WF §2.8 + 09-UI §3.3/§4.2/§7-§9 | `.plan/T-M5-003-chat-session-model-closure.md` + `.record/T-M5-003-实施记录.md`；生产空数据无 fixture、真实会话（新建/物化/重启持久化/内联重命名）、模型失败可见可重试、真实错题选择、turn_end L3 真实会话归属（用户裁决）；真机 UAT 两阶段 21 证据文件 + 全量 123 files/1149 tests + E2E 32 files/141 tests + verify full 通过（仅 t-m4-021 环境性抖动，已安装应用 CDP 两启动直连验证 OK）；功能 `e754c78` + 治理 `ef047df` + 修正 `48c93e2` 已推送 origin/master 并核验 master=origin/master=48c93e2；无 API/schema 变化；不启动 T-M5-004~008 |
-| T-M5-004 | S1-S5 结构化学习页面逐控件修订 | 壳层/S1-S5 | P0 | pending | 阶段2-5 | 07-WF §2.2-§2.6 + 09-UI §4.3-§4.8 | 首页动作、资料导入/转换/预览、笔记/导图/证据回链、练习、错题重做、模拟考/速背/计划；每个可见控件完整成功/失败/禁用/重试证据 |
+| T-M5-004 | S1-S5 结构化学习页面逐控件修订 | 壳层/S1-S5 | P0 | in_progress | 阶段2-5 | 07-WF §2.2-§2.6 + 09-UI §4.3-§4.8 | `.plan/T-M5-004-s1-s5-structured-learning-ui.md` + `.pi/prompts/task-execution/T-M5-004-s1-s5-structured-learning-ui.md`；首页动作、资料导入/转换/预览、笔记/导图/证据回链、练习、错题重做（重做正确/错误双动作）、S4 完整复盘（方案 A：题干/答案/解析）、模拟考/速背/计划；每个可见控件完整成功/失败/禁用/重试证据；v0.1.166 登记开工，v0.1.167 本地实施与验收完成（单元/集成 128 files/1174 tests、真实 Electron E2E 33 files/143 tests、真机 UAT 8 路径两阶段通过、双独立审查 PASS；`.record/T-M5-004-实施记录.md`），Git 收口待授权，任务保持 in_progress |
 | T-M5-005 | S6/S7/TTS/备份/设置与整体 UX 修订 | 壳层/S6-S7/跨切 | P0 | pending | 阶段2-5 | 07-WF §3-§5 + 09-UI §4.9-§13 | 报告目标与投递、采集、全内容区朗读、可理解备份调度、真实状态栏/上下文栏、非开发者设置、响应式/可访问性/危险操作确认 |
 | T-M5-006 | 全部必需运行依赖自包含与离线能力装配 | 壳层/业务Adapter/打包 | P0 | pending | 阶段1-5 | 01-TRD §3/§7 + 03-Arch §3.3/§6.5 + 11-组件装配 | 依赖/license/体积/更新/安全清单；OCR/Python/whisper 等随包或替代；WPS/云模型等不可再分发依赖不得阻塞核心闭环；用户 UI 不出现开发环境安装步骤 |
 | T-M5-007 | 干净 Windows 已安装应用全功能 UAT | 测试 | P0 | pending | 阶段5 | 08-Test §5-§7 + 09-UI 全文 | 无预装开发环境；从首次启动走 S1-S7/对话/TTS/备份；全部可见控件矩阵、截图、重启持久化、故障恢复；真实目标用户签收，P0/P1=0 |
@@ -708,8 +708,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | M2 | 9 | 0 | 0 | 0 | 9 | 0 |
 | M3 | 8 | 0 | 0 | 0 | 8 | 0 |
 | M4 | 26 | 0 | 0 | 0 | 26 | 0 |
-| M5 | 8 | 5 | 0 | 0 | 3 | 0 |
-| **合计** | **70** | **5** | **0** | **0** | **65** | **0** |
+| M5 | 8 | 4 | 1 | 0 | 3 | 0 |
+| **合计** | **70** | **4** | **1** | **0** | **65** | **0** |
 
 > 注（v0.1.157）：用户以“继续”明确选择 T-M5-001；唯一计划 `.plan/T-M5-001-ui-acceptance-audit.md` 与隔离分支 `agent/T-M5-001-ui-acceptance-audit` 已建立。T-M5-001 in_progress，其余 T-M5-002~008 保持 pending；本任务不修业务代码、不创建后续计划。M4 26 项及历史 62 项 done 事实保持不变。
 >
@@ -728,6 +728,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 ## 10. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.166 | 2026-08-13 | 用户明确批准 T-M5-004 开工（“请 按 prompt 进行 施工 按固定的开发工作流 进行每一个任务的开发”）。T-M5-004 S1-S5 结构化学习页面逐控件修订 pending→in_progress；§9 统计 M5 5 pending/0 in_progress/3 done→4 pending/1 in_progress/3 done（合计 5/0/65→4/1/65）；创建任务启动提示词 `.pi/prompts/task-execution/T-M5-004-s1-s5-structured-learning-ui.md`、唯一计划 `.plan/T-M5-004-s1-s5-structured-learning-ui.md` 并切换隔离分支 `agent/T-M5-004-s1-s5-structured-learning-ui`；运行根 `H:\pi-studybuddy-tmp\runs\T-M5-004\`。范围仅首页残余动作、S2 资料/笔记、S3 练习、S4 错题、S5 冲刺逐控件真实可达/可用/失败/禁用/重试语义；不新增 API/schema/handler/Stream/全局状态（contract 保持 127/127）；不启动 T-M5-005~008，Git 收口另需授权。依据：用户明确指令 + AGENTS.md §4.4/§4.5/§5/§7/§11.1/§11.2。 | |
+| v0.1.167 | 2026-08-13 | T-M5-004 本地实施与验收完成（Git 收口待授权，任务保持 in_progress）：用户裁决 CTRL-MISTAKE-04 采用方案 A（扩展 mistakes.get 返回 question 摘要：题干/题型/我的答案/正确答案/解析，handler 既有数据，可选字段向后兼容，方法数不变 contract 127/127；06-API §3.6 补登；mistakes.redo 补登 correct?: boolean 既有能力）。交付：首页任务完成动作+失败重试、资料预览（files.previewMarkdown/read storageKey 相对路径）+retryAiGeneration+列表重试、笔记思维导图+证据回链可点击、练习结果页「加入错题」、错题重做正确/错误双动作+详情失败重试+作答历史+完整复盘、冲刺静态按钮禁用+未确认考试拦截固定错误+生成失败恢复；移除/禁用静态无 action 按钮（Practice/Cram/Mistakes 兼容分支）。质量门（本次实际运行）：unit/integration 128 files/1174 tests、真实 Electron E2E 33 files/143 tests（含 t-m5-004-uat 2 tests 真机 UAT 8 路径两阶段纯 UI 证据落 runs/T-M5-004/uat/）、type-check、contract 127/127、安全 6/6、UUID 7/7、docs 治理与 diff-check 全部通过；双独立审查 PASS；.record/T-M5-004-实施记录.md 已创建；§9 统计不变（M5 4/1/3）。依据：用户裁决方案 A + AGENTS.md §4.5/§5/§7/§8.4/§11.1/§11.2。
 | v0.1.163 | 2026-08-12 | T-M5-003 受控收尾完成
 | v0.1.164 | 2026-08-12 | 修正 T-M5-003 远端收口中间事实
 | v0.1.165 | 2026-08-12 | T-M5-003 Git 收口完成：网络恢复后 `git push origin master` 经备用 IP 通道（140.82.116.3 + 一次性凭据改写 helper + insteadOf 重写，未落盘）成功并核验 `master=origin/master=48c93e2`（远端 refs/heads/master 一致；功能 `e754c78` + 治理 `ef047df` + 中间事实修正 `48c93e2` 一并推送）；Node24 master 完整 `verify --stage=full` 通过（unit/integration 123 files/1149 tests、真实 Electron E2E 32 files/141 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check；仅 t-m4-021 打包冒烟环境性 second-launch ping 抖动，已安装应用 CDP 两启动直连验证 OK）；§7.7 T-M5-003 in_progress→done，§9 统计 M5 5/1/2→5/0/3（合计 5/1/64→5/0/65）；§8.4 三要件齐全，任务登记 done；不启动 T-M5-004~008。依据：用户明确 Git 收口授权 + 网络恢复证据 + AGENTS.md §4.5/§7/§8.4/§11.1/§11.2。 |
