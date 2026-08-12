@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.157
+**版本**：v0.1.158
 **日期**：2026-08-12
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,7 +34,7 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.153 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 62 任务，T-M4-026 已完成 Git 收口（M4 26 done/0 in_progress）。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.154 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 62 任务，T-M4-026 本地收口完成但 origin/master 推送待网络恢复（M4 25 done/1 in_progress）。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -47,7 +47,8 @@
 
 ## 四、组件治理流程（强制）
 
-> v0.1.157 T-M4-026 Git 收口完成同步：04-Todo v0.1.153；功能提交 `10d50eb` 与治理登记提交已由 `agent/T-M4-026-ai-provider-config` 快进合并进入 `master`，Node24 master `verify --stage=full` 通过（118 files/1133 tests、真实 Electron E2E 29 files/137 tests），origin/master 已推送并核验，任务登记 done，M4 26/0/26，合计 62/0/62；不启动后续任务。
+> v0.1.158 修正 T-M4-026 远端收口中间事实：04-Todo v0.1.154；功能提交 `10d50eb` 与治理登记提交 `c3d2db3` 已快进进入本地 master，Node24 master `verify --stage=full` 通过（118 files/1133 tests、真实 Electron E2E 29 files/137 tests），但 2 次 `git push origin master` 因 GitHub 连接不可达（443 超时）失败，origin/master 尚未核验到新提交（仍为 6132f09），按 §8.4 任务保持 in_progress，待网络恢复后推送；不启动后续任务。
+> v0.1.157 T-M4-026 Git 收口完成同步（推送事实由 v0.1.158 修正）：04-Todo v0.1.153；功能提交 `10d50eb` 与治理登记提交已由 `agent/T-M4-026-ai-provider-config` 快进合并进入 `master`，Node24 master `verify --stage=full` 通过（118 files/1133 tests、真实 Electron E2E 29 files/137 tests），origin/master 已推送并核验，任务登记 done，M4 26/0/26，合计 62/0/62；不启动后续任务。
 > v0.1.154 T-M4-021 Git 收口完成同步：04-Todo v0.1.150；功能 `82738f9`（test(m4)）与治理登记提交已由 `agent/T-M4-021-m4-release-acceptance` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 29 files/137 tests），origin/master 已推送并核验，任务登记 done，**M4 全部 25 任务完成，v0.1 里程碑收官**。
 > v0.1.153 T-M4-021 本地实施与验收证据同步：04-Todo v0.1.149；收官验收 E2E 通过（x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC）；§6.6 M4 退出门槛 8 项全勾选；全量 unit/integration 118 files/1130 tests、真实 Electron E2E 29 files/137 tests、verify full 通过；任务保持 in_progress，Git 收口待单独授权。
 > v0.1.152 T-M4-021 开工登记同步：04-Todo v0.1.148；用户明确选择 M4 收官验收（2026-08-11“收官验收”；prompt 资产已就绪 v0.1.96，执行序 40，M4 最后一项）；§7.6.1 T-M4-021 pending→in_progress（M4 0 pending/1 in_progress/24 done，合计 0/1/60）；唯一计划 `.plan/T-M4-021-m4-release-acceptance.md` 已建立（📝 待审查），隔离分支待计划批准后建立；范围仅干净 master 重新构建 x64 setup + 隔离安装 + 至少两次启动 + CDP 全链验证 + M4 退出门槛逐条对照 + 发布证据矩阵，不实现新功能；Git 收口另需授权。
@@ -119,7 +120,7 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
-- [x] 04-Todo v0.1.153 ✅ 已审查批准：T-M4-026 Git 收口完成（功能提交 `10d50eb` 与治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
+- [x] 04-Todo v0.1.154 ✅ 已审查批准：T-M4-026 本地收口中间事实（功能 `10d50eb` + 治理 `c3d2db3` 已快进进入本地 master，Node24 master 完整 `verify --stage=full` 复验通过；2 次 push 因 GitHub 443 不可达失败，origin/master 尚未核验，任务保持 in_progress，待网络恢复后推送；不启动后续任务）。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。
 - [x] 04-Todo v0.1.148 ✅ 已审查批准：T-M4-021 已开工登记（用户明确选择 M4 收官验收；唯一计划 `.plan/T-M4-021-m4-release-acceptance.md` 已建 📝 待审查，任务 pending→in_progress，M4 最后一项）；本任务为 M4 收官。
@@ -228,7 +229,8 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
-| v0.1.157 | 2026-08-12 | T-M4-026 Git 收口完成同步：04-Todo v0.1.153；功能提交 `10d50eb` 与治理登记提交已由 `agent/T-M4-026-ai-provider-config` 快进合并进入 `master`，Node24 master `verify --stage=full` 通过（118 files/1133 tests、真实 Electron E2E 29 files/137 tests），origin/master 已推送并核验，任务登记 done，M4 26/0/26，合计 62/0/62；不启动后续任务。依据：用户明确 Git 收口授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11.1/§11.2。 |
+| v0.1.158 | 2026-08-12 | 修正 T-M4-026 远端收口中间事实：04-Todo v0.1.154；功能提交 `10d50eb` 与治理登记提交 `c3d2db3`（docs(m4)）已由 `agent/T-M4-026-ai-provider-config` 快进合并进入本地 `master`，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1133 tests、真实 Electron E2E 29 files/137 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs/diff-check）；但 2 次 `git push origin master` 因 GitHub 连接不可达（443 超时）失败，origin/master 尚未核验到新提交（仍为 6132f09），按 §8.4 任务保持 in_progress，待网络恢复后推送；不启动后续任务。依据：用户明确 Git 收口授权 + 远端网络错误证据 + AGENTS.md §4.5、§7、§8.4、§11.2。 |
+| v0.1.157 | 2026-08-12 | T-M4-026 Git 收口完成同步（推送事实由 v0.1.158 修正）：04-Todo v0.1.153；功能提交 `10d50eb` 与治理登记提交已由 `agent/T-M4-026-ai-provider-config` 快进合并进入 `master`，Node24 master `verify --stage=full` 通过（118 files/1133 tests、真实 Electron E2E 29 files/137 tests），origin/master 推送结果见 v0.1.158 修正，任务登记 done 待推送核验，M4 26/0/26，合计 62/0/62；不启动后续任务。依据：用户明确 Git 收口授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11.1/§11.2。 |
 | v0.1.156 | 2026-08-12 | T-M4-026 完整验收同步：模型 catalog、DPAPI 凭证、session 原子切换和中转站空模型边界已落实；Node24 `verify --stage=full` 通过（118 files/1133 tests、真实 Electron E2E 29 files/137 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs/diff-check）；任务仍 in_progress，Git 收口待用户授权。依据：用户明确指令 + AGENTS.md §4.5/§5/§7/§9/§11.1/§11.2。 |
 | v0.1.155 | 2026-08-12 | T-M4-026 AI provider 多模型与 DPAPI 凭证配置登记：7 个非空参考凭证通过 Electron 主进程 safeStorage/Windows DPAPI 写入本机 vault；DeepSeek/火山/云雾/Agnes 模型 catalog 与默认 Agnes 模型同步；未知中转站不猜测模型，未执行外网探测；Git 收口待用户授权。依据：用户明确指令 + AGENTS.md §4.5/§5/§7/§9/§11.1/§11.2。 |
 | v0.1.154 | 2026-08-11 | T-M4-021 Git 收口完成同步：04-Todo v0.1.150；功能 `82738f9`（test(m4) M4 收官验收 E2E 与打包冒烟扩展）与治理登记提交已由 `agent/T-M4-021-m4-release-acceptance` 快进合并进入 master，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1130 tests、真实 Electron E2E 29 files/137 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs 治理与 diff-check），origin/master 已推送并核验，任务登记 done，**M4 全部 25 任务完成，v0.1 里程碑收官**。依据：用户明确 Git 收口授权（2026-08-11）+ AGENTS.md §4.5、§7、§8.2、§8.4。 |
