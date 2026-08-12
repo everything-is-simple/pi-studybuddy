@@ -8,7 +8,7 @@ import type { StudyTask, DailyBrief } from "../../../contract/types";
 import type { S1Context } from "./context";
 import { mapTask, mapDailyBrief } from "./dto";
 import { notFound } from "./errors";
-import { findSemesterByCourseId, findSemesterByEntityId } from "./lookup";
+import { assertSemesterWritable, findSemesterByCourseId, findSemesterByEntityId } from "./lookup";
 import type { SqlParams } from "../../../data/sqlite";
 
 function now(): string {
@@ -54,6 +54,7 @@ export function createTaskHandlers(ctx: S1Context) {
         priority?: number;
       };
       const { db, semesterId } = findSemesterByCourseId(ctx, courseId);
+      assertSemesterWritable(ctx, semesterId);
       const id = randomUUID();
       const ts = now();
       const prio = priority ?? 3;
@@ -68,6 +69,7 @@ export function createTaskHandlers(ctx: S1Context) {
     "tasks.complete": (params: unknown): StudyTask => {
       const { id } = params as { id: string };
       const { db, semesterId } = findSemesterByEntityId(ctx, "study_tasks", id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM study_tasks WHERE id = @id").get({ id }) as
         | Record<string, unknown>
         | undefined;

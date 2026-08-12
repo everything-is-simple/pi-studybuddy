@@ -7,7 +7,7 @@ import type { CourseInstance } from "../../../contract/types";
 import type { S1Context } from "./context";
 import { mapCourse } from "./dto";
 import { notFound, badRequest } from "./errors";
-import { findSemesterByCourseId } from "./lookup";
+import { assertSemesterWritable, findSemesterByCourseId } from "./lookup";
 import type { SqlParams } from "../../../data/sqlite";
 
 function now(): string {
@@ -32,6 +32,7 @@ export function createCourseHandlers(ctx: S1Context) {
         subject: string;
         [k: string]: unknown;
       };
+      assertSemesterWritable(ctx, semesterId);
       const id = randomUUID();
       const ts = now();
       const db = ctx.semesterDb(semesterId);
@@ -78,7 +79,8 @@ export function createCourseHandlers(ctx: S1Context) {
 
     "courses.update": (params: unknown): CourseInstance => {
       const { id, ...fields } = params as { id: string; [k: string]: unknown };
-      const { db } = findSemesterByCourseId(ctx, id);
+      const { db, semesterId } = findSemesterByCourseId(ctx, id);
+      assertSemesterWritable(ctx, semesterId);
 
       const allowed: Record<string, string> = {
         courseName: "course_name",

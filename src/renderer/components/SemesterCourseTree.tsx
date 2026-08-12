@@ -21,6 +21,8 @@ interface Props {
   context: SemesterCourseContext;
   onToggleSemester: (semesterId: string) => void;
   onSelectCourse: (semesterId: string, courseId: string) => void;
+  /** 空数据首次启动的显式入口（T-M5-002）。 */
+  onCreateSemester?: () => void;
 }
 
 const panelBorder = "1px solid var(--border, #e0e0e0)";
@@ -101,15 +103,30 @@ export function SemesterCourseTree({
   context,
   onToggleSemester,
   onSelectCourse,
+  onCreateSemester,
 }: Props): React.JSX.Element {
   return (
     <section aria-label="学期和课程" style={{ paddingBottom: 12, borderBottom: panelBorder }}>
-      <div style={{ fontWeight: 600, marginBottom: 8, color: "var(--text, #222)" }}>学期</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+        <div style={{ fontWeight: 600, color: "var(--text, #222)" }}>学期</div>
+        {semesterLoadState === "ready" && semesters.length > 0 && onCreateSemester && (
+          <button type="button" onClick={onCreateSemester} style={{ padding: "4px 7px", border: panelBorder, borderRadius: 4, background: "transparent", color: "var(--text, #222)", cursor: "pointer" }}>新增学期</button>
+        )}
+      </div>
       {semesterLoadState === "idle" && <div style={{ color: "var(--text-muted, #777)" }}>正在等待本机学习数据连接…</div>}
       {semesterLoadState === "loading" && <div style={{ color: "var(--text-muted, #777)" }}>正在加载学期…</div>}
       {semesterLoadState === "error" && <div style={{ color: "var(--danger, #b42318)" }}>{academicLoadErrorText("semesters")}</div>}
       {semesterLoadState === "ready" && semesters.length === 0 && (
-        <div style={{ color: "var(--text-muted, #777)" }}>还没有学期，请先在学习计划中创建。</div>
+        <div style={{ display: "grid", gap: 8, color: "var(--text-muted, #777)" }}>
+          <div>还没有学期，先创建学习计划即可开始。</div>
+          <button
+            type="button"
+            onClick={onCreateSemester}
+            style={{ padding: "7px 8px", border: panelBorder, borderRadius: 4, background: "var(--accent, #e8f0fe)", color: "var(--text, #222)", cursor: "pointer", textAlign: "left" }}
+          >
+            创建学习计划（创建学期）
+          </button>
+        </div>
       )}
       {semesterLoadState === "ready" && semesters.map((semester) => {
         const expanded = expandedSemesterIds.includes(semester.id);

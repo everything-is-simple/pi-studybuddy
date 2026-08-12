@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import type { ScheduleEntry } from "../../../contract/types";
 import type { S1Context } from "./context";
 import { mapSchedule } from "./dto";
-import { findSemesterByCourseId, findSemesterByEntityId } from "./lookup";
+import { assertSemesterWritable, findSemesterByCourseId, findSemesterByEntityId } from "./lookup";
 import type { SqlParams } from "../../../data/sqlite";
 
 function now(): string {
@@ -33,7 +33,8 @@ export function createScheduleHandlers(ctx: S1Context) {
         endTime: string;
         location?: string;
       };
-      const { db } = findSemesterByCourseId(ctx, courseId);
+      const { db, semesterId } = findSemesterByCourseId(ctx, courseId);
+      assertSemesterWritable(ctx, semesterId);
       const id = randomUUID();
       const ts = now();
       db.prepare(
@@ -46,7 +47,8 @@ export function createScheduleHandlers(ctx: S1Context) {
 
     "schedule.update": (params: unknown): ScheduleEntry => {
       const { id, ...fields } = params as { id: string; [k: string]: unknown };
-      const { db } = findSemesterByEntityId(ctx, "schedule_entries", id);
+      const { db, semesterId } = findSemesterByEntityId(ctx, "schedule_entries", id);
+      assertSemesterWritable(ctx, semesterId);
       const allowed: Record<string, string> = {
         weekday: "weekday",
         startTime: "start_time",
@@ -74,7 +76,8 @@ export function createScheduleHandlers(ctx: S1Context) {
 
     "schedule.delete": (params: unknown): void => {
       const { id } = params as { id: string };
-      const { db } = findSemesterByEntityId(ctx, "schedule_entries", id);
+      const { db, semesterId } = findSemesterByEntityId(ctx, "schedule_entries", id);
+      assertSemesterWritable(ctx, semesterId);
       db.prepare("UPDATE schedule_entries SET deleted_at = @ts WHERE id = @id").run({ id, ts: now() });
     },
   };

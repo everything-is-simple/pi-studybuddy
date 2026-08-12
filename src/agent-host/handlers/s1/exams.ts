@@ -8,7 +8,7 @@ import type { AssessmentAttempt } from "../../../contract/types";
 import type { S1Context } from "./context";
 import { mapAssessment } from "./dto";
 import { notFound, badRequest } from "./errors";
-import { findSemesterByCourseId, findSemesterByEntityId } from "./lookup";
+import { assertSemesterWritable, findSemesterByCourseId, findSemesterByEntityId } from "./lookup";
 
 function now(): string {
   return new Date().toISOString();
@@ -68,6 +68,7 @@ export function createExamHandlers(ctx: S1Context) {
         confidence?: number;
       };
       const { db, semesterId } = findSemesterByCourseId(ctx, courseId);
+      assertSemesterWritable(ctx, semesterId);
       const id = randomUUID();
       const ts = now();
 
@@ -89,6 +90,7 @@ export function createExamHandlers(ctx: S1Context) {
     "exams.confirm": (params: unknown): AssessmentAttempt => {
       const { id, confirmed } = params as { id: string; confirmed: boolean };
       const { db, semesterId } = findSemesterByEntityId(ctx, "assessment_attempts", id);
+      assertSemesterWritable(ctx, semesterId);
       const existing = db.prepare("SELECT * FROM assessment_attempts WHERE id = @id").get({ id }) as Record<string, unknown>;
       if (!existing) throw notFound("未找到该考试记录");
 
@@ -117,7 +119,8 @@ export function createExamHandlers(ctx: S1Context) {
 
     "exams.supersede": (params: unknown): AssessmentAttempt => {
       const { id, newAttemptId } = params as { id: string; newAttemptId: string };
-      const { db } = findSemesterByEntityId(ctx, "assessment_attempts", id);
+      const { db, semesterId } = findSemesterByEntityId(ctx, "assessment_attempts", id);
+      assertSemesterWritable(ctx, semesterId);
       const ts = now();
       db.prepare(
         "UPDATE assessment_attempts SET confirmation_status = 'superseded', updated_at = @ts WHERE id = @id",

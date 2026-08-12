@@ -6,7 +6,7 @@
  */
 import type { S1Context } from "./context";
 import type { DatabaseSync } from "../../../data/sqlite";
-import { notFound } from "./errors";
+import { badRequest, notFound } from "./errors";
 
 export interface SemDbRef {
   db: DatabaseSync;
@@ -17,6 +17,15 @@ function activeSemesterIds(ctx: S1Context): string[] {
   return (ctx.globalDb
     .prepare("SELECT id FROM semesters WHERE deleted_at IS NULL ORDER BY created_at DESC")
     .all() as Array<{ id: string }>).map((r) => r.id);
+}
+
+/** 已归档学期只能浏览，所有 S1 写入口均须在写入前调用。 */
+export function assertSemesterWritable(ctx: S1Context, semesterId: string): void {
+  const row = ctx.globalDb
+    .prepare("SELECT status FROM semesters WHERE id = @id AND deleted_at IS NULL")
+    .get({ id: semesterId }) as { status?: string } | undefined;
+  if (!row) throw notFound("未找到该学期，请检查是否已删除");
+  if (row.status === "archived") throw badRequest("学期已归档，仅支持浏览");
 }
 
 export function findSemesterByCourseId(ctx: S1Context, courseId: string): SemDbRef {

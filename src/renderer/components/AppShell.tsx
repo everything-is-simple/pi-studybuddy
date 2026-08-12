@@ -38,6 +38,7 @@ import { EmptyState } from "./common/EmptyState";
 import type { CourseInstance, Semester } from "../../contract/types";
 import type { TypedRpcClient } from "../rpc-client";
 import { SemesterCourseTree } from "./SemesterCourseTree";
+import { CreateCourseForm, FirstRunWizard, S1PlanPanel } from "./S1PlanPanel";
 import {
   SemesterCourseRequestGate,
   applyCourseLoadResult,
@@ -61,6 +62,12 @@ export type AppShellViewAction =
   | { type: "selectTab"; tabId: string }
   | { type: "openSettings" }
   | { type: "closeSettings" };
+
+type PlanningView =
+  | { type: "none" }
+  | { type: "firstRun" }
+  | { type: "createCourse" }
+  | { type: "manage"; semesterId: string; courseId: string };
 
 /** 设置是独立页面；仅切换页面状态，不得覆盖当前工作台 Tab。 */
 export function initialAppShellViewState(): AppShellViewState {
@@ -161,6 +168,8 @@ export function AppShell({
   const [sidebarSessions, setSidebarSessions] = useState<SessionSidebarItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const sessionRequestIdRef = React.useRef(0);
+  // 首次启动向导可在 semesters.list 未返回时完成创建；版本号阻止旧读取覆盖新建上下文。
+  const semesterRequestIdRef = React.useRef(0);
   // T-M4-007：AppShell 持有唯一学期/课程上下文；不向各 Tab 分散复制选择状态。
   const [semesterCourseState, dispatchSemesterCourse] = useReducer(
     semesterCourseReducer,
@@ -170,6 +179,8 @@ export function AppShell({
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [semesterLoadState, setSemesterLoadState] = useState<SemesterLoadState>("idle");
   const [courseStates, setCourseStates] = useState<Record<string, CourseLoadState>>({});
+  // T-M5-002：首次启动/学习计划面板只在 AppShell 保存，避免复制学期/课程选择状态。
+  const [planningView, setPlanningView] = useState<PlanningView>({ type: "none" });
   // T-M4-018：TTS 播放态（AppShell 局部 UI 状态，不属于学术上下文；09-UI §5）
   const tts = useTtsPlayback(rpc);
   // 归档只读状态始终从当前学期列表派生，保持学期/课程选择只有一个状态源。
@@ -254,14 +265,15 @@ export function AppShell({
     }
 
     setSemesterLoadState("loading");
+    const requestId = ++semesterRequestIdRef.current;
     void loadSemesters(rpc)
       .then((items) => {
-        if (cancelled || !mountedRef.current) return;
+        if (cancelled || !mountedRef.current || requestId !== semesterRequestIdRef.current) return;
         setSemesters(items);
         setSemesterLoadState("ready");
       })
       .catch(() => {
-        if (cancelled || !mountedRef.current) return;
+        if (cancelled || !mountedRef.current || requestId !== semesterRequestIdRef.current) return;
         setSemesters([]);
         setSemesterLoadState("error");
       });
@@ -301,6 +313,49 @@ export function AppShell({
   /** 课程选择只更新 AppShell 唯一上下文，既有工作台 Tab 通过 renderTab 接收该值。 */
   function handleSelectCourse(semesterId: string, courseId: string): void {
     dispatchSemesterCourse({ type: "selectCourse", semesterId, courseId });
+    setPlanningView({ type: "none" });
+  }
+
+  /** 切换 Tab 时退出学习计划面板，避免面板挡住其他工作台。 */
+  function handleSelectTab(tabId: string): void {
+    setPlanningView({ type: "none" });
+    dispatchView({ type: "selectTab", tabId });
+  }
+
+  /** 首次向导/新课程创建成功后立刻更新唯一上下文，不要求学生重启或手工刷新。 */
+  function applyCreatedContext(semester: Semester, course: CourseInstance): void {
+    semesterRequestIdRef.current += 1;
+    setSemesters((current) => {
+      const without = current.filter((item) => item.id !== semester.id);
+      return [semester, ...without];
+    });
+    setSemesterLoadState("ready");
+    setCourseStates((current) => ({
+      ...current,
+      [semester.id]: {
+        status: "ready",
+        courses: [...(current[semester.id]?.courses ?? []).filter((item) => item.id !== course.id), course],
+      },
+    }));
+    dispatchSemesterCourse({ type: "selectCourse", semesterId: semester.id, courseId: course.id });
+    setPlanningView({ type: "none" });
+    dispatchView({ type: "selectTab", tabId: "home" });
+  }
+
+  function refreshPlanningData(): void {
+    if (!rpc || !academicContext.semesterId) return;
+    const requestId = ++semesterRequestIdRef.current;
+    void loadSemesters(rpc).then((items) => {
+      if (!mountedRef.current || requestId !== semesterRequestIdRef.current) return;
+      setSemesters(items);
+      setSemesterLoadState("ready");
+    }).catch(() => {});
+    if (academicContext.courseId) {
+      void loadCoursesForSemester(rpc, academicContext.semesterId).then((courses) => {
+        if (!mountedRef.current) return;
+        setCourseStates((current) => ({ ...current, [academicContext.semesterId!]: { status: "ready", courses } }));
+      }).catch(() => {});
+    }
   }
 
   function handleNewSession(): void {
@@ -345,6 +400,47 @@ export function AppShell({
     void rpc.call("sessions.export", { id, format }).catch(() => {
       /* 静默失败：导出失败不阻塞 UI */
     });
+  }
+
+  const planningButtonStyle: React.CSSProperties = {
+    width: "100%",
+    marginTop: 8,
+    padding: "7px 8px",
+    border: "1px solid var(--border, #e0e0e0)",
+    borderRadius: 4,
+    background: "var(--bg, #fff)",
+    color: "var(--text, #222)",
+    cursor: "pointer",
+    textAlign: "left",
+  };
+
+  const selectedSemester = semesters.find((item) => item.id === academicContext.semesterId);
+  const selectedCourse = academicContext.semesterId && academicContext.courseId
+    ? (courseStates[academicContext.semesterId]?.courses ?? []).find((item) => item.id === academicContext.courseId)
+    : undefined;
+
+  function renderPlanningView(): React.JSX.Element | null {
+    if (!rpc || planningView.type === "none") return null;
+    if (planningView.type === "firstRun") {
+      return <FirstRunWizard rpc={rpc} onCancel={() => setPlanningView({ type: "none" })} onComplete={applyCreatedContext} />;
+    }
+    if (planningView.type === "createCourse" && selectedSemester) {
+      return <CreateCourseForm rpc={rpc} semester={selectedSemester} onCancel={() => setPlanningView({ type: "none" })} onCreated={(course) => applyCreatedContext(selectedSemester, course)} />;
+    }
+    if (planningView.type === "manage" && selectedSemester && selectedCourse) {
+      return <S1PlanPanel
+        rpc={rpc}
+        semester={selectedSemester}
+        course={selectedCourse}
+        readOnly={academicContext.isReadOnly === true}
+        onChanged={refreshPlanningData}
+        onNavigateBackup={() => {
+          setPlanningView({ type: "none" });
+          dispatchView({ type: "selectTab", tabId: "backup" });
+        }}
+      />;
+    }
+    return null;
   }
 
   return (
@@ -410,7 +506,14 @@ export function AppShell({
             context={academicContext}
             onToggleSemester={handleToggleSemester}
             onSelectCourse={handleSelectCourse}
+            onCreateSemester={() => setPlanningView({ type: "firstRun" })}
           />
+          {academicContext.semesterId && !academicContext.courseId && !academicContext.isReadOnly && (
+            <button type="button" onClick={() => setPlanningView({ type: "createCourse" })} style={planningButtonStyle}>添加课程</button>
+          )}
+          {academicContext.semesterId && academicContext.courseId && (
+            <button type="button" onClick={() => setPlanningView({ type: "manage", semesterId: academicContext.semesterId!, courseId: academicContext.courseId! })} style={planningButtonStyle}>管理学习计划</button>
+          )}
           <div style={{ fontWeight: 600, margin: "14px 0 8px", color: "var(--text, #222)" }}>会话</div>
           <SessionSidebar
             sessions={sidebarSessions}
@@ -458,8 +561,8 @@ export function AppShell({
             <SettingsPage rpc={rpc} onClose={() => dispatchView({ type: "closeSettings" })} />
           ) : (
             <>
-              {/* TabBar：固定 9 个学习工作台 Tab（设置不在其中）。 */}
-              <TabBar tabs={TABS} activeTabId={activeTabId} onSelectTab={(tabId) => dispatchView({ type: "selectTab", tabId })} />
+              {/* TabBar：固定 9 个学习工作台 Tab（设置不在其中）。切换 Tab 会退出学习计划面板。 */}
+              <TabBar tabs={TABS} activeTabId={activeTabId} onSelectTab={handleSelectTab} />
 
               {/* TTS 全局控制条（T-M2-008 静态壳 → T-M4-018 RPC 接线，09-UI §5.1-§5.5） */}
               <TtsControlBar
@@ -481,13 +584,14 @@ export function AppShell({
 
               {/* T-M4-007：归档上下文只读提示；具体业务写入口尚属后续 S1-S7 接线任务。 */}
               <AcademicReadOnlyNotice context={academicContext} />
-              {renderTab(
+              {/* T-M5-002：学习计划面板/向导优先于工作台 Tab 内容，但 TabBar 与 TTS 常驻。 */}
+              {renderPlanningView() ?? renderTab(
                 activeTabId,
                 rpc,
                 academicContext.semesterId,
                 academicContext.courseId,
                 academicContext,
-                (tabId) => dispatchView({ type: "selectTab", tabId }),
+                handleSelectTab,
                 activeSessionId,
                 (text, target) => void tts.speak(text, target),
               )}
