@@ -29,6 +29,7 @@ import { ReportTab } from "./tabs/ReportTab";
 import { CaptureTab } from "./tabs/CaptureTab";
 import { ChatTab } from "./tabs/ChatTab";
 import { SessionSidebar, type SessionSidebarItem } from "./SessionSidebar";
+import { CHAT_ERRORS } from "../chat-errors";
 import { TtsControlBar } from "./TtsControlBar";
 import { useTtsPlayback, type TtsSpeakTarget } from "../tts-playback";
 import { BackupPanel } from "./BackupPanel";
@@ -120,6 +121,7 @@ function renderTab(
   onNavigateTab: (tabId: string) => void,
   activeSessionId: string | undefined,
   onSpeakText: (text: string, target?: TtsSpeakTarget) => void,
+  onSessionActivity: (sessionId: string) => void,
 ): React.JSX.Element {
   switch (activeTabId) {
     case "home":
@@ -145,7 +147,7 @@ function renderTab(
       // T-M3-004：工具卡片跳转接线（09-UI §4.2 + 07-WF §2.8 步骤 3 + E2E-11）
       // AppShell 是 tab 状态持有者，setActiveTabId 注入 ChatTab onNavigateTab
       // T-M3-006：受控 activeSessionId 注入（裁决 5：会话即对话 Tab 内容）
-      return <ChatTab rpc={rpc} academicContext={academicContext} onNavigateTab={onNavigateTab} activeSessionId={activeSessionId} />;
+      return <ChatTab rpc={rpc} academicContext={academicContext} onNavigateTab={onNavigateTab} activeSessionId={activeSessionId} onSessionActivity={onSessionActivity} />;
     default:
       return (
         <TabContainer>
@@ -167,6 +169,10 @@ export function AppShell({
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
   const [sidebarSessions, setSidebarSessions] = useState<SessionSidebarItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  // T-M5-003：会话操作（重命名/删除/导出）失败可见（固定中文错误，无静默 catch）
+  const [operationError, setOperationError] = useState<string | null>(null);
+  // T-M5-003：状态栏模型状态（modelsConfig.get，09-UI §2.2 状态栏）
+  const [modelStatusText, setModelStatusText] = useState("未配置");
   const sessionRequestIdRef = React.useRef(0);
   // 首次启动向导可在 semesters.list 未返回时完成创建；版本号阻止旧读取覆盖新建上下文。
   const semesterRequestIdRef = React.useRef(0);
@@ -198,6 +204,18 @@ export function AppShell({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // T-M5-003：状态栏模型状态真实化（modelsConfig.get；失败固定文案，不恒“未配置”占位）
+  React.useEffect(() => {
+    if (!rpc) return;
+    void rpc
+      .call("modelsConfig.get", {})
+      .then((cfg) => {
+        const c = cfg as { provider?: string; model?: string };
+        setModelStatusText(c?.provider && c?.model ? `${c.provider} · ${c.model}` : "未配置");
+      })
+      .catch(() => setModelStatusText("状态不可用"));
+  }, [rpc]);
 
   // T-M3-006：左侧栏会话列表数据源（sessions.list；搜索时走 sessions.search，
   // L3 未建库降级为内存过滤——search handler 返回空数组时不覆盖当前列表）
@@ -359,24 +377,39 @@ export function AppShell({
   }
 
   function handleNewSession(): void {
-    // 裁决 2：新建会话=内存仓库空白会话 + 立即成为当前会话
-    // （当前承载层无 create 契约，先置空选中态，发送首条消息时 agent.send 携带新会话）
-    setActiveSessionId("sess-new");
+    // T-M5-003：新建会话 = 真实 ID（crypto.randomUUID，降级时间戳随机），
+    // 删除 sess-new 占位；首条消息发送时 agent.send 在 host 侧物化该会话。
+    let id: string;
+    try {
+      id =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    } catch {
+      id = `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+    setOperationError(null);
+    setActiveSessionId(id);
+  }
+
+  /** T-M5-003：会话列表刷新（新建/发送后侧栏同步；失败可见） */
+  function refreshSessions(): void {
+    if (!rpc) return;
+    void rpc
+      .call("sessions.list", {})
+      .then((list) => {
+        setSidebarSessions(list as SessionSidebarItem[]);
+        setOperationError(null);
+      })
+      .catch(() => setOperationError(CHAT_ERRORS.sessionsRefresh));
   }
 
   function handleRename(id: string, name: string): void {
     if (!rpc) return;
     void rpc
       .call("sessions.rename", { id, name })
-      .then(() => {
-        if (!rpc) return;
-        void rpc.call("sessions.list", {}).then((list) => {
-          setSidebarSessions(list as SessionSidebarItem[]);
-        });
-      })
-      .catch(() => {
-        /* 静默失败 */
-      });
+      .then(() => refreshSessions())
+      .catch(() => setOperationError(CHAT_ERRORS.renameFailed));
   }
 
   function handleDelete(id: string): void {
@@ -385,21 +418,17 @@ export function AppShell({
       .call("sessions.delete", { id })
       .then(() => {
         if (activeSessionId === id) setActiveSessionId(undefined);
-        if (!rpc) return;
-        void rpc.call("sessions.list", {}).then((list) => {
-          setSidebarSessions(list as SessionSidebarItem[]);
-        });
+        refreshSessions();
       })
-      .catch(() => {
-        /* 静默失败 */
-      });
+      .catch(() => setOperationError(CHAT_ERRORS.deleteFailed));
   }
 
   function handleExport(id: string, format: "md" | "json"): void {
     if (!rpc) return;
-    void rpc.call("sessions.export", { id, format }).catch(() => {
-      /* 静默失败：导出失败不阻塞 UI */
-    });
+    void rpc
+      .call("sessions.export", { id, format })
+      .then(() => setOperationError(null))
+      .catch(() => setOperationError(CHAT_ERRORS.exportFailed));
   }
 
   const planningButtonStyle: React.CSSProperties = {
@@ -515,6 +544,29 @@ export function AppShell({
             <button type="button" onClick={() => setPlanningView({ type: "manage", semesterId: academicContext.semesterId!, courseId: academicContext.courseId! })} style={planningButtonStyle}>管理学习计划</button>
           )}
           <div style={{ fontWeight: 600, margin: "14px 0 8px", color: "var(--text, #222)" }}>会话</div>
+          {/* T-M5-003：会话操作失败可见（固定中文错误，无静默 catch） */}
+          {operationError && (
+            <div
+              style={{
+                marginBottom: 8,
+                padding: "6px 8px",
+                borderRadius: 6,
+                fontSize: 11,
+                background: "#fde8e8",
+                border: "1px solid #f5baba",
+                color: "#8c2f2f",
+              }}
+            >
+              ⚠️ {operationError}
+              <button
+                type="button"
+                onClick={() => setOperationError(null)}
+                style={{ marginLeft: 8, fontSize: 11, cursor: "pointer" }}
+              >
+                知道了
+              </button>
+            </div>
+          )}
           <SessionSidebar
             sessions={sidebarSessions}
             query={searchQuery}
@@ -594,6 +646,7 @@ export function AppShell({
                 handleSelectTab,
                 activeSessionId,
                 (text, target) => void tts.speak(text, target),
+                refreshSessions,
               )}
 
               {/* RPC 通道验证（保留 T-M0-001 连通性检查） */}
@@ -656,7 +709,7 @@ export function AppShell({
           color: "var(--text-muted, #888)",
         }}
       >
-        <span>模型：未配置</span>
+        <span>模型：{modelStatusText}</span>
         <span>|</span>
         <span>备份：就绪</span>
         <span>|</span>

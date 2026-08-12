@@ -85,6 +85,12 @@ function resolveDataRoot(): string {
 export interface StudyBuddyExtensionOptions {
   whisperCliPath?: string;
   whisperModelPath?: string;
+  /**
+   * T-M5-003：当前会话 id 解析（turn_end L3 索引归属真实会话）。
+   * pi 事件不携带 sessionId，由 agent-host 在 agent.send 前写入当前会话；
+   * 未提供或返回空 → turn_end 跳过索引（不写 sess-001 回退，生产无 fixture 语义）。
+   */
+  getSessionId?: () => string | undefined;
 }
 
 /**
@@ -229,11 +235,13 @@ export function createStudyBuddyExtension(
       return undefined;
     });
 
-    // turn_end：L3 会话检索增量索引（裁决 2）
+    // turn_end：L3 会话检索增量索引（裁决 2 + T-M5-003 真实会话归属）
     // 数据源仅事件携带内容（assistant message + toolResults），不读 ~/.pi 会话文件。
-    // 当前会话 id：单用户单会话（defaultSessionFixture 的 sess-001），从事件无法直接
-    // 获得，故用扩展上下文默认会话 id（03-Arch §6.7 会话管理，多会话留后续）。
+    // 事件不携带 sessionId，经扩展上下文 getSessionId 取当前真实会话（agent.send 写入）；
+    // 无当前会话时跳过索引（移除 sess-001 回退，生产不写 fixture 会话）。
     pi.on("turn_end", async (event) => {
+      const sessionId = options?.getSessionId?.();
+      if (!sessionId) return undefined;
       const e = event as {
         turnIndex: number;
         message?: { role?: string; content?: unknown };
@@ -241,7 +249,7 @@ export function createStudyBuddyExtension(
       };
       indexTurnEndChunks({
         dataRoot,
-        sessionId: DEFAULT_SESSION_ID,
+        sessionId,
         turnIndex: e.turnIndex,
         message: e.message,
         toolResults: e.toolResults,
@@ -250,6 +258,3 @@ export function createStudyBuddyExtension(
     });
   };
 }
-
-/** 默认会话 id（单用户单会话，defaultSessionFixture 的 sess-001；03-Arch §6.7） */
-const DEFAULT_SESSION_ID = "sess-001";

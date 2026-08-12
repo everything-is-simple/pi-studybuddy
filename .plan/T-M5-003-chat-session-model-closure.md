@@ -5,7 +5,7 @@
 **里程碑**：M5 用户可用性验收 + UI 修订 + 一键交付
 **实施分支**：`agent/T-M5-003-chat-session-model-closure`
 **测试运行根**：`H:\pi-studybuddy-tmp\runs\T-M5-003\`
-**集成基线**：`master=origin/master=869de2f`
+**集成基线**：`master=origin/master=9ec9b1e`（2026-08-12 核验；原开工基线 869de2f，T-M5-002 已快进并入 master；实施前重新核验）
 
 ## 1. 裁决与范围
 
@@ -102,3 +102,10 @@ git diff --check
 - API/schema 缺少对话闭环必须表达的能力，或设计条款冲突：记录证据并请求用户裁决。
 - 任何 P0/P1 不属于对话/会话/模型/文件引用边界：登记到既定 T-M5-004~008，不扩展本任务。
 - 完成所有验收项、独立审查与质量门后，按 AGENTS.md §7 受控收尾；不自动创建或启动下一任务，不自动 commit、merge 或 push。
+
+## 完成记录
+
+- 完成日期：2026-08-12
+- 实施记录：`.record/T-M5-003-实施记录.md`
+- 状态：✅ 本地实施/验收完成（RED→GREEN→REFACTOR + 真机 UAT 两阶段 + 双独立审查无 P0/P1）；Git 收口完成后转 done。
+- 收尾事实：生产空数据无 fixture、真实会话（新建/发送/物化/重启持久化/内联重命名）、模型状态失败可见可重试、真实错题选择、turn_end L3 真实会话归属（用户裁决纳入）；unit/integration 123 files/1149 tests、真实 Electron E2E 32 files/141 tests、verify full 通过（t-m4-021 一次环境性抖动重跑通过）；真机 UAT 证据 21 文件落 `runs\T-M5-003\uat\`（不进 Git）；无 API/handler/schema 变化（contract 127/127）；T-M5-004~008 保持 pending。

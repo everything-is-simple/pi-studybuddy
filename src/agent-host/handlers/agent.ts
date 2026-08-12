@@ -46,6 +46,11 @@ export type AgentFixture = (
 export interface CreateAgentHandlersOptions {
   /** 受控夹具只服务测试；缺省时生产路径必须返回 MODEL_NOT_CONFIGURED。 */
   fixture?: AgentFixture;
+  /**
+   * T-M5-003：当前会话 id 引用——agent.send 前写入，供扩展 turn_end
+   * L3 索引归属真实会话（事件不携带 sessionId）。
+   */
+  sessionIdRef?: { current: string | undefined };
 }
 
 /** 固定回复片段（受控夹具，非真实 LLM 输出） */
@@ -202,9 +207,18 @@ export function createAgentHandlers(
       if (!sessionId || !text) {
         return { eventCount: 0 };
       }
+      // T-M5-003：真实会话所有权——首条消息物化会话（touch 创建真实 ID 会话，
+      // 不新增契约方法，contract 保持 127/127）；即使后续模型未配置，会话仍已创建。
+      if (sessionStore) {
+        sessionStore.touch(sessionId);
+      }
       // 会话级学习场景元数据写回内存仓库（09-UI §4.2；裁决：不新增契约方法）
       if (sessionMeta && sessionStore) {
         sessionStore.updateMeta(sessionId, sessionMeta);
+      }
+      // T-M5-003：真实会话归属——扩展 turn_end L3 索引使用当前 sessionId（非 sess-001）
+      if (options.sessionIdRef) {
+        options.sessionIdRef.current = sessionId;
       }
 
       // 等待生产 host 完成已配置模型的异步初始化，避免首条消息与启动并发时误报未配置。

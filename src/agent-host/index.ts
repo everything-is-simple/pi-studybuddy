@@ -20,7 +20,7 @@ import { createFileWatchService } from "./file-watch";
 import { createFileHandlers } from "./handlers/files";
 import { createModelHandlers } from "./handlers/models";
 import { resolveDataRoot } from "./allowed-roots";
-import { createSessionStore, defaultSessionFixture } from "./session-store";
+import { createSessionStore } from "./session-store";
 import { createSessionHandlers } from "./handlers/sessions";
 import { createAgentHandlers, runMockFixture, type StudyBuddySessionRef } from "./handlers/agent";
 import { createStudyBuddySession, type StudyBuddySession } from "./studybuddy-extension-loader";
@@ -128,8 +128,9 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   const fileWatch = createFileWatchService(server);
   // T-M3-002：files.read 白名单门禁需业务数据根（AGENTS.md §9.4）
   const dataRoot = resolveDataRoot();
-  // T-M3-001：会话内存仓库 + sessions.*/agent.* handlers（对话 Tab 承载层）
-  const sessionStore = createSessionStore(defaultSessionFixture());
+  // T-M5-003：生产空数据根 = 空会话列表（不注入 fixture；真实会话由用户动作产生）；
+  // sessions.json 持久化 → 重启后会话可见（09-UI §7，不新增 API/schema）
+  const sessionStore = createSessionStore(undefined, { dataRoot });
 
   // T-M4-023：生产模型只来自业务数据根 models.json + DPAPI credential-vault。
   // 2026-08-11：agent-host（utilityProcess）无 electron safeStorage，凭证经
@@ -144,6 +145,8 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     listKeys: async () => [],
   };
   const studyBuddySessionRef: StudyBuddySessionRef = { current: null };
+  // T-M5-003：当前会话 id（agent.send 写入 → 扩展 turn_end L3 索引归属真实会话）
+  const currentSessionIdRef: { current: string | undefined } = { current: undefined };
   const replaceModelSession = async (modelConfig: { provider: string; model: string }): Promise<void> => {
     const apiKey = await safeReadModelCredential(credentialService, modelConfig.provider);
     if (!apiKey) throw modelNotConfiguredError();
@@ -152,6 +155,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
       next = await createStudyBuddySession({
         dataRoot,
         modelConfig: { provider: modelConfig.provider, model: modelConfig.model, apiKey },
+        getSessionId: () => currentSessionIdRef.current,
       });
     } catch {
       throw modelNotConfiguredError();
@@ -180,6 +184,7 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     ...createSessionHandlers({ store: sessionStore, dataRoot, exportDir: path.join(dataRoot, "exports") }),
     ...createAgentHandlers(server, sessionStore, studyBuddySessionRef, {
       ...(process.env.VITEST !== undefined ? { fixture: runMockFixture } : {}),
+      sessionIdRef: currentSessionIdRef,
     }),
     // T-M4-002 S1-S7/TTS/Backup 业务 handler（断裂1修复，03-Arch §6.2）
     ...createBusinessHandlers(dataRoot, server),

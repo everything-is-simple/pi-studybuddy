@@ -22,6 +22,7 @@ import { EmptyState } from "../common/EmptyState";
 import type { TypedRpcClient } from "../../rpc-client";
 import type { SemesterCourseContext } from "../../semester-course-state";
 import { jumpButtonLabel, toolJumpTarget } from "../../tool-tab-map";
+import { CHAT_ERRORS, buildSessionMeta, toFixedSendError } from "../../chat-errors";
 
 /** 工具调用视图条目（T-M3-002：tool_call → running / tool_result → done|error） */
 export interface ToolCallView {
@@ -92,6 +93,8 @@ interface Props {
   activeSessionId?: string;
   /** T-M3-006：会话加载错误（AppShell 注入；错误态可重试语义） */
   sessionLoadError?: string;
+  /** T-M5-003：发送完成后通知 AppShell（新会话物化 → 侧栏刷新；renderer 内部回调，非 API） */
+  onSessionActivity?: (sessionId: string) => void;
 }
 
 /** 流式接收状态：idle/streaming/done */
@@ -157,6 +160,7 @@ export function ChatTab({
   onNavigateTab,
   activeSessionId,
   sessionLoadError,
+  onSessionActivity,
   academicContext,
 }: Props): React.JSX.Element {
   const effectiveCourseId = academicContext?.courseId;
@@ -177,6 +181,16 @@ export function ChatTab({
   const [goal, setGoal] = useState<string>(initialGoal ?? "");
   const [mistakeIds, setMistakeIds] = useState<string[]>(initialMistakeIds ?? []);
   const subscriptionRef = useRef<(() => void) | null>(null);
+  // T-M5-003：失败可见（无静默 catch）——固定中文错误 + 可重试
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [modelListError, setModelListError] = useState<string | null>(null);
+  const [modelConfigError, setModelConfigError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [materialsError, setMaterialsError] = useState<string | null>(null);
+  // T-M5-003：真实错题选择（mistakes.list 当前课程）
+  const [mistakePickerOpen, setMistakePickerOpen] = useState(false);
+  const [mistakeOptions, setMistakeOptions] = useState<Array<{ id: string }>>([]);
+  const [mistakesError, setMistakesError] = useState<string | null>(null);
 
   // 订阅 agent.events（07-WF §2.8 步骤 2：renderer 看到流式回复 + 工具调用视图）
   useEffect(() => {
@@ -252,26 +266,23 @@ export function ChatTab({
     };
   }, [rpc]);
 
-  // 加载会话列表（sessions.list）
-  useEffect(() => {
-    let cancelled = false;
-    if (!rpc) return () => {
-      cancelled = true;
-    };
+  // 加载会话列表（sessions.list；失败可见可重试，无静默 catch）
+  function loadSessions(): void {
+    if (!rpc) return;
     void rpc
       .call("sessions.list", {})
       .then((list) => {
-        if (!cancelled) setSessions(list as unknown as ChatSessionSummary[]);
+        setSessions(list as unknown as ChatSessionSummary[]);
+        setSessionsError(null);
       })
-      .catch(() => {
-        /* 静默失败：骨架阶段会话列表可空 */
-      });
-    return () => {
-      cancelled = true;
-    };
+      .catch(() => setSessionsError(CHAT_ERRORS.sessionsLoad));
+  }
+
+  useEffect(() => {
+    loadSessions();
   }, [rpc]);
 
-  // T-M3-002：加载模型列表（models.list，受控 fixture）
+  // T-M3-002：加载模型列表（models.list；失败可见可重试）
   useEffect(() => {
     let cancelled = false;
     if (!rpc || initialModels) return () => {
@@ -280,37 +291,37 @@ export function ChatTab({
     void rpc
       .call("models.list", {})
       .then((list) => {
-        if (!cancelled) setModels(list as unknown as ModelProvider[]);
+        if (!cancelled) {
+          setModels(list as unknown as ModelProvider[]);
+          setModelListError(null);
+        }
       })
       .catch(() => {
-        /* 静默失败：模型选择器可空 */
+        if (!cancelled) setModelListError(CHAT_ERRORS.modelListLoad);
       });
     return () => {
       cancelled = true;
     };
   }, [rpc, initialModels]);
 
-  // T-M3-005：挂载时回填默认模型（modelsConfig.get → provider:model 组合 id）
-  useEffect(() => {
-    let cancelled = false;
-    if (!rpc || initialModelId) return () => {
-      cancelled = true;
-    };
+  // T-M5-003：模型配置读取（modelsConfig.get；失败可见可重试，无静默 catch）
+  function loadModelConfig(): void {
+    if (!rpc) return;
     void rpc
       .call("modelsConfig.get", {})
       .then((cfg) => {
-        if (cancelled) return;
         const c = cfg as { provider?: string; model?: string };
+        setModelConfigError(null);
         if (c && c.provider && c.model) {
           setSelectedModel(`${c.provider}:${c.model}`);
         }
       })
-      .catch(() => {
-        /* 静默失败：模型配置可空 */
-      });
-    return () => {
-      cancelled = true;
-    };
+      .catch(() => setModelConfigError(CHAT_ERRORS.modelConfigLoad));
+  }
+
+  useEffect(() => {
+    if (!rpc || initialModelId) return;
+    loadModelConfig();
   }, [rpc, initialModelId]);
 
   // T-M3-002：@选择器展开时加载当前课程资料（materials.list）
@@ -335,7 +346,7 @@ export function ChatTab({
         );
       })
       .catch(() => {
-        /* 静默失败：资料列表可空 */
+        if (!cancelled) setMaterialsError(CHAT_ERRORS.materialsLoad);
       });
     return () => {
       cancelled = true;
@@ -345,21 +356,37 @@ export function ChatTab({
   function handleSend(): void {
     const text = input.trim();
     if (!text || !rpc) return;
+    // T-M5-003：发送归属 AppShell 唯一 activeSessionId（删除 sess-001 硬编码）
+    const sessionId = activeSessionId;
+    if (!sessionId) {
+      setSendError(CHAT_ERRORS.sendNoSession);
+      return;
+    }
     setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setPickerOpen(false);
+    setSendError(null);
     void rpc
       .call("agent.send", {
-        sessionId: "sess-001",
+        sessionId,
         text,
         // T-M3-003：学习场景元数据随发送携带（09-UI §4.2，影响 AI 上下文）
-        sessionMeta: {
-          ...(subject ? { subject } : {}),
-          ...(goal ? { goal } : {}),
-          ...(mistakeIds.length ? { mistakeIds } : {}),
-        },
+        sessionMeta: buildSessionMeta(subject, goal, mistakeIds),
       })
-      .catch(() => setStatus("done"));
+      .then(() => {
+        setStatus("done");
+        // 新会话物化后刷新会话列表（标题/侧栏可见）
+        loadSessions();
+        onSessionActivity?.(sessionId);
+      })
+      .catch((err: unknown) => {
+        // T-M5-003：失败可见（固定中文错误，无静默 catch）
+        setStatus("done");
+        // 即使模型未配置，host 已在 agent.send 中物化会话（touch 先于模型检查）
+        loadSessions();
+        onSessionActivity?.(sessionId);
+        setSendError(toFixedSendError(err));
+      });
   }
 
   // T-M3-002：@ 触发选择器（输入末尾 @ 或点击 [@文件] 按钮）
@@ -398,6 +425,38 @@ export function ChatTab({
   function modelLabel(provider: ModelProvider, modelId: string): string {
     const m = provider.models.find((x) => x.id === modelId);
     return m ? `${provider.name} · ${m.name}` : `${provider.name} · ${modelId}`;
+  }
+
+  // T-M5-003：真实错题选择（mistakes.list 当前课程，09-UI §4.2 错题关联）
+  function openMistakePicker(): void {
+    if (!rpc) return;
+    setMistakePickerOpen(true);
+    if (!effectiveCourseId) {
+      setMistakesError(CHAT_ERRORS.mistakesNoCourse);
+      setMistakeOptions([]);
+      return;
+    }
+    setMistakesError(null);
+    void rpc
+      .call("mistakes.list", { courseId: effectiveCourseId })
+      .then((list) => {
+        setMistakeOptions(list as unknown as Array<{ id: string }>);
+        setMistakesError(null);
+      })
+      .catch(() => setMistakesError(CHAT_ERRORS.mistakesLoad));
+  }
+
+  /** T-M5-003：模型相关失败统一重试（列表 + 配置） */
+  function retryModels(): void {
+    if (!rpc) return;
+    void rpc
+      .call("models.list", {})
+      .then((list) => {
+        setModels(list as unknown as ModelProvider[]);
+        setModelListError(null);
+      })
+      .catch(() => setModelListError(CHAT_ERRORS.modelListLoad));
+    loadModelConfig();
   }
 
   return (
@@ -477,6 +536,39 @@ export function ChatTab({
         </div>
       ) : null}
 
+      {/* T-M5-003：会话列表加载失败可见（无静默 catch） */}
+      {sessionsError && (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: "8px 10px",
+            borderRadius: 6,
+            fontSize: 12,
+            background: "#fde8e8",
+            border: "1px solid #f5baba",
+            color: "#8c2f2f",
+          }}
+        >
+          ⚠️ {sessionsError}
+          <button
+            type="button"
+            onClick={loadSessions}
+            style={{
+              marginLeft: 8,
+              padding: "1px 8px",
+              fontSize: 11,
+              cursor: "pointer",
+              border: "1px solid #f5baba",
+              background: "transparent",
+              borderRadius: 4,
+              color: "#8c2f2f",
+            }}
+          >
+            重试
+          </button>
+        </div>
+      )}
+
       {/* 会话列表 */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 6, color: "var(--text, #222)" }}>会话</div>
@@ -521,19 +613,25 @@ export function ChatTab({
         <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
           <span style={{ color: "var(--text-muted, #888)" }}>模型</span>
           <select
+            key={modelConfigError ? "model-error" : "model-ok"}
             value={selectedModel}
             onChange={(e) => {
               const combo = e.target.value;
-              setSelectedModel(combo);
-              // T-M3-005：切换落库（modelsConfig.set，provider:model 组合 id 拆分）
               const idx = combo.indexOf(":");
-              if (idx > 0 && rpc) {
-                const provider = combo.slice(0, idx);
-                const model = combo.slice(idx + 1);
-                void rpc.call("modelsConfig.set", { provider, model }).catch(() => {
-                  /* 静默失败：落库失败不阻塞 UI */
+              if (idx <= 0 || !rpc) return;
+              const provider = combo.slice(0, idx);
+              const model = combo.slice(idx + 1);
+              // T-M5-003：先反馈用户选择，保存失败立即回退 + 固定错误（不伪装成功）；
+              // key 重挂载保证失败后下拉不回显未保存的选项
+              setSelectedModel(combo);
+              setModelConfigError(null);
+              void rpc
+                .call("modelsConfig.set", { provider, model })
+                .then(() => setModelConfigError(null))
+                .catch(() => {
+                  setSelectedModel("");
+                  setModelConfigError(CHAT_ERRORS.modelConfigSave);
                 });
-              }
             }}
             style={{
               padding: "4px 6px",
@@ -544,6 +642,8 @@ export function ChatTab({
               color: "var(--text, #222)",
             }}
           >
+            {/* T-M5-003：未配置模型时占位项（不误显示首个模型） */}
+            <option value="">选择模型</option>
             {models.map((provider) =>
               provider.models
                 .filter((model) => model.modality !== "image" && model.modality !== "video")
@@ -554,6 +654,39 @@ export function ChatTab({
                 )),
             )}
           </select>
+        </div>
+      )}
+
+      {/* T-M5-003：模型列表/配置加载或保存失败可见（无静默 catch） */}
+      {(modelListError || modelConfigError) && (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: "8px 10px",
+            borderRadius: 6,
+            fontSize: 12,
+            background: "#fde8e8",
+            border: "1px solid #f5baba",
+            color: "#8c2f2f",
+          }}
+        >
+          ⚠️ {modelListError ?? modelConfigError}
+          <button
+            type="button"
+            onClick={retryModels}
+            style={{
+              marginLeft: 8,
+              padding: "1px 8px",
+              fontSize: 11,
+              cursor: "pointer",
+              border: "1px solid #f5baba",
+              background: "transparent",
+              borderRadius: 4,
+              color: "#8c2f2f",
+            }}
+          >
+            重试
+          </button>
         </div>
       )}
 
@@ -670,10 +803,10 @@ export function ChatTab({
             ))}
           </span>
         )}
-        {/* 关联错题添加（S4 跳转语义：mistakes.list 数据源） */}
+        {/* 关联错题添加（T-M5-003：打开真实错题选择器，mistakes.list 数据源） */}
         <button
           type="button"
-          onClick={() => setMistakeIds((prev) => (prev.includes("mist-001") ? prev : [...prev, "mist-001"]))}
+          onClick={openMistakePicker}
           style={{
             padding: "2px 8px",
             fontSize: 11,
@@ -686,7 +819,83 @@ export function ChatTab({
         >
           + 关联错题
         </button>
+        {/* T-M5-003：真实错题选择器（当前课程 mistakes.list） */}
+        {mistakePickerOpen && (
+          <div
+            style={{
+              width: "100%",
+              marginTop: 6,
+              padding: "6px 8px",
+              borderRadius: 6,
+              border: "1px solid var(--border, #e0e0e0)",
+              background: "var(--bg, #ffffff)",
+            }}
+          >
+            <div style={{ fontWeight: 600, fontSize: 11, marginBottom: 4 }}>关联错题（当前课程）</div>
+            {mistakesError ? (
+              <div style={{ fontSize: 11, color: "#8c2f2f" }}>
+                ⚠️ {mistakesError}
+                <button
+                  type="button"
+                  onClick={openMistakePicker}
+                  style={{ marginLeft: 8, fontSize: 11, cursor: "pointer" }}
+                >
+                  重试
+                </button>
+              </div>
+            ) : mistakeOptions.length === 0 ? (
+              <EmptyState message="当前课程暂无错题" />
+            ) : (
+              mistakeOptions.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() =>
+                    setMistakeIds((prev) => (prev.includes(m.id) ? prev : [...prev, m.id]))
+                  }
+                  style={{
+                    display: "inline-block",
+                    margin: "2px 4px 2px 0",
+                    padding: "2px 8px",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    border: "1px solid var(--border, #e0e0e0)",
+                    background: "var(--bg-panel, #f5f5f5)",
+                    borderRadius: 10,
+                    color: "var(--text, #222)",
+                  }}
+                >
+                  {m.id}
+                </button>
+              ))
+            )}
+            <button
+              type="button"
+              onClick={() => setMistakePickerOpen(false)}
+              style={{ display: "block", marginTop: 4, fontSize: 11, cursor: "pointer" }}
+            >
+              关闭
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* T-M5-003：发送失败可见（固定中文错误，无静默 catch） */}
+      {sendError && (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: "8px 10px",
+            borderRadius: 6,
+            fontSize: 12,
+            background: "#fde8e8",
+            border: "1px solid #f5baba",
+            color: "#8c2f2f",
+          }}
+        >
+          ⚠️ {sendError}
+        </div>
+      )}
 
       {/* 消息列表 */}
       <div style={{ marginBottom: 10 }}>
@@ -743,7 +952,7 @@ export function ChatTab({
                           <button
                             type="button"
                             data-tab={target.tabId}
-                            onClick={() => onNavigateTab?.(target.tabId, { sessionId: "sess-001" })}
+                            onClick={() => onNavigateTab?.(target.tabId, { sessionId: activeSessionId ?? undefined })}
                             style={{
                               marginTop: 4,
                               padding: "2px 10px",

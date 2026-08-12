@@ -39,7 +39,6 @@ const {
 // ── T-M3-007：对话承载层 handler（agent/sessions/modelsConfig）────────────────
 const {
   createSessionStore,
-  defaultSessionFixture,
 } = require("../../dist/agent-host/session-store");
 const { createSessionHandlers } = require("../../dist/agent-host/handlers/sessions");
 const { createAgentHandlers, runMockFixture } = require("../../dist/agent-host/handlers/agent");
@@ -96,8 +95,9 @@ const noopFileWatch = {
   start: async () => {},
   stop: () => {},
 };
-// 会话内存仓库（复用生产 factory，06-API §3.1 会话骨架）
-const sessionStore = createSessionStore(defaultSessionFixture());
+// 会话内存仓库（复用生产 factory，06-API §3.1 会话骨架；T-M5-003：生产空初始化，
+// 真实会话由 agent.send 首条消息物化，不注入 fixture）
+const sessionStore = createSessionStore();
 // agent.send 经 server.pushEvent 发射 agent.events；子进程无 RpcServer，
 // 用 shim server 将事件转发父进程 {"type":"event","topic","payload"} 供 RpcDriver 订阅。
 const eventForwardServer = {

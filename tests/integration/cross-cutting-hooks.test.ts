@@ -217,9 +217,9 @@ describe("cross-cutting hooks 集成", () => {
     expect(raw.__studybuddy_managed).toBe(true);
   });
 
-  it("turn_end 钩子 → assistant + tool 消息写入 L3 chunks/chunks_fts", async () => {
+  it("turn_end 钩子 → assistant + tool 消息写入 L3 chunks/chunks_fts（T-M5-003：真实会话 id）", async () => {
     const { handlers, pi } = createStubPi();
-    const factory = createStudyBuddyExtension();
+    const factory = createStudyBuddyExtension({ getSessionId: () => "real-session-001" });
     await factory(pi);
     const handler = handlers["turn_end"] as (e: {
       turnIndex: number;
@@ -236,21 +236,26 @@ describe("cross-cutting hooks 集成", () => {
     const db = openConversationDbAt(ISOLATION_DIR);
     const rows = db.db
       .prepare("SELECT id, role, source_type, content, last_offset FROM chunks WHERE session_id = ? ORDER BY last_offset")
-      .all("sess-001");
+      .all("real-session-001");
     expect(rows.length).toBe(2);
     expect(rows[0].role).toBe("assistant");
     expect(rows[0].source_type).toBe("message");
     expect(rows[1].role).toBe("tool");
     expect(rows[1].source_type).toBe("tool_result");
+    // 不写 sess-001 回退（T-M5-003：生产无 fixture 会话语义）
+    const legacy = db.db
+      .prepare("SELECT id FROM chunks WHERE session_id = ?")
+      .all("sess-001");
+    expect(legacy.length).toBe(0);
     // FTS 有记录（bigram 分词）
     const fts = db.db.prepare("SELECT COUNT(*) AS c FROM chunks_fts").get() as { c: number };
     expect(fts.c).toBeGreaterThan(0);
     closeDatabase(db); // 释放文件锁，避免下一条测试 rmSync 时报 EBUSY
   });
 
-  it("turn_end 增量 → 同 session 二次触发只写新增（max(last_offset) 门控）", async () => {
+  it("turn_end 增量 → 同 session 二次触发只写新增（max(last_offset) 门控；真实会话 id）", async () => {
     const { handlers, pi } = createStubPi();
-    const factory = createStudyBuddyExtension();
+    const factory = createStudyBuddyExtension({ getSessionId: () => "real-session-002" });
     await factory(pi);
     const handler = handlers["turn_end"] as (e: {
       turnIndex: number;
@@ -264,17 +269,37 @@ describe("cross-cutting hooks 集成", () => {
     const db = openConversationDbAt(ISOLATION_DIR);
     const afterFirst = db.db
       .prepare("SELECT id, last_offset FROM chunks WHERE session_id = ? ORDER BY last_offset")
-      .all("sess-001");
+      .all("real-session-002");
     expect(afterFirst.length).toBe(1);
     // 第二次：turn 1（增量）
     await handler({ turnIndex: 1, message: { role: "assistant", content: "第二轮回复" } });
     const rows = db.db
       .prepare("SELECT id, last_offset FROM chunks WHERE session_id = ? ORDER BY last_offset")
-      .all("sess-001");
+      .all("real-session-002");
     expect(rows.length).toBe(2);
-    expect(rows[0].id).toBe("sess-001:0:assistant:0");
-    expect(rows[1].id).toBe("sess-001:1:assistant:0");
+    expect(rows[0].id).toBe("real-session-002:0:assistant:0");
+    expect(rows[1].id).toBe("real-session-002:1:assistant:0");
     expect(rows[1].last_offset).toBeGreaterThan(rows[0].last_offset);
+    closeDatabase(db);
+  });
+
+  it("T-M5-003：无 getSessionId → turn_end 跳过 L3 索引（不写 sess-001 回退）", async () => {
+    const { handlers, pi } = createStubPi();
+    const factory = createStudyBuddyExtension();
+    await factory(pi);
+    const handler = handlers["turn_end"] as (e: {
+      turnIndex: number;
+      message?: { role: string; content?: unknown };
+    }) => unknown;
+    rmSync(path.join(ISOLATION_DIR, "memory", "l3", "conversation.sqlite"), { force: true });
+    await handler({ turnIndex: 0, message: { role: "assistant", content: "不应被索引的内容" } });
+    const db = openConversationDbAt(ISOLATION_DIR);
+    const legacy = db.db
+      .prepare("SELECT id FROM chunks WHERE session_id = ?")
+      .all("sess-001");
+    expect(legacy.length).toBe(0);
+    const total = db.db.prepare("SELECT COUNT(*) AS c FROM chunks").get() as { c: number };
+    expect(total.c).toBe(0);
     closeDatabase(db);
   });
 });

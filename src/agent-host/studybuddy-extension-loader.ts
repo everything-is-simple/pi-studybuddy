@@ -49,6 +49,11 @@ export interface StudyBuddySessionOptions {
   whisperCliPath?: string;
   /** whisper.cpp 模型路径 */
   whisperModelPath?: string;
+  /**
+   * T-M5-003：当前会话 id 解析（传给扩展 turn_end，L3 索引归属真实会话）。
+   * agent-host 在 agent.send 前更新该值；未提供时扩展跳过 L3 索引。
+   */
+  getSessionId?: () => string | undefined;
 }
 
 /** createStudyBuddySession 返回值——封装 pi AgentSession + 扩展加载结果 + 清理接口 */
@@ -237,6 +242,7 @@ export async function createStudyBuddySession(
   const studyBuddyExtension: ExtensionFactory = createStudyBuddyExtension({
     whisperCliPath,
     whisperModelPath,
+    getSessionId: options?.getSessionId,
   });
 
   // 2. 模型运行时不使用 ~/.pi 的磁盘 models/auth；凭证只以内存 runtime key 注入。

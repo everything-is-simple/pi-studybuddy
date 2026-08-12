@@ -9,7 +9,7 @@
  *   - agent.send 返回 eventCount>0（受控夹具序列已发射）
  *   - Streams["agent.events"] 事件序列：message_start → token×N → context_compressed
  *   - 事件 payload 无完整 UUID（防泄露，AGENTS.md §9.3）
- *   - 默认会话列表（defaultSessionFixture 的 sess-001/002）可查
+ *   - T-M5-003：生产空数据根会话列表为空（不注入 fixture）；首条消息物化真实会话
  *   - sessions.context 返回承载层上下文（systemPrompt/messages/tokens）
  *   - L1 画像注入语义：before_agent_start 钩子由 T-M1-008 集成测试覆盖，
  *     此处经承载层 sessions.context systemPrompt 断言承载就绪
@@ -17,6 +17,7 @@
  * 数据隔离（AGENTS.md §5.3）：写 H:\pi-studybuddy-tmp\runs\T-M4-022\e2e\e2e-10\
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { randomUUID } from "node:crypto";
 import { launchElectron, type LaunchedApp } from "./helpers/electron-launcher";
 import { RpcDriver } from "./helpers/rpc-driver";
 import type {
@@ -37,6 +38,8 @@ function assertNoUuidInEvent(ev: AgentEvent): void {
 describe("E2E-10 对话 Tab 默认主入口 + AI 流式事件", () => {
   let app: LaunchedApp;
   let rpc: RpcDriver;
+  /** T-M5-003：首条消息物化的真实会话 id（E10-03/04 复用） */
+  let seededId: string;
 
   beforeAll(async () => {
     app = await launchElectron("e2e-10");
@@ -54,24 +57,33 @@ describe("E2E-10 对话 Tab 默认主入口 + AI 流式事件", () => {
     expect(typeof res.timestamp).toBe("number");
   });
 
-  it("E10-02 默认会话列表可查（sessions.list）— 对话默认主入口承载层就绪", async () => {
+  it("E10-02 生产空数据根会话列表为空（T-M5-003：不注入 fixture）", async () => {
     const list = await rpc.call<SessionSummary[]>("sessions.list", {});
     expect(Array.isArray(list)).toBe(true);
-    // defaultSessionFixture 注入 sess-001/sess-002（06-API §3.1 会话骨架）
-    expect(list.some((s) => s.id === "sess-001")).toBe(true);
-    expect(list.some((s) => s.id === "sess-002")).toBe(true);
+    expect(list).toEqual([]);
+  });
+
+  it("E10-02b 首条消息物化真实会话（agent.send → sessions.list 可见，09-UI §7）", async () => {
+    seededId = randomUUID();
+    const res = await rpc.call<{ eventCount: number }>("agent.send", {
+      sessionId: seededId,
+      text: "帮我理解极限的 ε-δ 定义",
+    });
+    expect(res.eventCount).toBeGreaterThan(0);
+    const list = await rpc.call<SessionSummary[]>("sessions.list", {});
+    expect(list.some((s) => s.id === seededId)).toBe(true);
   });
 
   it("E10-03 会话详情可查（sessions.get）→ 含承载层上下文", async () => {
-    const session = await rpc.call<Session>("sessions.get", { id: "sess-001" });
-    expect(session.id).toBe("sess-001");
+    const session = await rpc.call<Session>("sessions.get", { id: seededId });
+    expect(session.id).toBe(seededId);
     expect(session.context).toBeTruthy();
     expect(typeof session.context.systemPrompt).toBe("string");
     expect(typeof session.context.messages).toBe("number");
   });
 
   it("E10-04 会话上下文可查（sessions.context）— L1 画像承载语义", async () => {
-    const ctx = await rpc.call<SessionContext>("sessions.context", { id: "sess-001" });
+    const ctx = await rpc.call<SessionContext>("sessions.context", { id: seededId });
     expect(ctx.systemPrompt).toContain("学习对话");
     expect(ctx.messages).toBeGreaterThan(0);
     expect(typeof ctx.compressed).toBe("boolean");

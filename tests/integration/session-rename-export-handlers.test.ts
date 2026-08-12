@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { MessageChannel } from "node:worker_threads";
+import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -81,9 +82,15 @@ describe("sessions.rename/export RPC handlers（T-M3-006，06-API §3.1）", () 
     rmSync(exportDir, { recursive: true, force: true });
   });
 
+  /** T-M5-003：真实会话物化（生产空数据根；agent.send 首条消息创建会话） */
+  async function seedSession(): Promise<string> {
+    const id = randomUUID();
+    await client.call("agent.send", { sessionId: id, text: "种子会话" });
+    return id;
+  }
+
   it("sessions.rename 更新会话名称并返回 Session", async () => {
-    const list = (await client.call("sessions.list", {})) as Array<{ id: string }>;
-    const target = list[0].id;
+    const target = await seedSession();
     const renamed = (await client.call("sessions.rename", {
       id: target,
       name: "重命名后的会话",
@@ -96,8 +103,7 @@ describe("sessions.rename/export RPC handlers（T-M3-006，06-API §3.1）", () 
   });
 
   it("sessions.export md → 返回 path 且文件存在、内容脱敏", async () => {
-    const list = (await client.call("sessions.list", {})) as Array<{ id: string; name: string }>;
-    const target = list[0].id;
+    const target = await seedSession();
     const result = (await client.call("sessions.export", {
       id: target,
       format: "md",
@@ -105,21 +111,21 @@ describe("sessions.rename/export RPC handlers（T-M3-006，06-API §3.1）", () 
     expect(typeof result.path).toBe("string");
     expect(existsSync(result.path)).toBe(true);
     const content = readFileSync(result.path, "utf8");
-    expect(content).toContain(list[0].name);
+    expect(content).toContain("新会话");
     expect(content).not.toMatch(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i);
     expect(content).not.toMatch(/sk-[a-z0-9]{20,}/i);
   });
 
   it("sessions.export json → 结构化会话内容，同样脱敏", async () => {
-    const list = (await client.call("sessions.list", {})) as Array<{ id: string; name: string }>;
-    const target = list[0].id;
+    const target = await seedSession();
     const result = (await client.call("sessions.export", {
       id: target,
       format: "json",
     })) as { path: string };
     const parsed = JSON.parse(readFileSync(result.path, "utf8")) as { id: string; name: string };
-    expect(parsed.id).toBe(target);
-    expect(parsed.name).toBe(list[0].name);
+    // UUID 形会话 id 按 AGENTS.md §9.3 导出脱敏为 [id]
+    expect(parsed.id).toBe("[id]");
+    expect(parsed.name).toBe("新会话");
     const raw = readFileSync(result.path, "utf8");
     expect(raw).not.toMatch(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i);
   });

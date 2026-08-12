@@ -13,7 +13,7 @@
  * 安全（AGENTS.md §9.3）：只渲染脱敏元数据，不展示完整 UUID/API key。
  * 静态渲染测试通过 props 注入 sessions/query/now 确定性断言。
  */
-import React from "react";
+import React, { useState } from "react";
 import type { SessionSummary } from "../../contract/types";
 
 /** 会话条目（SessionSidebar 内部展示模型，脱敏后字段） */
@@ -90,6 +90,15 @@ export function SessionSidebar({
   onDelete,
   onExport,
 }: Props): React.JSX.Element {
+  // T-M5-003：内联重命名状态（Electron 不支持 window.prompt，改为输入框内联编辑）
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+
+  function commitRename(id: string): void {
+    const name = editName.trim();
+    if (name) onRename(id, name);
+    setEditingId(null);
+  }
   const base = now ?? new Date();
   const groups: Array<{ label: "今天" | "昨天" | "本周" | null; items: SessionSidebarItem[] }> = [
     { label: "今天", items: [] },
@@ -189,9 +198,33 @@ export function SessionSidebar({
                         }}
                       />
                     ) : null}
-                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {s.name}
-                    </span>
+                    {editingId === s.id ? (
+                      <input
+                        type="text"
+                        value={editName}
+                        aria-label="会话名称"
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") commitRename(s.id);
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        style={{
+                          flex: 1,
+                          fontSize: 12,
+                          padding: "2px 4px",
+                          borderRadius: 4,
+                          border: "1px solid var(--border, #e0e0e0)",
+                          background: "var(--bg, #ffffff)",
+                          color: "var(--text, #222)",
+                        }}
+                      />
+                    ) : (
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {s.name}
+                      </span>
+                    )}
                     {s.unread !== undefined && s.unread > 0 ? (
                       <span
                         title="未读"
@@ -220,46 +253,73 @@ export function SessionSidebar({
                       {s.preview}
                     </div>
                   ) : null}
-                  {/* 会话操作：重命名 / 删除 / 导出（09-UI §7 会话管理） */}
+                  {/* 会话操作：重命名（内联编辑，T-M5-003）/ 删除 / 导出（09-UI §7 会话管理） */}
                   <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-                    <button
-                      type="button"
-                      aria-label={`重命名 ${s.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const name = window.prompt("重命名会话", s.name);
-                        if (name && name.trim()) onRename(s.id, name.trim());
-                      }}
-                      style={actionButtonStyle}
-                    >
-                      重命名
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`导出 ${s.name}`}
-                      title="导出（md / json）"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const format = window.confirm("导出为 JSON 格式？[确定=json / 取消=md]")
-                          ? "json"
-                          : "md";
-                        onExport(s.id, format);
-                      }}
-                      style={actionButtonStyle}
-                    >
-                      导出
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`删除 ${s.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm(`确认删除会话「${s.name}」？`)) onDelete(s.id);
-                      }}
-                      style={{ ...actionButtonStyle, color: "#c01c28" }}
-                    >
-                      删除
-                    </button>
+                    {editingId === s.id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            commitRename(s.id);
+                          }}
+                          style={actionButtonStyle}
+                        >
+                          保存
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingId(null);
+                          }}
+                          style={actionButtonStyle}
+                        >
+                          取消
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          aria-label={`重命名 ${s.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingId(s.id);
+                            setEditName(s.name);
+                          }}
+                          style={actionButtonStyle}
+                        >
+                          重命名
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`导出 ${s.name}`}
+                          title="导出（md / json）"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const format = window.confirm("导出为 JSON 格式？[确定=json / 取消=md]")
+                              ? "json"
+                              : "md";
+                            onExport(s.id, format);
+                          }}
+                          style={actionButtonStyle}
+                        >
+                          导出
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`删除 ${s.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`确认删除会话「${s.name}」？`)) onDelete(s.id);
+                          }}
+                          style={{ ...actionButtonStyle, color: "#c01c28" }}
+                        >
+                          删除
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
