@@ -1,7 +1,7 @@
 # T-M4-026 实施计划：AI provider 多模型与凭证配置
 
 - 任务 ID：T-M4-026
-- 状态：in_progress（本地实现、配置、完整验收与 Git 收口本地完成；origin/master 推送待网络恢复）
+- 状态：done（本地实现、配置、完整验收与 Git 收口完成）
 - 日期：2026-08-12
 - 用户授权：用户明确要求读取 `H:\pi-references` 中的 AI 原站/中转站凭证并配置系统使用。
 - 里程碑：M4 业务接线 + AI provider 配置扩展
@@ -51,4 +51,4 @@
 - 完成日期：2026-08-12
 - 实施记录：`.record/T-M4-026-实施记录.md`
 - 状态：✅ 已完成
-- Git 收口已完成本地部分：功能提交 `10d50eb` 与治理登记提交 `c3d2db3` 已按显式路径提交，快进合并到 `master`，Node24 master 完整质量门复验通过；`origin/master` 推送因 GitHub 443 不可达失败，待网络恢复后推送核验（v0.1.154 修正）。
+- Git 收口已完成：功能提交 `10d50eb` 与治理登记提交 `c3d2db3` 已按显式路径提交，快进合并到 `master`，Node24 master 完整质量门复验通过；网络恢复后 `origin/master` 已推送并核验 `master=origin/master=869de2f`（v0.1.155 完成）。
