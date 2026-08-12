@@ -1,7 +1,8 @@
 # 08 测试验收计划
 
-**版本**：v0.1.4
-**日期**：2026-08-09
+**版本**：v0.1.5
+**日期**：2026-08-12
+**状态**：✅ 已审查批准（v0.1.5 新增 §6.6 用户端到端测试铁律：每任务收尾前除自动化全测试外必须执行真机 UAT，用户 2026-08-12 明确指令）
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.4 §7](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§8/§9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2 §6](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.6](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.3 §8/§9](./07-工作流-Workflow.md)
 **下游**：04-Todo、09-UI
@@ -481,6 +482,18 @@ E2E-13 对话 L3 会话检索
 - @文件引用经 allowed-roots 校验
 - L1 画像在 before_agent_start 注入（集成 §4.2 断言）
 - L3 在 turn_end 增量索引（断言 chunks_fts 有记录）
+
+### 6.6 用户端到端测试铁律（真机 UAT，v0.1.5 用户明确指令 2026-08-12）
+
+每个任务在收尾前，除了自动化全测试（unit/integration/E2E/verify full）之外，**必须执行用户端到端测试（真机 UAT）**：
+
+- 使用真实 Electron 应用 + 全新隔离数据根（`H:\\pi-studybuddy-tmp\\runs\\<task-id>\\`），不种子、不调用 handler 绕过界面，完全通过可见 UI 操作走用户主路径；
+- 至少覆盖本任务涉及的每个用户可见闭环（创建→使用→重启持久化），并逐页/逐按钮记录可达性与可用性；
+- 记录步骤级证据（DOM/截图/JSON）到运行根，并在实施记录 §6 登记；
+- DOM 不得含完整 UUID、绝对路径或错误栈；
+- 真机 UAT 未通过或证据不足时，不得报告任务完成。
+
+参考实现：T-M5-002 真机 UAT 证据位于 `H:\\pi-studybuddy-tmp\\runs\\T-M5-002\\uat\\`（first-run.json / reopen.json / UAT-报告.md）。
 
 ---
 

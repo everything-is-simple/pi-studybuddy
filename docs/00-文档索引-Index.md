@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.161
+**版本**：v0.1.162
 **日期**：2026-08-12
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -34,11 +34,11 @@
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | 📝 v0.1.158 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；M5 8 项已登记，T-M5-001 in_progress，T-M5-002~008 pending。 |
+| 04 | 任务清单-Todo-List.md | 📝 v0.1.162 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001/002 done，T-M5-003 in_progress，T-M5-004~008 pending；每任务用户端到端测试铁律已登记。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
-| 08 | 测试验收-Test-Plan.md | ✅ v0.1.4 已审查批准 | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E + §4.2 model_select 断言落点业务数据根 |
+| 08 | 测试验收-Test-Plan.md | ✅ v0.1.5 已审查批准 | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E + §6.6 用户端到端测试铁律（真机 UAT） | 测试金字塔 + 四层分层（单件/集成/系统冒烟/系统 E2E）+ 关键断言矩阵 + 11 状态机测试 + 安全不变量校验 + 夹具与运行隔离 + §6.5 通用 AI 对话 E2E + §4.2 model_select 断言落点业务数据根 |
 | 09 | 使用者介面-UI-Design.md | ✅ v0.1.5 已审查批准 | 三栏布局 + **💬 对话默认 Tab（pi 原生 AI 对话）** + 8 学习标签页（S1-S7）+ 💾 备份 Tab（T-M4-019 增补）+ TTS 随时可击发 UI + 备份恢复 + 会话业务化 + 文件体验 + 技能/模型管理 + 设置 + 安全隐私边界 + Streams 映射 + 响应式 + 模型选择持久化业务数据根 |
 | 10 | 开发规范-Dev-Rules.md | ✅ v0.1.0 已审查批准 | 16 步开发流程（准备/执行/收尾三阶段）+ TDD 纪律 + 单一执行任务门禁 + 文档治理检查 + diff 检查 + 用户授权门 |
 | 11 | 组件装配-Component-Assembly.md | ✅ v0.1.0 已审查批准 | "先分解再组合" SoT + 6 步装配流程 + 能力卡规范 + 试炼场边界 + 装配门禁四项（测试全绿/工作区干净/API 有文档/无越权） |
@@ -121,8 +121,8 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
-- [ ] T-M5-001 用户验收审计进行中：唯一计划 `.plan/T-M5-001-ui-acceptance-audit.md`，隔离分支 `agent/T-M5-001-ui-acceptance-audit`；只做逐页逐控件/依赖追踪矩阵，不修业务代码、不启动 M5-002~008。
-- [x] 04-Todo v0.1.158 📝 T-M5-001 审计证据已完成并保持 in_progress：真实 NSIS 安装空数据根逐页打开 10 个 Tab；P0/P1 追踪矩阵、依赖审计、两份独立审查与实施记录已建立；M5 仍为 1 in_progress/7 pending，未启动后续修订任务。
+- [ ] T-M5-003 对话/会话/模型/文件引用真实用户闭环修订进行中：唯一计划 `.plan/T-M5-003-chat-session-model-closure.md`，隔离分支 `agent/T-M5-003-chat-session-model-closure`；先写 RED，移除 `sess-001`/`mist-001` fixture 语义，不新增 API/schema，不启动 T-M5-004~008。
+- [x] 04-Todo v0.1.162：用户明确指令每任务必须执行真机 UAT（AGENTS.md §7 铁律 + 08-Test §6.6 + §6.7 门槛）；T-M5-001/002 done，T-M5-003 in_progress；M5 当前为 1 in_progress/2 done/5 pending。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。
