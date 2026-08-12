@@ -3,8 +3,10 @@ import { rmSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import {
   createStudyBuddySession,
+  ensureRuntimeProviderConfig,
   type StudyBuddySession,
 } from "../../src/agent-host/studybuddy-extension-loader";
+import { readFileSync, writeFileSync } from "node:fs";
 import type { ToolInfo } from "@earendil-works/pi-coding-agent";
 
 /**
@@ -145,8 +147,25 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
     expect(session).toBeDefined();
     expect(session.session).toBeDefined();
     expect(typeof session.session.getAllTools).toBe("function");
-    expect(session.session.model?.id).toBe("deepseek-v4-flash");
+    expect(session.session.model?.id).toBe("deepseek-chat");
   }, 30_000);
+
+  it("既有 provider catalog 升级时补入缺失 provider 且不覆盖已有 provider", () => {
+    const catalog = path.join(DATA_ROOT, "config", "pi-models.json");
+    mkdirSync(path.dirname(catalog), { recursive: true });
+    writeFileSync(catalog, JSON.stringify({ providers: { agnes: { name: "用户 Agnes", baseUrl: "https://example.invalid/v1", api: "openai-completions", models: [] } } }), "utf8");
+
+    ensureRuntimeProviderConfig(DATA_ROOT);
+
+    const providers = JSON.parse(readFileSync(catalog, "utf8")).providers;
+    expect(providers.agnes.name).toBe("用户 Agnes");
+    expect(providers.deepseek.models.map((model: { id: string }) => model.id)).toContain("deepseek-chat");
+    expect(providers.volcengine.models.map((model: { id: string }) => model.id)).toContain("doubao-seed-2-1-turbo-260628");
+    expect(providers.yunwu.models.map((model: { id: string }) => model.id)).toContain("gpt-5.6-terra");
+
+    writeFileSync(catalog, JSON.stringify({ providers: {} }), "utf8");
+    ensureRuntimeProviderConfig(DATA_ROOT);
+  });
 
   it("agnes 自定义 OpenAI 兼容 provider（pi-models.json）可创建 session（不连网）", async () => {
     const agnesSession = await createStudyBuddySession({

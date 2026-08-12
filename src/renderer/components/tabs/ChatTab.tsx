@@ -545,11 +545,13 @@ export function ChatTab({
             }}
           >
             {models.map((provider) =>
-              provider.models.map((m) => (
-                <option key={`${provider.id}:${m.id}`} value={`${provider.id}:${m.id}`}>
-                  {modelLabel(provider, m.id)}
-                </option>
-              )),
+              provider.models
+                .filter((model) => model.modality !== "image" && model.modality !== "video")
+                .map((m) => (
+                  <option key={`${provider.id}:${m.id}`} value={`${provider.id}:${m.id}`}>
+                    {modelLabel(provider, m.id)}
+                  </option>
+                )),
             )}
           </select>
         </div>

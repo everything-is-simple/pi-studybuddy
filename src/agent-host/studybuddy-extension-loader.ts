@@ -61,8 +61,8 @@ export interface StudyBuddySessionOptions {
  */
 const RUNTIME_MODEL_ID_ALIASES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   deepseek: {
-    "DeepSeek V4 Flash": "deepseek-v4-flash",
-    "DeepSeek V4 Pro": "deepseek-v4-pro",
+    "DeepSeek V4 Flash": "deepseek-chat",
+    "DeepSeek V4 Pro": "deepseek-reasoner",
   },
 };
 
@@ -80,35 +80,95 @@ const RUNTIME_MODEL_ID_ALIASES: Readonly<Record<string, Readonly<Record<string, 
 const RUNTIME_PROVIDERS_FILE_NAME = "pi-models.json";
 
 const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
-  providers: Record<string, { name: string; baseUrl: string; api: string; models: Array<{ id: string; name: string }> }>;
+  providers: Record<string, {
+    name: string;
+    baseUrl: string;
+    api: string;
+    compat?: { supportsDeveloperRole?: boolean; supportsReasoningEffort?: boolean };
+    models: Array<{ id: string; name: string; input?: Array<"text" | "image">; modality?: "chat" | "image" | "video"; reasoning?: boolean; contextWindow?: number; maxTokens?: number }>;
+  }>;
 }> = {
   providers: {
+    deepseek: {
+      name: "DeepSeek 直连（文本）",
+      baseUrl: "https://api.deepseek.com/v1",
+      api: "openai-completions",
+      models: [
+        { id: "deepseek-chat", name: "DeepSeek Chat", input: ["text"], contextWindow: 131072, maxTokens: 8192 },
+        { id: "deepseek-reasoner", name: "DeepSeek Reasoner", input: ["text"], reasoning: true, contextWindow: 131072, maxTokens: 8192 },
+      ],
+    },
+    volcengine: {
+      name: "火山方舟（文本/多模态）",
+      baseUrl: "https://ark.cn-beijing.volces.com/api/coding/v3",
+      api: "openai-completions",
+      models: [
+        { id: "deepseek-v4-flash-ga-260731", name: "DeepSeek V4 Flash", input: ["text"] },
+        { id: "deepseek-v4-pro-260425", name: "DeepSeek V4 Pro", input: ["text"], reasoning: true },
+        { id: "glm-5-2-260617", name: "GLM 5.2", input: ["text"], reasoning: true },
+        { id: "doubao-seedance-2-5-260628", name: "Doubao Seedance 2.5（视频生成）", input: ["text"], modality: "video" },
+        { id: "doubao-seed-2-0-lite-260428", name: "Doubao Seed 2.0 Lite", input: ["text", "image"] },
+        { id: "doubao-seed-2-0-mini-260428", name: "Doubao Seed 2.0 Mini", input: ["text", "image"] },
+        { id: "doubao-seed-2-1-turbo-260628", name: "Doubao Seed 2.1 Turbo", input: ["text", "image"] },
+      ],
+    },
+    yunwu: {
+      name: "云雾 API（文本）",
+      baseUrl: "https://yunwu.ai/v1",
+      api: "openai-completions",
+      models: [
+        { id: "gpt-5.6-terra", name: "GPT 5.6 Terra", input: ["text"], reasoning: true },
+        { id: "gpt-5.6-sol", name: "GPT 5.6 Sol", input: ["text"], reasoning: true },
+        { id: "gpt-5.6-luna", name: "GPT 5.6 Luna", input: ["text"], reasoning: true },
+        { id: "gpt-5.5", name: "GPT 5.5", input: ["text"], reasoning: true },
+        { id: "gpt-5.4", name: "GPT 5.4", input: ["text"], reasoning: true },
+        { id: "gpt-5.4-mini", name: "GPT 5.4 Mini", input: ["text"], reasoning: true },
+      ],
+    },
     agnes: {
-      name: "Agnes 多媒体模型",
+      name: "Agnes（多媒体）",
       baseUrl: "https://apihub.agnes-ai.com/v1",
       api: "openai-completions",
       models: [
-        { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash" },
-        { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro" },
-        { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash" },
-        { id: "agnes-video-v2.0", name: "Agnes Video 2.0" },
+        { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash", input: ["text", "image"] },
+        { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro", input: ["text", "image"], reasoning: true },
+        { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash（图像生成）", input: ["text", "image"], modality: "image" },
+        { id: "agnes-video-v2.0", name: "Agnes Video 2.0（视频生成）", input: ["text", "image"], modality: "video" },
       ],
     },
+    xiaojigpt: { name: "小鸡 GPT 中转（待模型探测）", baseUrl: "https://api.ckff.tech/v1", api: "openai-completions", models: [] },
+    shayulajiao: { name: "鲨鱼辣椒中转（待模型探测）", baseUrl: "https://shayulajiao.xyz/v1", api: "openai-completions", models: [] },
+    xiaojikiro: { name: "小鸡 Kiro 中转（待模型探测）", baseUrl: "https://ckff.dev/v1", api: "openai-completions", models: [] },
   },
 };
 
 /**
- * 确保 pi 运行时自定义 provider 定义文件存在（原子写 tmp + rename，单写进程）。
- * 返回文件路径；文件已存在则原样返回（不覆盖用户已有定义）。
+ * 确保业务数据根的 provider catalog 包含项目默认项。
+ *
+ * 已存在文件按 provider id 合并：用户已配置 provider 的 baseUrl/api/模型定义保持不变，
+ * 缺失 provider 才补入默认定义。这样升级新增 provider 时可见，同时不会改写用户的中转地址。
  */
 export function ensureRuntimeProviderConfig(dataRoot: string): string {
   const dir = path.join(dataRoot, "config");
   const file = path.join(dir, RUNTIME_PROVIDERS_FILE_NAME);
-  if (fs.existsSync(file)) return file;
-  fs.mkdirSync(dir, { recursive: true });
-  const tmp = `${file}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(DEFAULT_RUNTIME_PROVIDERS, null, 2), "utf8");
-  fs.renameSync(tmp, file);
+  let existing: { providers?: Record<string, unknown> } = {};
+  if (fs.existsSync(file)) {
+    try {
+      existing = JSON.parse(fs.readFileSync(file, "utf8")) as { providers?: Record<string, unknown> };
+    } catch {
+      // 损坏的非敏感 catalog 不作为运行时配置使用，安全地以默认值重建。
+      existing = {};
+    }
+  }
+  const currentProviders = existing.providers && typeof existing.providers === "object" ? existing.providers : {};
+  const mergedProviders = { ...DEFAULT_RUNTIME_PROVIDERS.providers, ...currentProviders };
+  const hasAllDefaults = Object.keys(DEFAULT_RUNTIME_PROVIDERS.providers).every((id) => Object.prototype.hasOwnProperty.call(currentProviders, id));
+  if (!fs.existsSync(file) || !hasAllDefaults) {
+    fs.mkdirSync(dir, { recursive: true });
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify({ ...existing, providers: mergedProviders }, null, 2), "utf8");
+    fs.renameSync(tmp, file);
+  }
   return file;
 }
 

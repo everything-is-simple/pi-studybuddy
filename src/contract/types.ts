@@ -765,6 +765,10 @@ export interface ModelProvider {
 export interface ModelInfo {
   id: string;
   name: string;
+  /** 模型输入能力：text-only 或可接收 image。 */
+  input?: Array<"text" | "image">;
+  /** 能力分类：chat 可用于对话；image/video 是生成模型，不能伪装成聊天模型。 */
+  modality?: "chat" | "image" | "video";
   contextWindow?: number;
 }
 

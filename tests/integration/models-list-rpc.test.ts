@@ -64,13 +64,19 @@ describe("models.list RPC（06-API §3.13 + §9.5 物理隔离）", () => {
     agentHost.dispose();
   });
 
-  it("models.list 返回 ModelProvider[]（受控 fixture）", async () => {
+  it("models.list 返回 ModelProvider[]；未声明模型的中转 provider 不伪造模型 ID", async () => {
     const providers = (await client.call("models.list", {})) as ModelProvider[];
     expect(providers.length).toBeGreaterThanOrEqual(2);
     for (const p of providers) {
       expect(p.id).toBeTruthy();
       expect(p.providerType).toBeTruthy();
-      expect(p.models.length).toBeGreaterThan(0);
+    }
+
+    for (const id of ["deepseek", "volcengine", "yunwu", "agnes"]) {
+      expect(providers.find((provider) => provider.id === id)?.models.length).toBeGreaterThan(0);
+    }
+    for (const id of ["xiaojigpt", "shayulajiao", "xiaojikiro"]) {
+      expect(providers.find((provider) => provider.id === id)?.models).toEqual([]);
     }
   });
 

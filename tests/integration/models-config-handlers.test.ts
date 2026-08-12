@@ -62,6 +62,34 @@ describe("modelsConfig.* + models.list fixture（06-API §3.13 + §9.5 + 裁决 
     expect(raw).not.toMatch(/sk-[A-Za-z0-9]{16,}/);
   });
 
+  it("生产模型切换成功后才持久化默认配置", async () => {
+    const applied: Array<{ provider: string; model: string }> = [];
+    const handlers = createModelHandlers(ISOLATION_DIR, {
+      onModelConfigChange: async (config) => {
+        applied.push(config);
+      },
+    });
+
+    const result = await handlers["modelsConfig.set"]({ provider: "volcengine", model: "deepseek-v4-flash-ga-260731" });
+
+    expect(applied).toEqual([{ provider: "volcengine", model: "deepseek-v4-flash-ga-260731" }]);
+    expect(result).toMatchObject({ provider: "volcengine", model: "deepseek-v4-flash-ga-260731", managed: true });
+    expect(handlers["modelsConfig.get"]({})).toMatchObject({ provider: "volcengine", model: "deepseek-v4-flash-ga-260731" });
+  });
+
+  it("生产模型切换失败时不覆盖当前默认配置", async () => {
+    const handlers = createModelHandlers(ISOLATION_DIR, {
+      onModelConfigChange: async () => {
+        throw new Error("credential unavailable");
+      },
+    });
+    const before = handlers["modelsConfig.get"]({});
+
+    await expect(handlers["modelsConfig.set"]({ provider: "yunwu", model: "gpt-5.6-sol" })).rejects.toThrow("credential unavailable");
+
+    expect(handlers["modelsConfig.get"]({})).toEqual(before);
+  });
+
   it("models.list fixture 含 deepseek + agnes 两组真 model provider（裁决 5）", () => {
     const handlers = createModelHandlers(ISOLATION_DIR);
     const providers = handlers["models.list"]({}) as ModelProvider[];
@@ -70,9 +98,12 @@ describe("modelsConfig.* + models.list fixture（06-API §3.13 + §9.5 + 裁决 
     expect(ids).toContain("agnes");
     const deepseek = providers.find((p) => p.id === "deepseek");
     const agnes = providers.find((p) => p.id === "agnes");
-    expect(deepseek?.models.map((m) => m.id)).toContain("DeepSeek V4 Flash");
-    expect(deepseek?.models.map((m) => m.id)).toContain("DeepSeek V4 Pro");
+    expect(deepseek?.models.map((m) => m.id)).toContain("deepseek-chat");
+    expect(deepseek?.models.map((m) => m.id)).toContain("deepseek-reasoner");
+    expect(providers.map((p) => p.id)).toContain("volcengine");
+    expect(providers.map((p) => p.id)).toContain("yunwu");
     expect(agnes?.models.map((m) => m.id)).toContain("agnes-2.5-flash");
+    expect(agnes?.models.find((m) => m.id === "agnes-2.5-flash")?.input).toEqual(["text", "image"]);
     expect(agnes?.models.map((m) => m.id)).toContain("agnes-2.5-pro");
     expect(agnes?.models.map((m) => m.id)).toContain("agnes-image-2.1-flash");
     expect(agnes?.models.map((m) => m.id)).toContain("agnes-video-v2.0");

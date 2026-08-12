@@ -23,7 +23,7 @@ import { resolveDataRoot } from "./allowed-roots";
 import { createSessionStore, defaultSessionFixture } from "./session-store";
 import { createSessionHandlers } from "./handlers/sessions";
 import { createAgentHandlers, runMockFixture, type StudyBuddySessionRef } from "./handlers/agent";
-import { createStudyBuddySession } from "./studybuddy-extension-loader";
+import { createStudyBuddySession, type StudyBuddySession } from "./studybuddy-extension-loader";
 import { readModelConfig } from "../agent/model-config";
 import path from "node:path";
 
@@ -46,6 +46,7 @@ import { createCredentialHandlers } from "./handlers/credentials";
 import { createSettingsHandlers } from "./handlers/settings";
 import { createSkillHandlers } from "./handlers/skills";
 import { createParentPortCredentialClient, type CredentialService } from "./credential-client";
+import { modelNotConfiguredError } from "./model-errors";
 
 export interface AgentHost {
   dispose(): void;
@@ -143,21 +144,28 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     listKeys: async () => [],
   };
   const studyBuddySessionRef: StudyBuddySessionRef = { current: null };
+  const replaceModelSession = async (modelConfig: { provider: string; model: string }): Promise<void> => {
+    const apiKey = await safeReadModelCredential(credentialService, modelConfig.provider);
+    if (!apiKey) throw modelNotConfiguredError();
+    let next: StudyBuddySession;
+    try {
+      next = await createStudyBuddySession({
+        dataRoot,
+        modelConfig: { provider: modelConfig.provider, model: modelConfig.model, apiKey },
+      });
+    } catch {
+      throw modelNotConfiguredError();
+    }
+    const previous = studyBuddySessionRef.current;
+    studyBuddySessionRef.current = next;
+    await previous?.dispose();
+  };
   if (process.env.VITEST === undefined) {
     const modelConfig = readModelConfig(dataRoot);
     if (modelConfig) {
-      studyBuddySessionRef.ready = (async () => {
-        const apiKey = await safeReadModelCredential(credentialService, modelConfig.provider);
-        if (!apiKey) return;
-        try {
-          studyBuddySessionRef.current = await createStudyBuddySession({
-            dataRoot,
-            modelConfig: { provider: modelConfig.provider, model: modelConfig.model, apiKey },
-          });
-        } catch {
-          // 错误细节可能包含 provider/运行时信息，不记录；agent.send 统一返回安全配置错误。
-        }
-      })();
+      studyBuddySessionRef.ready = replaceModelSession(modelConfig).catch(() => {
+        // 启动阶段不泄漏 provider/凭证细节；agent.send 统一返回安全配置错误。
+      });
     }
   }
 
@@ -165,7 +173,9 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     "system.ping": (...args: unknown[]) => ping(args[0] as Api["system.ping"]["params"]),
     ...toolchainHandlers,
     ...createFileHandlers(fileWatch, { dataRoot }),
-    ...createModelHandlers(dataRoot),
+    ...createModelHandlers(dataRoot, {
+      onModelConfigChange: process.env.VITEST === undefined ? replaceModelSession : undefined,
+    }),
     ...createSkillHandlers(),
     ...createSessionHandlers({ store: sessionStore, dataRoot, exportDir: path.join(dataRoot, "exports") }),
     ...createAgentHandlers(server, sessionStore, studyBuddySessionRef, {

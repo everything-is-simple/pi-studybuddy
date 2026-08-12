@@ -26,24 +26,54 @@ import { readModelConfig, writeModelConfig } from "../../agent/model-config";
 const MODEL_FIXTURE: ModelProvider[] = [
   {
     id: "deepseek",
-    name: "DeepSeek 文字模型",
+    name: "DeepSeek 直连（文本）",
     providerType: "openai-compatible",
     models: [
-      { id: "DeepSeek V4 Flash", name: "DeepSeek V4 Flash" },
-      { id: "DeepSeek V4 Pro", name: "DeepSeek V4 Pro" },
+      { id: "deepseek-chat", name: "DeepSeek Chat", input: ["text"] },
+      { id: "deepseek-reasoner", name: "DeepSeek Reasoner", input: ["text"] },
+    ],
+  },
+  {
+    id: "volcengine",
+    name: "火山方舟（文本/多模态）",
+    providerType: "openai-compatible",
+    models: [
+      { id: "deepseek-v4-flash-ga-260731", name: "DeepSeek V4 Flash", input: ["text"] },
+      { id: "deepseek-v4-pro-260425", name: "DeepSeek V4 Pro", input: ["text"] },
+      { id: "glm-5-2-260617", name: "GLM 5.2", input: ["text"] },
+      { id: "doubao-seedance-2-5-260628", name: "Doubao Seedance 2.5（视频生成）", input: ["text"], modality: "video" },
+      { id: "doubao-seed-2-0-lite-260428", name: "Doubao Seed 2.0 Lite", input: ["text", "image"] },
+      { id: "doubao-seed-2-0-mini-260428", name: "Doubao Seed 2.0 Mini", input: ["text", "image"] },
+      { id: "doubao-seed-2-1-turbo-260628", name: "Doubao Seed 2.1 Turbo", input: ["text", "image"] },
+    ],
+  },
+  {
+    id: "yunwu",
+    name: "云雾 API（文本）",
+    providerType: "openai-compatible",
+    models: [
+      { id: "gpt-5.6-terra", name: "GPT 5.6 Terra", input: ["text"] },
+      { id: "gpt-5.6-sol", name: "GPT 5.6 Sol", input: ["text"] },
+      { id: "gpt-5.6-luna", name: "GPT 5.6 Luna", input: ["text"] },
+      { id: "gpt-5.5", name: "GPT 5.5", input: ["text"] },
+      { id: "gpt-5.4", name: "GPT 5.4", input: ["text"] },
+      { id: "gpt-5.4-mini", name: "GPT 5.4 Mini", input: ["text"] },
     ],
   },
   {
     id: "agnes",
-    name: "Agnes 多媒体模型",
+    name: "Agnes（多媒体）",
     providerType: "openai-compatible",
     models: [
-      { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash" },
-      { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro" },
-      { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash" },
-      { id: "agnes-video-v2.0", name: "Agnes Video 2.0" },
+      { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash", input: ["text", "image"] },
+      { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro", input: ["text", "image"] },
+      { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash（图像生成）", input: ["text", "image"], modality: "image" },
+      { id: "agnes-video-v2.0", name: "Agnes Video 2.0（视频生成）", input: ["text", "image"], modality: "video" },
     ],
   },
+  { id: "xiaojigpt", name: "小鸡 GPT 中转（待模型探测）", providerType: "openai-compatible", models: [] },
+  { id: "shayulajiao", name: "鲨鱼辣椒中转（待模型探测）", providerType: "openai-compatible", models: [] },
+  { id: "xiaojikiro", name: "小鸡 Kiro 中转（待模型探测）", providerType: "openai-compatible", models: [] },
 ];
 
 /**
@@ -53,7 +83,12 @@ const MODEL_FIXTURE: ModelProvider[] = [
  * models.addProvider/probe/modelsConfig.test：保留完整 RPC 面；v0.1 不在 host 中探测外网，
  * 以明确的受控结果/错误取代“契约存在但生产未注册”。
  */
-export function createModelHandlers(dataRoot?: string) {
+export interface ModelHandlersOptions {
+  /** 在持久化新默认项前建立并切换生产 pi session，失败时保持原 session。 */
+  onModelConfigChange?: (config: ModelConfig) => Promise<void>;
+}
+
+export function createModelHandlers(dataRoot?: string, options: ModelHandlersOptions = {}) {
   return {
     "models.list": (_params: unknown): ModelProvider[] => MODEL_FIXTURE,
     "models.addProvider": (params: unknown): ModelProvider => {
@@ -76,11 +111,20 @@ export function createModelHandlers(dataRoot?: string) {
       latencyMs: 0,
       error: "模型连通性测试需要受控的提供方接入，当前版本未启用",
     }),
-    "modelsConfig.set": (params: unknown): ModelConfig => {
+    "modelsConfig.set": (params: unknown): ModelConfig | Promise<ModelConfig> => {
       const { provider, model } = params as { provider: string; model: string };
-      if (!dataRoot) return { provider, model };
-      writeModelConfig(dataRoot, { provider, model });
-      return { provider, model, managed: true };
+      if (!provider?.trim() || !model?.trim()) {
+        throw { code: "BAD_REQUEST", message: "请选择可用 AI 模型" };
+      }
+      const next = { provider: provider.trim(), model: model.trim() };
+      if (!options.onModelConfigChange) {
+        if (dataRoot) writeModelConfig(dataRoot, next);
+        return { ...next, managed: Boolean(dataRoot) };
+      }
+      return options.onModelConfigChange(next).then(() => {
+        if (dataRoot) writeModelConfig(dataRoot, next);
+        return { ...next, managed: Boolean(dataRoot) };
+      });
     },
   };
 }
