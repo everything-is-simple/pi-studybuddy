@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.159
+**版本**：v0.1.161
 **日期**：2026-08-12
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -29,12 +29,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ 已创建 | 导航、门禁、参考仓库清单 |
+| 00 | 本文档 | ✅ v0.1.161 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.155 已审查批准 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；共 62 任务，T-M4-026 已完成 Git 收口（M4 26 done/0 in_progress）。 |
+| 04 | 任务清单-Todo-List.md | 📝 v0.1.158 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；M5 8 项已登记，T-M5-001 in_progress，T-M5-002~008 pending。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.7 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -121,6 +121,8 @@
 4. 提交前运行文档治理检查（实现中）与 `git diff --check`。
 
 ## 七、当前状态
+- [ ] T-M5-001 用户验收审计进行中：唯一计划 `.plan/T-M5-001-ui-acceptance-audit.md`，隔离分支 `agent/T-M5-001-ui-acceptance-audit`；只做逐页逐控件/依赖追踪矩阵，不修业务代码、不启动 M5-002~008。
+- [x] 04-Todo v0.1.158 📝 T-M5-001 审计证据已完成并保持 in_progress：真实 NSIS 安装空数据根逐页打开 10 个 Tab；P0/P1 追踪矩阵、依赖审计、两份独立审查与实施记录已建立；M5 仍为 1 in_progress/7 pending，未启动后续修订任务。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。
@@ -230,6 +232,8 @@
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| v0.1.161 | 2026-08-12 | T-M5-001 真实安装审计证据同步：10 个 Tab 逐页打开并保存 DOM/控件/截图；空数据无初始化入口、生产 fixture 会话、固定 `sess-001`/`mist-001`、静态上下文/状态和 OCR/WPS/whisper 未随包等 P0/P1 缺口经两份独立审查复核；Node24 完整 verify、NSIS 隔离安装与两次 package smoke 通过但不等于全功能 UAT；新增 `.record/T-M5-001-实施记录.md`，任务保持 in_progress，不启动 T-M5-002~008。 |
+| v0.1.160 | 2026-08-12 | 用户明确“继续”，选择 T-M5-001 全 UI/功能/依赖用户验收审计开工；04-Todo v0.1.157，唯一计划 `.plan/T-M5-001-ui-acceptance-audit.md` 与隔离分支已建立，任务 in_progress；范围仅真实安装应用逐页逐控件审计、追踪矩阵、依赖边界和 P0/P1/P2 差异，不修业务代码、不启动 M5-002~008。依据：用户明确指令 + AGENTS.md §4.4/§4.5/§5/§8/§11.1/§11.2。 |
 | v0.1.159 | 2026-08-12 | T-M4-026 Git 收口完成同步：04-Todo v0.1.155；网络恢复后 `git push origin master` 成功并核验 `master=origin/master=869de2f`（远端 refs/heads/master 一致；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f` 一并推送）；Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1133 tests、真实 Electron E2E 29 files/137 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs/diff-check）；任务登记 done，M4 26/0/26，合计 62/0/62；不启动后续任务。依据：用户明确 Git 收口授权 + 网络恢复后继续执行 + AGENTS.md §4.5/§7/§8.2/§8.4/§11.1/§11.2。 |
 | v0.1.158 | 2026-08-12 | 修正 T-M4-026 远端收口中间事实（推送核验由 v0.1.159 完成）：04-Todo v0.1.154；功能提交 `10d50eb` 与治理登记提交 `c3d2db3`（docs(m4)）已由 `agent/T-M4-026-ai-provider-config` 快进合并进入本地 `master`，Node24 master 完整 `verify --stage=full` 通过（unit/integration 118 files/1133 tests、真实 Electron E2E 29 files/137 tests、contract 127/127、安全 6/6、smoke 6/6、UUID 7/7、docs/diff-check）；但 2 次 `git push origin master` 因 GitHub 连接不可达（443 超时）失败，origin/master 尚未核验到新提交（仍为 6132f09），按 §8.4 任务保持 in_progress，待网络恢复后推送；不启动后续任务。依据：用户明确 Git 收口授权 + 远端网络错误证据 + AGENTS.md §4.5、§7、§8.4、§11.2。 |
 | v0.1.157 | 2026-08-12 | T-M4-026 Git 收口完成同步（推送事实由 v0.1.158 修正）：04-Todo v0.1.153；功能提交 `10d50eb` 与治理登记提交已由 `agent/T-M4-026-ai-provider-config` 快进合并进入 `master`，Node24 master `verify --stage=full` 通过（118 files/1133 tests、真实 Electron E2E 29 files/137 tests），origin/master 推送结果见 v0.1.158 修正，任务登记 done 待推送核验，M4 26/0/26，合计 62/0/62；不启动后续任务。依据：用户明确 Git 收口授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11.1/§11.2。 |
