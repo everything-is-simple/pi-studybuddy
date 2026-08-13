@@ -174,6 +174,27 @@ describe("T-M2-001 S5 handler 集成测试", () => {
       }
     });
 
+    it("GEN-05 T-M5-004：无知识模块课程生成成功（mock_exam_questions 不引用不存在的模块）", () => {
+      // 新建无模块课程 + 已确认考试（模拟真实空课程 UAT 路径）
+      const sem = callS1("semesters.create", { label: "GEN5 学期", startDate: "2026-09-01", endDate: "2027-01-31", timezone: "Asia/Shanghai" }) as { id: string };
+      const course = callS1("courses.create", { semesterId: sem.id, courseName: "GEN5 课程", subject: "数学" }) as { id: string };
+      const exam = callS1("exams.add", { courseId: course.id, examName: "GEN5 考试", examType: "final", scheduledDate: "2026-08-20", source: "student_input" }) as { id: string };
+      callS1("exams.confirm", { id: exam.id, confirmed: true });
+      const paper = call("mockExams.generatePaper", {
+        assessmentAttemptId: exam.id,
+        questionCount: 5,
+      }) as { id: string; questions: unknown[] };
+      expect(paper.id).toBeTruthy();
+      expect(paper.questions.length).toBe(5);
+      // mock_exam_questions 的 knowledge_module_id 必须为 NULL（FK 校验：不得引用不存在的 default-module）
+      const db = s5Ctx.semesterDb(sem.id);
+      const rows = db.prepare("SELECT knowledge_module_id FROM mock_exam_questions WHERE mock_paper_id = @pid").all({ pid: paper.id }) as Array<{ knowledge_module_id: string | null }>;
+      expect(rows.length).toBe(5);
+      for (const row of rows) {
+        expect(row.knowledge_module_id, "空课程模拟卷题目不得引用不存在的知识模块").toBeNull();
+      }
+    });
+
     it("GEN-03 source_hash 防重复（同参数二次调用 → 返回已有 paper，不新建）", () => {
       const first = call("mockExams.generatePaper", {
         assessmentAttemptId: confirmedAttemptId,

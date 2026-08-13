@@ -18,7 +18,8 @@ export interface MockExamQuestion {
   acceptableAnswers?: string[];
   explanation: string;
   score: number;
-  knowledgeModuleId: string;
+  /** 关联知识模块（无模块时 null，FK 允许） */
+  knowledgeModuleId: string | null;
 }
 
 export interface MockExamGenerator {
@@ -53,8 +54,9 @@ export function createMockMockExamGenerator(): MockExamGenerator {
       const multiCount = Math.round(questionCount * 0.2);
       const fillCount = questionCount - singleCount - multiCount;
 
-      // 确保至少有一个模块可用
-      const effectiveModuleIds = moduleIds.length > 0 ? moduleIds : ["default-module"];
+      // 空课程无知识模块时 knowledge_module_id 用 null（FK 允许 NULL）；有模块时正常引用
+      const moduleForIndex = (idx: number): string | null =>
+        moduleIds.length > 0 ? moduleIds[idx % moduleIds.length] : null;
 
       let idx = 0;
       for (let i = 0; i < singleCount; i++) {
@@ -67,7 +69,7 @@ export function createMockMockExamGenerator(): MockExamGenerator {
           correctAnswer: "选项A",
           explanation: `解析：选项A 是正确答案（mock 模拟卷题目 ${idx}）`,
           score: 1,
-          knowledgeModuleId: effectiveModuleIds[idx % effectiveModuleIds.length],
+          knowledgeModuleId: moduleForIndex(idx),
         });
       }
 
@@ -81,7 +83,7 @@ export function createMockMockExamGenerator(): MockExamGenerator {
           correctAnswer: JSON.stringify(["选项A", "选项B"]),
           explanation: `解析：选项 A 和 B 是正确答案（mock 模拟卷题目 ${idx}）`,
           score: 2,
-          knowledgeModuleId: effectiveModuleIds[idx % effectiveModuleIds.length],
+          knowledgeModuleId: moduleForIndex(idx),
         });
       }
 
@@ -96,7 +98,7 @@ export function createMockMockExamGenerator(): MockExamGenerator {
           acceptableAnswers: ["正确答案", "对的", "right"],
           explanation: `解析：填空答案为"正确答案"（mock 模拟卷题目 ${idx}）`,
           score: 1,
-          knowledgeModuleId: effectiveModuleIds[idx % effectiveModuleIds.length],
+          knowledgeModuleId: moduleForIndex(idx),
         });
       }
 

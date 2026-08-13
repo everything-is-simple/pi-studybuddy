@@ -292,7 +292,7 @@ export function createMockExamHandlers(ctx: S5Context) {
         const qId = qRow.id as string;
         const qType = qRow.question_type as QuestionType;
         const correctAnswer = qRow.correct_answer as string;
-        const moduleId = (qRow.knowledge_module_id as string) ?? "unknown";
+        const moduleId = (qRow.knowledge_module_id as string) ?? null;
         const acceptableRaw = qRow.acceptable_answers_json as string | null;
         let acceptableAnswers: string[] | undefined;
         if (acceptableRaw) {
@@ -356,7 +356,11 @@ export function createMockExamHandlers(ctx: S5Context) {
       });
 
       // 写 mock_exam_module_analyses（weakness_level strong/medium/weak + UNIQUE）
+      // T-M5-004：空课程无知识模块时跳过（mock_exam_module_analyses.knowledge_module_id NOT NULL FK，
+      // 无真实模块可引用则不应写分析行；结果总分/正确率仍完整返回）
+      const hasRealModules = moduleStats.size > 0 && Array.from(moduleStats.keys()).some((id) => id !== null && id !== "unknown");
       for (const [moduleId, stat] of moduleStats) {
+        if (!hasRealModules || moduleId === null || moduleId === "unknown") continue;
         const accuracyRate = stat.total > 0 ? stat.correct / stat.total : 0;
         let weaknessLevel: string;
         if (accuracyRate >= 0.8) {
