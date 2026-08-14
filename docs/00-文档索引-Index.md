@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.177
+**版本**：v0.1.181
 **日期**：2026-08-14
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
@@ -29,12 +29,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ v0.1.177 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态 + T-M5-004 收口证据 + 13-测试与运维已批准及 T-M5-009 登记 |
+| 00 | 本文档 | ✅ v0.1.181 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态 + T-M5-004 收口证据 + T-M5-009 当前执行状态 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.179 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001~004 done，T-M5-009 pending（测试与运维追溯基线），T-M5-005~008 pending；每任务用户端到端测试铁律已登记。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.182 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001~004 done，T-M5-009 in_progress（受控文档消费路径验收已获用户认可为 PASS，Git 收口进行中），T-M5-005~008 pending；每任务用户端到端测试铁律已登记。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.9 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -44,6 +44,7 @@
 | 11 | 组件装配-Component-Assembly.md | ✅ v0.1.0 已审查批准 | "先分解再组合" SoT + 6 步装配流程 + 能力卡规范 + 试炼场边界 + 装配门禁四项（测试全绿/工作区干净/API 有文档/无越权） |
 | 12 | 目录治理-Directory-Governance.md | ✅ v0.1.1 已审查批准 | 目录职责速查 + 物理隔离（主仓/试炼场/临时/数据根/pi 会话/参考仓/备份）+ Git 纪律 + 不提交清单 + 数据流图 + 默认模型选型落业务数据根 config/models.json |
 | 13 | 测试与运维-Testing-and-Operations.md | ✅ v0.1.1 已审查批准 | 用户动作目录、错误归属、数据资产/SQLite 生命周期、测试真实性、真机 UAT、发布与运维门禁；T-M5-009 负责首次追溯基线，不取代 08-测试验收。 |
+| traceability/ | 测试与运维追溯基线资产（T-M5-009） | 📝 in_progress | interaction/error/data catalog、UI→运行→逻辑→数据→测试→运维矩阵、operations runbook、release evidence 模板 |
 | subsystems/ | 业务子系统文档（S1-S7 收编） | 📝 待创建 | 学习节奏/资料笔记/限时练习/错题/冲刺/家长报告/课堂采集 |
 
 ## 四、组件治理流程（强制）
@@ -124,8 +125,8 @@
 ## 七、当前状态
 - [x] 2026-08-14 T-M5-004 Git 收口完成：功能 `47639f9` 已快进合并 master；本地收口登记 `715add3` 已成功推送并核验 `master=origin/master=715add3`。最终完成登记随本提交推送与远端同位核验后满足 §8.4，任务登记 done；不启动 T-M5-005~008。
 - [x] 2026-08-13 用户明确同意：T-M5-004 将以最小 modules.create typed RPC、S2 host handler 与 NotesTab 局部可见入口补齐 S2→S3→S4 的纯 UI 创建前置；此裁决 supersede 原任务
-- [x] 13-测试与运维-Testing-and-Operations.md v0.1.1 ✅ 已审查批准：ACT/ERR/DATA 治理口径、SQLite 现状核对、真实测试、真机 UAT 与发布运维门禁已成为受控规范；用户选择方案 B，T-M5-009 已登记 pending 负责首次追溯基线，未获开工或 Git 收口授权。
-- [x] T-M5-003 对话/会话/模型/文件引用真实闭环修订 done：网络恢复后推送成功并核验 `master=origin/master=48c93e2`（功能 `e754c78` + 治理 `ef047df` + 修正 `48c93e2`）；M5 当前为 0 in_progress/3 done/5 pending（v0.1.165）。
+- [x] 13-测试与运维-Testing-and-Operations.md v0.1.1 ✅ 已审查批准：ACT/ERR/DATA 治理口径、SQLite 现状核对、真实测试、真机 UAT 与发布运维门禁已成为受控规范；用户选择方案 B，T-M5-009 已完成 RED→GREEN 六项基线资产与任务级测试；真机 UAT 与 Git 收口未授权，任务保持 in_progress。
+- [x] T-M5-003 对话/会话/模型/文件引用真实闭环修订 done：网络恢复后推送成功并核验 `master=origin/master=48c93e2`（功能 `e754c78` + 治理 `ef047df` + 修正 `48c93e2`）；M5 当前为 1 in_progress/4 done/4 pending（T-M5-009 执行序 45；T-M5-005~008 暂不执行）。
 - [x] 04-Todo v0.1.163~165：T-M5-003 本地收口、真机 UAT 铁律落实与远端推送核验证据已登记。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
@@ -235,6 +236,10 @@
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.181 | 2026-08-14 | T-M5-009：用户明确裁决本无 Electron UI 变更的文档治理任务可用受控文档消费路径验收替代真机 Electron UAT；`T-M5-009-DOC-CONSUMER-001` 结果 PASS，例外仅适用于本任务且不外推。用户同时授权 Git 收口；任务在远端同位前保持 in_progress。依据：用户本次明确治理裁决 + AGENTS.md §2、§7、§8。 |
+| v0.1.180 | 2026-08-14 | T-M5-009 六项追溯/运维资产 RED→GREEN；定向测试、文档治理、diff-check 与 Node24 `verify --stage=full` 通过；实施记录已建立，真机 UAT 与 Git 收口仍待单独门禁。 |
+| v0.1.179 | 2026-08-14 | T-M5-009 RED→GREEN 基线资产落地：新增 `docs/traceability/` 六项治理资产与任务级集成测试；Node24 定向测试、文档治理、`verify --stage=full` 通过；任务仍 in_progress，Git 收口未授权。 |
+| v0.1.178 | 2026-08-14 | 用户明确批准 T-M5-009 开工：T-M5-009 pending→in_progress；唯一计划 `.plan/T-M5-009-test-operations-traceability-baseline.md` 与隔离分支 `agent/T-M5-009-traceability-baseline` 已建立；先写 RED，范围仅建立六项追溯/运维治理资产，不新增业务 API/schema/handler/入口、不写生产数据、不启动 T-M5-005~008，Git 收口另待授权。依据：用户明确授权 + AGENTS.md §4.4/§4.5/§5/§7/§8。 |
 | v0.1.177 | 2026-08-14 | 用户审查批准 docs/13 v0.1.1，并选择方案 B：新增 T-M5-009「测试与运维追溯基线建立」为 pending。同步 04-Todo v0.1.179（含 T-M5-004 遗留状态修正）、当前状态与文档表。影响：仅治理规范批准和任务登记；未授权 T-M5-009 开工，不创建详细计划/分支，不改业务实现或数据，不执行 Git 收口。依据：用户本次明确授权 + AGENTS.md §2、§4.4、§7、§8、§11。 |
 | v0.1.176 | 2026-08-14 | T-M5-004 正式完成登记：用户授权后，功能 `47639f9` 已 ff-only 进入 master 并通过 Node24 master `verify --stage=full`（130 files/1192 tests、真实 Electron E2E 33 files/141 tests）；中间治理 `715add3` 已推送且核验 `master=origin/master=715add3`。本最终登记在后续 push/远端同位核验成功后满足 §8.4，任务 done，M5 4 pending/0 in_progress/4 done；不启动后续任务。 |
 | v0.1.175 | 2026-08-14 | 用户明确授权 T-M5-004 Git 收口；功能 `47639f9` 已快进合并 `master`，并在 Node24.14.0/pnpm11.20.0 上完成 master `verify --stage=full`（130 files/1192 tests、真实 Electron E2E 33 files/141 tests、执行 8/跳过 2、exit 0）。本条只登记推送前本地事实；按 §8.4 继续保持 in_progress，等待治理提交推送及 `origin/master` 同位核验。 |
