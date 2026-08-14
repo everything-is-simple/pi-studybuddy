@@ -1,7 +1,7 @@
 # T-M5-004 唯一执行计划：S1-S5 结构化学习页面逐控件修订
 
 **任务 ID**：T-M5-004
-**状态**：📝 进行中（in_progress；2026-08-14 用户已明确授权 Git 收口。功能 `47639f9` 已快进合并 master，Node24 master `verify --stage=full` 通过（130 files/1192 tests、真实 Electron E2E 33 files/141 tests）；本计划的最终治理登记、推送与 `master=origin/master` 核验正在执行，核验完成前不改 done）
+**状态**：✅ 已完成（done；2026-08-14 用户授权后功能 `47639f9` 已 ff-only 合并 master，Node24 master `verify --stage=full` 通过（130 files/1192 tests、真实 Electron E2E 33 files/141 tests）；中间治理 `715add3` 已推送并核验同位，本最终完成登记随后的推送/远端核验成功后满足 §8.4。此计划保留为历史验收证据，不启动后续任务）
 **日期**：2026-08-14
 **里程碑**：M5 用户可用性验收 + UI 修订 + 一键交付
 **标题**：S1-S5 结构化学习页面逐控件修订
@@ -15,11 +15,11 @@
 
 | 文件 | 版本/状态 |
 |---|---|
-| AGENTS.md | v0.1.125（用户已授权 Git 收口；功能已合并 master 并通过 master 全量质量门；远端核验执行中） |
-| docs/00-索引 | v0.1.175 |
-| docs/04-Todo | v0.1.177（T-M5-004 in_progress；用户授权后本地收口已完成，等待推送核验） |
+| AGENTS.md | v0.1.126（T-M5-004 Git 收口完成；后续任务未启动） |
+| docs/00-索引 | v0.1.176 |
+| docs/04-Todo | v0.1.178（T-M5-004 done；完成判据与统计已同步） |
 | .plan/00-当前任务.md | 本计划 |
-| live Git | `master=47639f9`、`origin/master=dacec56`；功能已由隔离分支 ff-only 合并 master，Git 收口已获授权，治理登记/推送核验执行中 |
+| live Git | 中间治理登记已核验 `master=origin/master=715add3`；本最终完成登记随后的推送/远端核验完成后为当前基线 |
 
 ## 2. 目标
 
