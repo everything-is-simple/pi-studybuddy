@@ -1,6 +1,6 @@
 # T-M5-005 `release-evidence`
 
-**状态**：in_progress；本任务功能/证据提交已进入 master、完整质量门通过，原生 Electron UAT 部分完成；Git 集成事实已核验但不替代未完成的 UAT与审查
+**状态**：in_progress；本任务功能/证据提交与治理事实提交均已进入 master、完整质量门通过，原生 Electron UAT 部分完成；Git 集成事实已核验但不替代未完成的 UAT与审查
 **盘点日期**：2026-08-14
 **任务**：T-M5-005
 **填写规则**：空白字段和未覆盖路径不得解释为通过；T-M5-005 证据消费 T-M5-009 基线。
@@ -69,7 +69,7 @@
 |---|---|---|
 | docs/04 任务登记 | `docs/04-任务清单-Todo-List.md:T-M5-005` | PASS（任务仍 in_progress；部分 UAT/未覆盖范围已同步） |
 | master 集成与复验 | `112da31` 已 ff-only 合并 master；`C:\node-v24.14.0-win-x64\node.exe scripts/verify.mjs --stage=full` | PASS：132 files/1199 tests、33 files/141 Electron E2E、contract 128/128、安全 6/6、build/smoke/docs-governance |
-| origin/master 推送核验 | `git rev-parse HEAD` 与 `git rev-parse origin/master` | PASS：首次均为 `112da3114d048bcdaa4a1949c8f7844479e60ec4` |
+| origin/master 推送核验 | `git rev-parse HEAD`、`git rev-parse origin/master`、`git merge-base --is-ancestor 112da31 HEAD` | PASS：治理事实提交推送后均为 `87d40f8c98233aa182bc8821c19f174a53fbd71c`，且功能提交 `112da31` 为其祖先 |
 | `.record` 八章节 | `.record/T-M5-005-实施记录.md` | PASS（本轮记录） |
 
 只有上述三项 Git/治理要件齐全，才可依据 AGENTS.md §8.4 报告任务完成。

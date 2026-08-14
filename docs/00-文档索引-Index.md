@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.187
+**版本**：v0.1.188
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -28,12 +28,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ v0.1.187 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态 + T-M5-005 功能提交已合并/完整门禁/部分 UAT、T-M5-004/T-M5-009 收口证据 |
+| 00 | 本文档 | ✅ v0.1.188 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态 + T-M5-005 功能/治理提交远端同位、完整门禁与部分 UAT、T-M5-004/T-M5-009 收口证据 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.187 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001~004、009 done，T-M5-005 in_progress（功能提交已入 master、完整门禁与部分原生 UAT 已登记），T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.188 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001~004、009 done，T-M5-005 in_progress（功能/治理提交已推送 master、完整门禁与部分原生 UAT 已登记），T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.9 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -126,7 +126,7 @@
 - [x] 2026-08-14 T-M5-004 Git 收口完成：功能 `47639f9` 已快进合并 master；本地收口登记 `715add3` 已成功推送并核验 `master=origin/master=715add3`；不自动启动后续任务。
 - [x] `docs/traceability/` 六项基线资产已完成，供 T-M5-005~008 依任务范围消费。
 - [x] 13-测试与运维-Testing-and-Operations.md v0.1.3 ✅ 已审查批准：T-M5-009 已完成受控 Git 收口，六项追溯基线资产由 T-M5-005 按范围消费；本文的 ACT/ERR/DATA、真实测试、真机 UAT 与发布运维门禁保持不变。
-- [x] T-M5-005 功能/证据提交 `112da31` 已推送任务分支、ff-only 合并并推送至 master；Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍为 in_progress：完整原生 UAT和独立审查未完成；T-M5-006~008 保持 pending，安装器全程排除。
+- [x] T-M5-005 功能/证据提交 `112da31` 和治理事实提交 `87d40f8` 已推送 master；核验 `HEAD=origin/master=87d40f8` 且 `112da31` 为祖先。Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍为 in_progress：完整原生 UAT和独立审查未完成；T-M5-006~008 保持 pending，安装器全程排除。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。
@@ -235,6 +235,7 @@
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.188 | 2026-08-14 | T-M5-005 治理事实提交 `87d40f8` 已推送 master，核验 `HEAD=origin/master=87d40f8c98233aa182bc8821c19f174a53fbd71c`，功能提交 `112da31` 为其祖先。当前已验证改动的任务分支推送、ff-only 合并、master 完整门禁、治理回填和远端同位均已登记；任务仍 in_progress，完整原生 UAT、独立审查和用户签收未完成。不启动 T-M5-006~008，安装器全程排除。 |
 | v0.1.187 | 2026-08-14 | 同步 T-M5-005 已发生 Git 事实：功能/证据提交 `112da31` 已推送任务分支，ff-only 合并并推送 master；首次核验 `HEAD=origin/master=112da31`，Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍 in_progress，完整原生 UAT、独立审查和用户签收未完成；不启动 T-M5-006~008，安装器全程排除。 |
 | v0.1.186 | 2026-08-14 | 同步 T-M5-005 Git 收口授权：用户已明确授权提交、推送任务分支、master ff-only 合并、master 推送及远端同位核验；实际提交和远端结果待执行后回填。任务仍 in_progress，未覆盖原生 S6/S7/备份/设置/TTS 完整闭环，不启动 T-M5-006~008；安装器 `omp-windows-x64-v17.3.3.exe` 全程排除。 |
 | v0.1.185 | 2026-08-14 | T-M5-005 实施与部分验收同步：renderer RED→GREEN 补足速背卡/转写结果/报告朗读入口并复用 AppShell TTS，备份覆盖恢复改为先确认；定向 renderer 4/4、相关 RPC 47/47、Electron renderer E2E 7/7 和 Node24 type-check/build 通过。隔离根真实 Electron 已验证学期/课程创建与重启回读、设置保存反馈和采集合规/WAV 选择器；完整报告/投递、成功转写、真实恢复、设置值重启回读与 TTS 已复习持久化仍未覆盖。任务保持 in_progress。 |

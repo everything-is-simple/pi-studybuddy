@@ -1,8 +1,8 @@
 # AGENTS.md — pi-studybuddy 仓库操作宪章
 
-**版本**：v0.1.137
+**版本**：v0.1.138
 **日期**：2026-08-14
-**状态**：📝 M5 进行中（v0.1.137：T-M5-005 功能/证据提交 `112da31` 已推送任务分支、ff-only 合并并推送至 master；Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍为 in_progress：原生 UAT 未覆盖 S6 完整报告/投递、S7 成功转写、真实备份恢复、设置值重启回读和 TTS 已复习持久化；不启动 T-M5-006~008。安装器全程排除；T-M5-009 的受控文档消费路径验收例外不外推。）
+**状态**：📝 M5 进行中（v0.1.138：T-M5-005 功能/证据提交 `112da31` 与治理事实提交 `87d40f8` 均已推送 master，核验 `HEAD=origin/master=87d40f8`；Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍为 in_progress：原生 UAT 未覆盖 S6 完整报告/投递、S7 成功转写、真实备份恢复、设置值重启回读和 TTS 已复习持久化；不启动 T-M5-006~008。安装器全程排除；T-M5-009 的受控文档消费路径验收例外不外推。）
 **适用**：对人和 AI agent 同等约束（仿 pi 生态 AGENTS.md 约定，作为 context file 自动注入 system prompt）
 
 > 本文件是 pi-studybuddy 仓库的最高治理文件。任何 AI、开发者或自动化工具在对话中断后，只读本文件与 [docs/00-文档索引](./docs/00-文档索引-Index.md) 即可恢复系统身份、权威来源、当前任务和禁止事项；**不得依赖聊天记忆代替仓库文档**。
@@ -82,11 +82,11 @@
 
 | 文档 | 版本 | 权威范围 |
 |---|---|---|
-| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.187 | 文档导航 + 门禁 + 版本历史 + M5 用户验收阶段状态 + T-M5-005 Git 收口中间事实与部分 UAT、T-M5-004/T-M5-009 收口证据 |
+| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.188 | 文档导航 + 门禁 + 参考仓库清单 + M5 用户验收阶段状态 + T-M5-005 Git 收口事实与部分 UAT、T-M5-004/T-M5-009 收口证据 |
 | [01-TRD](./docs/01-TRD-技术需求-Technical-Requirements.md) | v0.2.4 | 技术底座决策 + 六点定案（决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化）|
 | [02-PRD](./docs/02-PRD-产品需求-Product-Requirements.md) | v0.1.4 | 产品需求 + 业务闭环 + §3.11 对话默认主入口 |
 | [03-Architecture](./docs/03-架构设计-Architecture-Design.md) | v0.1.3 | 四层架构 + pi 扩展 + §6.7 会话管理 + §2.3 model_select 落点业务数据根 config/models.json |
-| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.187 | 任务登记 + 组件治理看板 + 里程碑 M0-M5；T-M5-001~004、009 done，T-M5-005 in_progress（功能提交已进入 master、完整门禁与部分原生 UAT 已登记），T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
+| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.188 | 任务登记 + 组件治理看板 + 里程碑 M0-M5；T-M5-001~004、009 done，T-M5-005 in_progress（功能/治理提交已推送 master、完整门禁与部分原生 UAT 已登记），T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
 | [05-ERD](./docs/05-数据模型-ERD-Data-Model.md) | v0.1.2 | 全局库 + 学期库 + 三层记忆 |
 | [06-API](./docs/06-API契约-API-Contracts.md) | v0.1.9 | RPC 契约 + 100+ 方法 + 9 Streams + §4 AgentEvent payload 结构化 + modelsConfig.get/set |
 | [07-Workflow](./docs/07-工作流-Workflow.md) | v0.1.3 | 学生主路径 + 对话路径 + 11 状态机 + §2.8 工具→Tab 映射表 |
@@ -476,6 +476,7 @@ node scripts/check-desktop-security.mjs     # 08-Test §5.7 安全不变量（3 
 ## §12 修订记录
 
 | 版本 | 日期 | 变更 |
+| v0.1.138 | 2026-08-14 | T-M5-005 Git 治理事实提交 `87d40f8` 已推送 master，核验 `HEAD=origin/master=87d40f8c98233aa182bc8821c19f174a53fbd71c`；功能提交 `112da31` 是其祖先。至此当前已验证改动的任务分支推送、ff-only 合并、master 完整门禁、治理回填和远端同位均已登记。任务仍为 in_progress：完整原生 UAT、两名独立审查和用户签收未完成；不启动 T-M5-006~008，安装器未读取、未暂存。依据：用户授权 + §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.137 | 2026-08-14 | 同步 T-M5-005 Git 收口的已发生事实：功能/证据提交 `112da31` 已推送 `agent/T-M5-005-s6-s7-tts-backup-settings-ux`，ff-only 合并并推送 master；首次核验 `HEAD=origin/master=112da31`。Node24 master `verify --stage=full` 通过（unit/integration 132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build、smoke、docs-governance）。任务仍为 in_progress，完整原生 UAT与独立审查未完成；本次仅回填事实，不报告完成。安装器未读取、未暂存。依据：用户授权 + §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.136 | 2026-08-14 | T-M5-005 Git 收口中间事实：功能/证据提交 `112da31` 已推送 `agent/T-M5-005-s6-s7-tts-backup-settings-ux`，已 ff-only 合并并推送 master；`HEAD=origin/master=112da31` 已核验。Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build、smoke、docs-governance）。任务保持 in_progress，完整原生 UAT 与独立审查未完成；本治理登记推送和同位核验后再更新当前收口事实。安装器未读取、未暂存。依据：用户授权 + §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.135 | 2026-08-14 | 用户明确授权 T-M5-005 当前已验证改动的提交、任务分支推送、master ff-only 合并、master 推送与远端同位核验；授权不扩大为任务完成或后续任务启动。任务仍须完成原生 Electron UAT、独立审查和用户签收；安装器 `omp-windows-x64-v17.3.3.exe` 明确排除。依据：用户明确指令 + §4.5/§7/§8/§11。 |

@@ -1,7 +1,7 @@
 # 04 任务清单
-**版本**：v0.1.187
+**版本**：v0.1.188
 **日期**：2026-08-14
-**状态**：✅ 已审查批准（M5 进行中：T-M5-001/002/003/004、009 已 done；T-M5-005 功能/证据提交 `112da31` 已推送任务分支、ff-only 合并并推送至 master，Node24 master 完整门禁通过，仍因原生 UAT与独立审查缺口保持 in_progress。S6 完整报告/投递、S7 成功转写、真实备份恢复、设置值重启回读和 TTS 已复习持久化未覆盖；T-M5-006~008 pending，安装器全程排除。）
+**状态**：✅ 已审查批准（M5 进行中：T-M5-001/002/003/004、009 已 done；T-M5-005 功能/证据提交 `112da31` 与治理事实提交 `87d40f8` 已推送 master，`HEAD=origin/master=87d40f8`，Node24 master 完整门禁通过；仍因原生 UAT与独立审查缺口保持 in_progress。S6 完整报告/投递、S7 成功转写、真实备份恢复、设置值重启回读和 TTS 已复习持久化未覆盖；T-M5-006~008 pending，安装器全程排除。）
 **上游**：[01-TRD v0.2.4](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.4](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.9](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.3](./07-工作流-Workflow.md)、[08-Test v0.1.7 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.5](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录；v0.1.74 登记 T-M4-022 完成（Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证，前置于 T-M4-006；commit 0ec4163 已推送 origin/master）；v0.1.75 登记 T-M4-006 设置页 UI in_progress（计划待用户审查）；v0.1.78 同步 T-M4-006 双独立复审最终 PASS 与 diff 检查通过，Git 收口未授权故保持 in_progress；v0.1.91 登记 T-M4-009 Git 收口完成
 
@@ -730,6 +730,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 ## 10. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.188 | 2026-08-14 | T-M5-005 治理事实提交 `87d40f8` 已推送 master，核验 `HEAD=origin/master=87d40f8c98233aa182bc8821c19f174a53fbd71c`，功能提交 `112da31` 为其祖先。当前已验证改动的任务分支推送、ff-only 合并、master 完整门禁、治理回填和远端同位均已登记；任务仍 in_progress：完整原生 UAT、独立审查和用户签收未完成。不启动 T-M5-006~008，安装器全程排除。依据：用户授权 + AGENTS.md §4.5/§7/§8.2/§8.4。 |
 | v0.1.187 | 2026-08-14 | 同步 T-M5-005 已发生 Git 事实：功能/证据提交 `112da31` 已推送任务分支、ff-only 合并并推送 master；首次核验 `HEAD=origin/master=112da31`。Node24 master `verify --stage=full` 通过（unit/integration 132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍 in_progress：完整原生 UAT、独立审查和用户签收未完成；不启动 T-M5-006~008，安装器全程排除。依据：用户授权 + AGENTS.md §4.5/§7/§8.2/§8.4。 |
 | v0.1.186 | 2026-08-14 | 登记用户对 T-M5-005 当前改动执行 Git 收口的明确授权：任务提交、任务分支推送、master ff-only 合并、master 推送及远端同位核验均待实际执行；任务仍 in_progress，不启动 T-M5-006~008，安装器 `omp-windows-x64-v17.3.3.exe` 全程排除。依据：用户明确指令 + AGENTS.md §4.5/§7/§8.2/§8.4。 |
 | v0.1.185 | 2026-08-14 | T-M5-005 实施与部分验收同步：renderer RED→GREEN 补足速背卡/转写结果/报告朗读入口并复用 AppShell TTS，备份覆盖恢复改为先确认；定向 renderer 4/4、相关 RPC 47/47、Electron renderer E2E 7/7 和 Node24 type-check/build 通过。隔离根真实 Electron 已验证学期/课程创建与重启回读、设置保存反馈和采集合规/WAV 选择器；完整报告/投递、成功转写、真实恢复、设置值重启回读与 TTS 已复习持久化仍未覆盖。任务保持 in_progress。 |
