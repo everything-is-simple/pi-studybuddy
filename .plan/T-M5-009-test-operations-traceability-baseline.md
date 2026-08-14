@@ -1,7 +1,7 @@
 # T-M5-009 唯一执行计划：测试与运维追溯基线建立
 
 **任务 ID**：T-M5-009
-**状态**：📝 in_progress（2026-08-14 用户明确批准开工；随后认可受控文档消费路径验收 PASS 并授权 Git 收口，待远端同位核验）
+**状态**：✅ done（2026-08-14 用户任务特定裁决认可受控文档消费路径验收 PASS；功能 `156756c`、master 复验及本治理登记推送/远端同位核验后完成）
 **日期**：2026-08-14
 **里程碑**：M5 用户可用性验收 + UI 修订 + 一键交付
 **标题**：测试与运维追溯基线建立
@@ -98,4 +98,4 @@ UI 控件/用户动作 → 运行时能力 → 逻辑/handler → 数据资产 �
 - 2026-08-14：用户批准 T-M5-009 开工；创建实施分支 `agent/T-M5-009-traceability-baseline`。
 - 2026-08-14：RED→GREEN 完成；六项资产、实施记录和治理同步完成。`H:\pi-studybuddy-tmp\runs\T-M5-009\` 保存 RED/GREEN/verify 日志。
 - 2026-08-14：用户明确裁决受控文档消费路径验收替代本任务真机 Electron UAT，并认可 `H:\pi-studybuddy-tmp\runs\T-M5-009\document-consumer-acceptance.json` 的 `T-M5-009-DOC-CONSUMER-001` 为 PASS；用户同时授权 Git 收口。
-- 待续：在远端同位核验前保持 in_progress；不启动 T-M5-005。
+- 2026-08-14：功能/基线提交 `156756c` 已 ff-only 合并 master；Node24 master `verify --stage=full` 最终重跑通过（131 files/1195 tests、真实 Electron E2E 33 files/141 tests）。本治理登记推送并核验 origin/master 后完成；不启动 T-M5-005。

@@ -1,6 +1,6 @@
 # T-M5-009 `interaction-catalog`
 
-**状态**：首版基线，`in_progress`
+**状态**：首版基线，`done`
 **盘点日期**：2026-08-14
 **任务**：T-M5-009
 **证据来源**：`H:\pi-studybuddy-tmp\runs\T-M5-001\control-inventory.md`、`gap-register.md`、`ui-function-dependency-matrix.md`、当前 `src/`、`tests/`、docs/07、docs/08、docs/09。

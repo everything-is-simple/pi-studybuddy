@@ -1,6 +1,6 @@
 # T-M5-009 `data-asset-catalog`
 
-**状态**：首版基线，`in_progress`
+**状态**：首版基线，`done`
 **盘点日期**：2026-08-14
 **任务**：T-M5-009
 **权威来源**：docs/05、docs/08 §9、docs/13 §5、当前 `src/host`/`src/main`/`tests/helpers` 实现。
