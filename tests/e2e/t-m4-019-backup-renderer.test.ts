@@ -94,8 +94,10 @@ const UI_PHASE2 = `(
     overwriteRadio.click();
     await wait(100);
 
-    // 开始恢复（真实 RPC → 生产 backup.restore → integrity_check）
+    // 开始恢复先进入覆盖确认，再执行真实 RPC → 生产 backup.restore → integrity_check
     await clickButton("开始恢复");
+    await waitFor(() => document.body.textContent?.includes("覆盖会替换现有课程数据"), "overwrite confirmation missing");
+    await clickButton("确认覆盖");
     await waitFor(() => document.body.textContent?.includes("恢复完成"), "restore completed missing");
     const visible = document.body.textContent || "";
     return {

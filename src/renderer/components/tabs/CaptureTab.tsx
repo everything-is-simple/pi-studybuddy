@@ -31,6 +31,8 @@ interface Props {
   courseId?: string;
   /** AppShell 唯一学术上下文 */
   academicContext?: SemesterCourseContext;
+  /** 复用 AppShell 已有 TTS 播放态，不另建跨 Tab 状态。 */
+  onSpeakText?: (text: string, target?: { title?: string }) => void;
 }
 
 /** 文件大小格式化 */
@@ -75,6 +77,7 @@ export function CaptureTab({
   rpc,
   courseId,
   academicContext,
+  onSpeakText,
 }: Props): React.JSX.Element {
   const readOnly = academicContext?.isReadOnly === true;
   const [permission, setPermission] = React.useState<boolean>(permissionConfirmed);
@@ -365,6 +368,7 @@ export function CaptureTab({
               fontFamily: "inherit",
             }}
           />
+          <button type="button" disabled={!onSpeakText || !transcript.trim()} onClick={() => onSpeakText?.(transcript.trim(), { title: "课堂转写" })} style={{ marginBottom: 12, padding: "4px 12px", fontSize: 12 }}>朗读转写结果</button>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 12, marginBottom: 4, color: "var(--text-muted, #888)" }}>保存标题</div>
             <input

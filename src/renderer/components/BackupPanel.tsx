@@ -115,6 +115,7 @@ export function BackupPanel({
   const [zipPicked, setZipPicked] = useState(false);
   const [zipName, setZipName] = useState<string | undefined>(undefined);
   const [conflictChoice, setConflictChoice] = useState<"overwrite" | "create_new">("create_new");
+  const [confirmingOverwrite, setConfirmingOverwrite] = useState(false);
   const [cronInput, setCronInput] = useState("0 2 * * *");
   const [actionError, setActionError] = useState<string | undefined>(undefined);
   const [progress, setProgress] = useState<{ phase: string; progress: number } | undefined>(undefined);
@@ -211,6 +212,7 @@ export function BackupPanel({
     setZipPicked(true);
     setZipName(result.fileName);
     setActionError(undefined);
+    setConfirmingOverwrite(false);
   }
 
   /** 备份此课程（07-WF §5.1 + 06-API §3.11） */
@@ -290,9 +292,14 @@ export function BackupPanel({
     }
   }
 
-  /** 从备份恢复（07-WF §5.3；冲突策略显式选择） */
+  /** 从备份恢复（07-WF §5.3；覆盖策略需先经可取消确认） */
   async function restore(): Promise<void> {
     if (!rpc || !effectiveSemesterId || !zipPathRef.current || restoreBusy) return;
+    if (conflictChoice === "overwrite" && !confirmingOverwrite) {
+      setConfirmingOverwrite(true);
+      return;
+    }
+    setConfirmingOverwrite(false);
     setRestoreBusy(true);
     setRestorePhase("restoring");
     setActionError(undefined);
@@ -594,7 +601,10 @@ export function BackupPanel({
                 name="restore-conflict"
                 value="overwrite"
                 checked={conflictChoice === "overwrite"}
-                onChange={() => setConflictChoice("overwrite")}
+                onChange={() => {
+                  setConflictChoice("overwrite");
+                  setConfirmingOverwrite(false);
+                }}
                 style={{ marginRight: 4 }}
               />
               覆盖现有数据
@@ -605,7 +615,10 @@ export function BackupPanel({
                 name="restore-conflict"
                 value="create_new"
                 checked={conflictChoice === "create_new"}
-                onChange={() => setConflictChoice("create_new")}
+                onChange={() => {
+                  setConflictChoice("create_new");
+                  setConfirmingOverwrite(false);
+                }}
                 style={{ marginRight: 4 }}
               />
               新建课程（保留两份）
@@ -628,6 +641,15 @@ export function BackupPanel({
                 {restoreBusy ? "恢复中…" : "开始恢复"}
               </button>
             </div>
+            {confirmingOverwrite && (
+              <div role="alert" style={{ marginTop: 12, padding: 12, border: "1px solid #c62828", borderRadius: 4, background: "#ffebee" }}>
+                <div style={{ fontSize: 12, marginBottom: 8 }}>覆盖会替换现有课程数据。当前恢复接口不会预检同名冲突；请确认后继续。</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" disabled={restoreBusy} onClick={() => void restore()} style={{ padding: "4px 12px", fontSize: 12, cursor: restoreBusy ? "default" : "pointer", border: "1px solid #c62828", background: "#c62828", color: "#fff", borderRadius: 4 }}>确认覆盖</button>
+                  <button type="button" disabled={restoreBusy} onClick={() => setConfirmingOverwrite(false)} style={{ padding: "4px 12px", fontSize: 12, cursor: restoreBusy ? "default" : "pointer", border: "1px solid var(--border, #e0e0e0)", background: "#fff", borderRadius: 4 }}>取消</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

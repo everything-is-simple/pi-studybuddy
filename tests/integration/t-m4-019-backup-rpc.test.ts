@@ -355,7 +355,7 @@ describe("T-M4-019 备份恢复面板 RPC 接线", () => {
     expect(host.textContent).toContain("12");
   });
 
-  it("C-RED-07 冲突策略：显式选择覆盖 → restore 携带 overwrite", async () => {
+  it("C-RED-07 冲突策略：选择覆盖先经确认，确认后 restore 携带 overwrite", async () => {
     const { rpc, calls } = createBackupMockRpc();
     mockBridge({ canceled: false, rawPath: "H:\\backups\\studybuddy\\backup.zip" });
     const mounted = await mount(rpc);
@@ -368,6 +368,9 @@ describe("T-M4-019 备份恢复面板 RPC 接线", () => {
     });
     await flush();
     await clickButton(host, "开始恢复");
+    expect(calls.filter((c) => c.method === "backup.restore")).toHaveLength(0);
+    expect(host.textContent).toContain("覆盖会替换现有课程数据");
+    await clickButton(host, "确认覆盖");
     const restoreCall = calls.filter((c) => c.method === "backup.restore").at(-1)?.params as {
       conflictResolution: string;
     };

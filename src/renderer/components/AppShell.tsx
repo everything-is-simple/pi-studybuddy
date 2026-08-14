@@ -135,11 +135,11 @@ function renderTab(
     case "mistakes":
       return <MistakesTab rpc={rpc} courseId={courseId} academicContext={academicContext} onSpeakText={onSpeakText} />;
     case "cram":
-      return <CramTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
+      return <CramTab rpc={rpc} courseId={courseId} academicContext={academicContext} onSpeakText={onSpeakText} />;
     case "report":
-      return <ReportTab rpc={rpc} semesterId={semesterId} academicContext={academicContext} />;
+      return <ReportTab rpc={rpc} semesterId={semesterId} academicContext={academicContext} onSpeakText={onSpeakText} />;
     case "capture":
-      return <CaptureTab rpc={rpc} courseId={courseId} academicContext={academicContext} />;
+      return <CaptureTab rpc={rpc} courseId={courseId} academicContext={academicContext} onSpeakText={onSpeakText} />;
     case "backup":
       // T-M4-019：BackupPanel 可达（TabBar 入口 + 学期/课程上下文）
       return <BackupPanel rpc={rpc} semesterId={semesterId} courseId={courseId} />;

@@ -39,6 +39,8 @@ interface Props {
   semesterId?: string;
   /** AppShell 唯一学术上下文（兼容旧的扁平 props） */
   academicContext?: SemesterCourseContext;
+  /** 复用 AppShell 已有 TTS 播放态，不另建跨 Tab 状态。 */
+  onSpeakText?: (text: string, target?: { title?: string }) => void;
 }
 
 /** 报告类型中文标签 */
@@ -163,6 +165,14 @@ function safeReportText(value: string | undefined, fallback: string, maxLength =
   return text.slice(0, maxLength);
 }
 
+/** 只朗读详情页已经过相同净化规则处理的脱敏聚合内容。 */
+function reportSpeechText(content: { summary?: string; sections: ReportSection[] }): string {
+  return [
+    content.summary ? safeReportText(content.summary, "内容已隐藏。") : "",
+    ...content.sections.map((section) => `${safeReportText(section.title, "报告章节")}：${safeReportText(section.content, "内容已隐藏。")}`),
+  ].filter(Boolean).join("。 ");
+}
+
 /** 不显示 RPC 原始异常，避免 UUID、绝对路径和堆栈进入 renderer。 */
 function reportErrorText(action: "list" | "generate" | "get" | "freeze" | "deliver" | "retry" | "targets"): string {
   switch (action) {
@@ -201,10 +211,11 @@ function channelStatusLabel(status: ReportDelivery["status"]): string {
   }
 }
 
-function RuntimeReportTab({ rpc, semesterId, academicContext }: {
+function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
   rpc: TypedRpcClient;
   semesterId?: string;
   academicContext?: SemesterCourseContext;
+  onSpeakText?: (text: string, target?: { title?: string }) => void;
 }): React.JSX.Element {
   const effectiveSemesterId = academicContext?.semesterId ?? semesterId;
   const isReadOnly = academicContext?.isReadOnly === true;
@@ -438,6 +449,7 @@ function RuntimeReportTab({ rpc, semesterId, academicContext }: {
             ))}
           </div>
         )}
+        <button type="button" disabled={!onSpeakText || !reportSpeechText(content)} onClick={() => onSpeakText?.(reportSpeechText(content), { title: "家长报告" })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读报告</button>
 
         {/* 冻结入口 */}
         <div style={{ marginTop: 12, marginBottom: 12 }}>
@@ -566,8 +578,8 @@ function RuntimeReportTab({ rpc, semesterId, academicContext }: {
   );
 }
 
-export function ReportTab({ reports, selectedReport, rpc, semesterId, academicContext }: Props): React.JSX.Element {
-  if (rpc) return <RuntimeReportTab rpc={rpc} semesterId={semesterId} academicContext={academicContext} />;
+export function ReportTab({ reports, selectedReport, rpc, semesterId, academicContext, onSpeakText }: Props): React.JSX.Element {
+  if (rpc) return <RuntimeReportTab rpc={rpc} semesterId={semesterId} academicContext={academicContext} onSpeakText={onSpeakText} />;
 
   // ---- 静态渲染（无 rpc，兼容旧 props）----
   if (selectedReport) {
@@ -600,6 +612,7 @@ export function ReportTab({ reports, selectedReport, rpc, semesterId, academicCo
             ))}
           </div>
         )}
+        <button type="button" disabled={!onSpeakText || !reportSpeechText(content)} onClick={() => onSpeakText?.(reportSpeechText(content), { title: "家长报告" })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读报告</button>
       </TabContainer>
     );
   }

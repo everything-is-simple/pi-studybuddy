@@ -57,6 +57,8 @@ interface Props {
   courseId?: string;
   /** AppShell 唯一学术上下文；本 Tab 不新增跨 Tab 状态。 */
   academicContext?: SemesterCourseContext;
+  /** 复用 AppShell 已有 TTS 播放态，不另建跨 Tab 状态。 */
+  onSpeakText?: (text: string, target?: { title?: string }) => void;
 }
 
 /** 重要性星级 */
@@ -85,6 +87,18 @@ function safeRendererText(value: string | undefined, fallback: string, maxLength
     /\b(?:api[_ -]?key|token|secret)\s*[:=]/i.test(text);
   if (!text || hasUuid || hasPath || hasStackOrSecret) return fallback;
   return text.slice(0, maxLength);
+}
+
+/** 只朗读已净化并正显示给学生的速背卡字段。 */
+function speedCardSpeechText(card: CramCard): string {
+  return [
+    safeRendererText(card.moduleName, "当前模块"),
+    `核心概念：${safeRendererText(card.coreConcept, "内容已隐藏。")}`,
+    card.keyPoints?.length ? `关键点：${card.keyPoints.map((point) => safeRendererText(point, "内容已隐藏。")).join("、")}` : "",
+    card.mnemonic ? `记忆口诀：${safeRendererText(card.mnemonic, "内容已隐藏。")}` : "",
+    card.commonExamPattern ? `常考题型：${safeRendererText(card.commonExamPattern, "内容已隐藏。")}` : "",
+    card.easyMistake ? `易错点：${safeRendererText(card.easyMistake, "内容已隐藏。")}` : "",
+  ].filter(Boolean).join("。 ");
 }
 
 /** 不显示 RPC 原始异常，避免 UUID、绝对路径和堆栈进入 renderer。 */
@@ -178,7 +192,7 @@ function MockExamPhase(): React.JSX.Element {
 }
 
 /** 速背卡子组件（确定性只读，不调 LLM；静态兼容） */
-function SpeedCardsPhase({ cards }: { cards: CramCard[] }): React.JSX.Element {
+function SpeedCardsPhase({ cards, onSpeakText }: { cards: CramCard[]; onSpeakText?: (text: string, target?: { title?: string }) => void }): React.JSX.Element {
   if (!cards || cards.length === 0) {
     return <EmptyState message="暂无速背卡，请先完善知识模块" />;
   }
@@ -242,6 +256,7 @@ function SpeedCardsPhase({ cards }: { cards: CramCard[] }): React.JSX.Element {
               {safeRendererText(card.easyMistake, "内容已隐藏。")}
             </div>
           )}
+          <button type="button" disabled={!onSpeakText} onClick={() => onSpeakText?.(speedCardSpeechText(card), { title: "速背卡" })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读速背卡</button>
         </div>
       ))}
     </div>
@@ -341,11 +356,12 @@ function MockExamResultView({ result, paper }: { result: MockExamResult; paper: 
   );
 }
 
-function RuntimeCramTab({ rpc, courseId, academicContext, initialSubTab }: {
+function RuntimeCramTab({ rpc, courseId, academicContext, initialSubTab, onSpeakText }: {
   rpc: TypedRpcClient;
   courseId?: string;
   academicContext?: SemesterCourseContext;
   initialSubTab?: CramSubTab;
+  onSpeakText?: (text: string, target?: { title?: string }) => void;
 }): React.JSX.Element {
   const effectiveCourseId = academicContext?.courseId ?? courseId;
   const isReadOnly = academicContext?.isReadOnly === true;
@@ -767,6 +783,7 @@ function RuntimeCramTab({ rpc, courseId, academicContext, initialSubTab }: {
                         <strong>易错点：</strong>{safeRendererText(card.easyMistake, "内容已隐藏。")}
                       </div>
                     )}
+                    <button type="button" disabled={!onSpeakText} style={buttonStyle(!onSpeakText)} onClick={() => onSpeakText?.(speedCardSpeechText(card), { title: "速背卡" })}>朗读速背卡</button>
                     <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                       <button type="button" disabled={cardIndex <= 0} style={buttonStyle(cardIndex <= 0)} onClick={() => setCardIndex((index) => Math.max(0, index - 1))}>上一张</button>
                       <button type="button" disabled={cardIndex >= cardsResource.data.length - 1} style={buttonStyle(cardIndex >= cardsResource.data.length - 1)} onClick={() => setCardIndex((index) => Math.min(cardsResource.data.length - 1, index + 1))}>下一张</button>
@@ -792,8 +809,8 @@ function RuntimeCramTab({ rpc, courseId, academicContext, initialSubTab }: {
   );
 }
 
-export function CramTab({ subTab = "speedCards", cards, plan, rpc, courseId, academicContext }: Props): React.JSX.Element {
-  if (rpc) return <RuntimeCramTab rpc={rpc} courseId={courseId} academicContext={academicContext} initialSubTab={subTab} />;
+export function CramTab({ subTab = "speedCards", cards, plan, rpc, courseId, academicContext, onSpeakText }: Props): React.JSX.Element {
+  if (rpc) return <RuntimeCramTab rpc={rpc} courseId={courseId} academicContext={academicContext} initialSubTab={subTab} onSpeakText={onSpeakText} />;
 
   return (
     <TabContainer>
@@ -812,7 +829,7 @@ export function CramTab({ subTab = "speedCards", cards, plan, rpc, courseId, aca
 
       {/* 根据子 Tab 渲染对应内容 */}
       {subTab === "mockExam" && <MockExamPhase />}
-      {subTab === "speedCards" && <SpeedCardsPhase cards={cards ?? []} />}
+      {subTab === "speedCards" && <SpeedCardsPhase cards={cards ?? []} onSpeakText={onSpeakText} />}
       {subTab === "plan" && <PlanPhase plan={plan ?? []} />}
     </TabContainer>
   );

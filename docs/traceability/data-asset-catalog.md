@@ -25,10 +25,10 @@
 | DATA-BIZ-012 | 模拟考模块分析 | 学期 SQLite `sem.db` | S5 | 依赖已有模块；未知模块不得写假引用 | 敏感 | 结果恢复 | GEN-05 + UAT | 已证实 |
 | DATA-CFG-001 | 模型配置 | `<dataRoot>/config/models.json` | 设置/模型运行时 | 用户配置；由 modelsConfig 管理 | 不含密钥；不进 Git/DOM | 备份策略待明确 | 业务根隔离 + contract | 部分证据 |
 | DATA-CFG-002 | 凭证 | `<dataRoot>/config/credentials.json` + Windows DPAPI | credential-vault | 安全资产；不可明文导出 | 永不记录 key/base URL | 卸载/备份保留策略待明确 | 只用受控本机 vault | 部分证据 |
-| DATA-CFG-003 | 用户偏好/设置 | `<dataRoot>/config/` | Settings | 可变配置；需版本化 | 脱敏 | 升级兼容性待明确 | 专用根 + UI | 未覆盖 |
+| DATA-CFG-003 | 用户偏好/设置 | `<dataRoot>/config/` | Settings | 保存反馈已见；实际修改值重启回读未完成 | 脱敏 | 升级兼容性待明确 | 隔离根 + UI | 部分证据 |
 | DATA-FILE-001 | 资料正式文件 | semester 下受限 `storageKey` | S2/file handler | 与资料元数据绑定；路径白名单 | 原文敏感；日志只记 opaque key | 备份/恢复需校验 | 文件选择 UI + isolated root | 部分证据 |
 | DATA-FILE-002 | 导入 capability 暂存 | `<dataRoot>/imports/materials/<token>` | main/preload/host | 一次性消费；失败清理 | token 不进 DOM/日志 | 不应作为备份事实 | 受控文件 E2E | 部分证据 |
-| DATA-FILE-003 | 导出/备份包 | `<dataRoot>/exports/` 或用户选择目录 | backup | 可导出、校验、恢复；失败不得覆盖原数据 | 包内容敏感 | 需 checksum/恢复回读 | 备份/恢复专项 UAT | 未覆盖 |
+| DATA-FILE-003 | 导出/备份包 | `<dataRoot>/exports/` 或用户选择目录 | backup | 可导出、校验、恢复；失败不得覆盖原数据 | 包内容敏感 | 本轮真实恢复/回读未覆盖 | 备份/恢复专项 UAT | 未覆盖 |
 | DATA-MEM-001 | L1 learner profile | `<dataRoot>/memory/l1/learner-profile.json` | memory layer | 来源可追踪；可备份 | 高敏感；不进日志 | 备份/恢复策略待明确 | 隔离根 + schema test | 未覆盖 |
 | DATA-MEM-002 | L2 wiki index | `<dataRoot>/memory/l2/wiki-index` | memory layer | 可重建索引；不是唯一事实 | 资料敏感 | 允许重建 | 单件/集成 | 未覆盖 |
 | DATA-MEM-003 | L3 conversation | `<dataRoot>/memory/l3/conversation.sqlite` | chat/agent | 会话事实；需与 session 关联 | 消息敏感；模型输出不进普通日志 | 备份/恢复待明确 | 专用根 + session E2E | 部分证据 |

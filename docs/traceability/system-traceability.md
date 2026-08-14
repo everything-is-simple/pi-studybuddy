@@ -30,10 +30,11 @@
 | TRACE-S5-001 | ACT-S5-001 选择已确认考试 | renderer gate + RPC | exams.list / confirmed gate | DATA-BIZ-004 | UAT-S5-001 | OPS-START-001 | 已证实 |
 | TRACE-S5-002 | ACT-S5-003 提交模拟考并回读 | renderer state + RPC | mock-exams submit/result | DATA-BIZ-011/012 | UAT-S5-003 + restart | OPS-DATA-001 | 已证实 |
 | TRACE-CHAT-001 | T-M5-003 对话动作待分解 | agent host + model runtime | sessions/agent.send | DATA-MEM-003 + DATA-CFG-001/002 | T-M5-003 UAT evidence | OPS-DEP-001 | 部分证据 |
-| TRACE-S6-001 | 报告/投递 ACT 待分解 | reports/deliveries RPC | handlers 已接线 | DATA-BIZ-* 待细化 | 自动化存在，真机范围待补 | OPS-REPORT-001 | 未覆盖 |
-| TRACE-S7-001 | 采集/转写 ACT 待分解 | capture + whisper boundary | classCapture handlers | DATA-FILE-* / DATA-BIZ-* | 依赖自包含未证实 | OPS-DEP-001 | 阻塞 |
-| TRACE-BACKUP-001 | 备份/恢复 ACT 待分解 | backup RPC/scheduler | backup handlers | DATA-FILE-003 + all DATA-BIZ | 真实恢复回读待补 | OPS-BACKUP-001 | 未覆盖 |
-| TRACE-SETTINGS-001 | 设置/模型/凭证 ACT 待分解 | settings + credential-vault | config/vault handlers | DATA-CFG-* | 部分 contract/renderer | OPS-SEC-001 | 部分证据 |
+| TRACE-S6-001 | ACT-S6-001 报告详情朗读 | reports/deliveries RPC + existing TTS callback | ReportTab/报告 handlers 已接线 | DATA-BIZ-* 待细化 | renderer contract/E2E；原生详情未覆盖 | OPS-REPORT-001 | 部分证据 |
+| TRACE-S7-001 | ACT-S7-001 合规确认/WAV 选择 | capture + whisper boundary | classCapture handlers | DATA-FILE-* / DATA-BIZ-* | 原生 UAT 37/38/39 只到合规空态；依赖自包含未证实 | OPS-DEP-001 | 阻塞 |
+| TRACE-TTS-001 | ACT-TTS-001 速背卡/报告/转写朗读 | AppShell useTtsPlayback | existing tts handlers | review event only after explicit mark | renderer contract/E2E；原生内容入口未到达 | OPS-DEP-001 | 部分证据 |
+| TRACE-BACKUP-001 | ACT-BACKUP-001 overwrite 确认 | backup RPC/scheduler | BackupPanel + backup handlers | DATA-FILE-003 + all DATA-BIZ | renderer contract/RPC；真实恢复回读待补 | OPS-BACKUP-001 | 部分证据 |
+| TRACE-SETTINGS-001 | ACT-SETTINGS-001 设置保存反馈 | settings + credential-vault | config/vault handlers | DATA-CFG-003 | 原生打开/保存反馈 21/22；重启值未覆盖 | OPS-SEC-001 | 部分证据 |
 
 ## 3. 证据分层约束
 

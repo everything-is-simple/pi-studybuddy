@@ -1,8 +1,8 @@
 # 13 测试与运维
 
-**版本**：v0.1.1
+**版本**：v0.1.2
 **日期**：2026-08-14
-**状态**：✅ 已审查批准；T-M5-009 已获用户批准开工并进入 in_progress，唯一计划与隔离分支已建立，Git 收口未授权。
+**状态**：✅ 已审查批准；T-M5-009 已完成受控 Git 收口，六项 `docs/traceability/` 基线资产可供后续任务消费；当前无执行中任务。
 **上游**：[AGENTS.md §2、§5、§7、§9、§11](../AGENTS.md)、[01-TRD](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture](./03-架构设计-Architecture-Design.md)、[05-ERD](./05-数据模型-ERD-Data-Model.md)、[06-API](./06-API契约-API-Contracts.md)、[07-Workflow](./07-工作流-Workflow.md)、[08-测试验收](./08-测试验收-Test-Plan.md)、[09-使用者介面](./09-使用者介面-UI-Design.md)
 **下游**：[04-Todo](./04-任务清单-Todo-List.md)、任务唯一计划、实施记录、测试资产、发布与运维记录
 **用途**：把用户动作、界面、运行时、领域逻辑、数据资产、错误处理、自动化测试、真机 UAT 与运维收敛为一条可追溯的交付链；它不是具体任务计划，也不取代 08-测试验收的测试分层与验收条款。
@@ -388,5 +388,6 @@ operations：备份、恢复、迁移、安装、诊断与升级回退；不得�
 
 | 版本 | 日期 | 变更 | 原因、影响与依据 |
 |---|---|---|---|
+| v0.1.2 | 2026-08-14 | 同步 T-M5-009 完成事实：功能/基线提交 `156756c` 已 ff-only 合并 master，Node24 master `verify --stage=full` 最终重跑通过（131 files/1195 tests、真实 Electron E2E 33 files/141 tests），治理登记推送和 `master=origin/master` 同位核验完成；六项追溯基线资产由 in_progress→done。用户认可 `T-M5-009-DOC-CONSUMER-001` PASS 仅替代该无 Electron UI 变更任务的真机 UAT，例外不外推。原因：修复当前状态滞后；影响：不改本文规范、业务 API/schema/handler/入口或数据。依据：用户明确批准 + AGENTS.md §2、§7、§8.4、§11。 |
 | v0.1.1 | 2026-08-14 | 审查批准；固化 ACT/ERR/DATA 三类治理口径、SQLite 现状核对与方案 B；登记 T-M5-009 为专门治理任务（pending）。 | 原因：用户明确批准本文并选择方案 B。影响：新增受控任务和长期交付物所有权；不启动实施、不新增业务 API/schema/handler/入口、不写生产数据、不执行 Git 收口。依据：用户本次明确授权 + AGENTS.md §2、§4.4、§7、§8、§11。 |
 | v0.1.0 | 2026-08-13 | 初始草案：定义用户动作目录、错误责任、数据资产/SQLite 生命周期、测试真实性、UAT、发布与运维门禁。 | 原因：用户要求将测试阶段治理 prompt 演化为 docs 第 13 份文档。影响：新增统一可追溯标准，不改业务功能/API/schema/任务状态。依据：用户明确指令 + AGENTS.md §2、§5、§7、§9、§11。 |

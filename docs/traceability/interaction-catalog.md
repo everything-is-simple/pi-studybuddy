@@ -33,6 +33,11 @@
 | ACT-S5-001 | 选择已确认考试 | CTRL-CRAM-01 | 选择考试；未确认时不得继续 | exams.list / cram gate | DATA-BIZ-004 | ERR-STATE-001 | UAT-S5-001 | 已证实 |
 | ACT-S5-002 | 生成并开始模拟考 | CTRL-CRAM-02 | 题数/时间确认后生成 | mock-exams handlers | DATA-BIZ-011 | ERR-DEPENDENCY-001 | UAT-S5-002 | 已证实 |
 | ACT-S5-003 | 提交模拟考并读取结果 | CTRL-CRAM-03 | 提交后结果页可见，重启后再读 | mock-exams submit/result | DATA-BIZ-011/DATA-BIZ-012 | ERR-STATE-001 | UAT-S5-003 | 已证实 |
+| ACT-S6-001 | 查看报告并朗读脱敏详情 | CTRL-REPORT-01..05 | 报告详情可见后点击朗读 | ReportTab + existing TTS callback | DATA-BIZ-* 待细化 | ERR-STATE-001 | renderer contract test；原生详情未覆盖 | 部分证据 |
+| ACT-S7-001 | 合规确认并选择 WAV | CTRL-CAPTURE-01..04 | 勾选授权后选择受支持文件 | CaptureTab + native file dialog | DATA-FILE-* 待细化 | ERR-FILE-001/ERR-DEPENDENCY-001 | 原生 UAT 37/38/39；未完成转写 | 部分证据/阻塞 |
+| ACT-TTS-001 | 从速背卡/报告/转写结果朗读 | CTRL-TTS-01..03 + Tab text zones | 可见文本且目标内容非空 | AppShell `onSpeakText` + useTtsPlayback | review event only after explicit mark | ERR-DEPENDENCY-001 | renderer contract + E2E regression；native content entry not reached | 部分证据 |
+| ACT-BACKUP-001 | 选择覆盖恢复并确认风险 | CTRL-BACKUP-01..04 | `overwrite` first shows confirm/cancel; confirm invokes restore | BackupPanel + backup.restore | DATA-FILE-003 | ERR-BACKUP-001 | renderer contract + RPC regression；native restore not covered | 部分证据 |
+| ACT-SETTINGS-001 | 打开设置并保存通用偏好 | CTRL-SETTINGS-01..06 | Save action and fixed feedback visible | SettingsPage + settings RPC | DATA-CFG-003 | ERR-SQLITE-001 | native UAT 21/22; restart value readback not covered | 部分证据 |
 
 ## 3. 控件输入基线（未等同于动作）
 
@@ -52,12 +57,12 @@
 | CTRL-NOTE-01..05 | 笔记 | 选择/编辑/保存/朗读/学习状态/渲染 | 已映射 ACT-S2-003/004；其余待分解 | 部分证据 |
 | CTRL-PRACTICE-01..05 | 练习 | 选模块/作答/导航/提交/重试 | 已映射 ACT-S3-001/002；其余待分解 | 部分证据 |
 | CTRL-MISTAKE-01..04 | 错题 | 筛选/详情/分类/重做/复盘 | 已映射 ACT-S4-001/002；其余待分解 | 部分证据 |
-| CTRL-CRAM-01..05 | 冲刺 | 考试/生成/作答/速背/计划 | 已映射 ACT-S5-001..003；CTRL-CRAM-04/05 待 T-M5-005 | 部分证据 |
-| CTRL-REPORT-01..05 | 报告 | 生成/详情/冻结/投递/导出 | 待分解，消费 T-M5-005 | 部分证据 |
-| CTRL-CAPTURE-01..04 | 采集 | 授权/WAV/转写/保存/朗读 | 待分解，消费 T-M5-005/006 | 阻塞/未覆盖 |
-| CTRL-TTS-01..03 | TTS | 引擎/播放/暂停/停止/复习标记 | 待分解，消费 T-M5-005 | 部分证据 |
-| CTRL-BACKUP-01..04 | 备份 | 选择/备份/调度/恢复/历史 | 待分解，消费 T-M5-005/007/008 | 部分证据 |
-| CTRL-SETTINGS-01..06 | 设置 | 凭证/设置/模型/工具链/实验/技能包 | 待分解，消费 T-M5-005/006 | 部分证据 |
+| CTRL-CRAM-01..05 | 冲刺 | 考试/生成/作答/速背/计划 | 已映射 ACT-S5-001..003；朗读速背卡入口已实现但本轮未到达 | 部分证据 |
+| CTRL-REPORT-01..05 | 报告 | 生成/详情/冻结/投递/导出/朗读 | 已映射 ACT-S6-001；详情朗读入口已实现，原生详情未覆盖 | 部分证据 |
+| CTRL-CAPTURE-01..04 | 采集 | 授权/WAV/转写/保存/朗读 | 已映射 ACT-S7-001；合规空态原生可见，whisper/成功转写不在本任务 | 部分证据/阻塞 |
+| CTRL-TTS-01..03 | TTS | 引擎/播放/暂停/停止/复习标记 | 已映射 ACT-TTS-001；常驻控制和自动化通过，完整 UI 内容入口未覆盖 | 部分证据 |
+| CTRL-BACKUP-01..04 | 备份 | 选择/备份/调度/恢复/历史 | 已映射 ACT-BACKUP-001；overwrite 确认已实现，真实恢复未覆盖 | 部分证据 |
+| CTRL-SETTINGS-01..06 | 设置 | 凭证/设置/模型/工具链/实验/技能包 | 已映射 ACT-SETTINGS-001；打开/保存反馈可见，重启值未覆盖 | 部分证据 |
 
 ## 4. 覆盖状态与停止条件
 
