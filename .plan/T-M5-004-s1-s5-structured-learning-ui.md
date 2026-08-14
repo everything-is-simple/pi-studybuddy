@@ -1,7 +1,7 @@
 # T-M5-004 唯一执行计划：S1-S5 结构化学习页面逐控件修订
 
 **任务 ID**：T-M5-004
-**状态**：📝 进行中（in_progress；2026-08-14 v4c 重验已证明 S2 单模块、重复创建脱敏错误与首次重启唯一模块回读；S3 原第二次重启缺口已以既有 typed RPC 的最小可见结果回读 UI 修复，并在同一未预置隔离根完成可见历史/结果读回。未新增 API/schema/handler/Stream/跨 Tab 状态/真实外部 AI；双独立审查 A/B 已完成且 P0/P1=0；Git 收口仍未授权）
+**状态**：📝 进行中（in_progress；2026-08-14 用户已明确授权 Git 收口。功能 `47639f9` 已快进合并 master，Node24 master `verify --stage=full` 通过（130 files/1192 tests、真实 Electron E2E 33 files/141 tests）；本计划的最终治理登记、推送与 `master=origin/master` 核验正在执行，核验完成前不改 done）
 **日期**：2026-08-14
 **里程碑**：M5 用户可用性验收 + UI 修订 + 一键交付
 **标题**：S1-S5 结构化学习页面逐控件修订
@@ -15,11 +15,11 @@
 
 | 文件 | 版本/状态 |
 |---|---|
-| AGENTS.md | v0.1.124（T-M5-004 in_progress；v4c 原生 UAT、质量门与双独立审查 A/B 已通过；Git 收口仍待授权） |
-| docs/00-索引 | v0.1.174 |
-| docs/04-Todo | v0.1.176（T-M5-004 in_progress；非 Git 收尾准备完成，Git 收口未授权） |
+| AGENTS.md | v0.1.125（用户已授权 Git 收口；功能已合并 master 并通过 master 全量质量门；远端核验执行中） |
+| docs/00-索引 | v0.1.175 |
+| docs/04-Todo | v0.1.177（T-M5-004 in_progress；用户授权后本地收口已完成，等待推送核验） |
 | .plan/00-当前任务.md | 本计划 |
-| live Git | `master=origin/master=dacec56`；本轮工作位于隔离分支，Git 收口未获授权 |
+| live Git | `master=47639f9`、`origin/master=dacec56`；功能已由隔离分支 ff-only 合并 master，Git 收口已获授权，治理登记/推送核验执行中 |
 
 ## 2. 目标
 
