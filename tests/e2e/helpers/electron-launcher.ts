@@ -192,9 +192,9 @@ function withTimeout<T>(promise: Promise<T>, message: string, ms: number): Promi
  */
 export async function launchElectron(
   suffix = "default",
-  options: { reuseDataRoot?: boolean } = {},
+  options: { reuseDataRoot?: boolean; dataRoot?: string } = {},
 ): Promise<LaunchedApp> {
-  const dataRoot = path.join(E2E_RUN_DIR, suffix);
+  const dataRoot = options.dataRoot ?? path.join(E2E_RUN_DIR, suffix);
   if (!options.reuseDataRoot) {
     fs.rmSync(dataRoot, { recursive: true, force: true });
   }

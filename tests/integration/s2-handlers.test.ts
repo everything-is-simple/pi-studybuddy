@@ -327,20 +327,65 @@ describe("T-M1-002 S2 handler 集成测试", () => {
       expect(mm.markmapJson).toContain("root");
     });
 
-    it("MOD-01 modules.list：按 courseId 返回", () => {
+    it("MOD-01 RED modules.create：为当前课程的显式资料创建可练习模块并写入事实回链", () => {
+      const create = (handlers as Record<string, (params: unknown) => unknown>)["modules.create"];
+      const created = create({
+        courseId,
+        materialId: noteMaterialId,
+        moduleName: "极限定义",
+        summary: "理解函数极限的基本定义。",
+        importance: 4,
+        difficulty: 2,
+      }) as KnowledgeModule;
+
+      expect(created.courseId).toBe(courseId);
+      expect(created.materialId).toBe(noteMaterialId);
+      expect(created.moduleName).toBe("极限定义");
+      expect(created.learnStatus).toBe("not_started");
+      expect(created.aiGenerated).toBe(0);
+      expect(JSON.parse(created.sourceEvidenceJson)).toEqual({ materialId: noteMaterialId });
+
+      const row = ctx.semesterDb(semesterId)
+        .prepare("SELECT course_instance_id, material_id, ai_generated FROM knowledge_modules WHERE id = @id")
+        .get({ id: created.id }) as { course_instance_id: string; material_id: string; ai_generated: number };
+      expect(row).toEqual({ course_instance_id: courseId, material_id: noteMaterialId, ai_generated: 0 });
+    });
+
+    it("MOD-02 RED modules.create：资料不属于目标课程时拒绝跨课程事实写入", () => {
+      const otherCourse = callS1("courses.create", {
+        semesterId,
+        courseName: "另一门课程",
+        subject: "物理",
+      }) as { id: string };
+      const create = (handlers as Record<string, (params: unknown) => unknown>)["modules.create"];
+      expect(() => create({ courseId: otherCourse.id, materialId: noteMaterialId, moduleName: "越权模块" })).toThrowError(/资料|课程|不属于/);
+    });
+
+    it("MOD-03 RED modules.create：同一资料内同名模块必须拒绝，防止重复进入练习选择", () => {
+      const create = (handlers as Record<string, (params: unknown) => unknown>)["modules.create"];
+      create({ courseId, materialId: noteMaterialId, moduleName: "重复模块防线" });
+
+      expect(() => create({ courseId, materialId: noteMaterialId, moduleName: "重复模块防线" })).toThrowError(/已存在|重复/);
+      const count = (ctx.semesterDb(semesterId)
+        .prepare("SELECT COUNT(*) AS count FROM knowledge_modules WHERE material_id = @materialId AND module_name = @moduleName AND deleted_at IS NULL")
+        .get({ materialId: noteMaterialId, moduleName: "重复模块防线" }) as { count: number }).count;
+      expect(count).toBe(1);
+    });
+
+    it("MOD-04 modules.list：按 courseId 返回", () => {
       const list = call("modules.list", { courseId }) as KnowledgeModule[];
       expect(list.length).toBeGreaterThanOrEqual(1);
       expect(list.some((m) => m.id === moduleId)).toBe(true);
     });
 
-    it("MOD-02 modules.list：按 learnStatus 过滤", () => {
+    it("MOD-05 modules.list：按 learnStatus 过滤", () => {
       const notStarted = call("modules.list", { courseId, learnStatus: "not_started" }) as KnowledgeModule[];
       expect(notStarted.every((m) => m.learnStatus === "not_started")).toBe(true);
       const mastered = call("modules.list", { courseId, learnStatus: "mastered" }) as KnowledgeModule[];
       expect(mastered.length).toBe(0);
     });
 
-    it("MOD-03 modules.get：返回 KnowledgeModule（含 sourceEvidenceJson 回链）", () => {
+    it("MOD-06 modules.get：返回 KnowledgeModule（含 sourceEvidenceJson 回链）", () => {
       const m = call("modules.get", { id: moduleId }) as KnowledgeModule;
       expect(m.id).toBe(moduleId);
       expect(m.moduleName).toBe("测试模块");
@@ -348,22 +393,22 @@ describe("T-M1-002 S2 handler 集成测试", () => {
       expect(m.materialId).toBe(noteMaterialId);
     });
 
-    it("MOD-04 updateLearnStatus：not_started→learning", () => {
+    it("MOD-07 updateLearnStatus：not_started→learning", () => {
       const m = call("modules.updateLearnStatus", { id: moduleId, learnStatus: "learning" }) as KnowledgeModule;
       expect(m.learnStatus).toBe("learning");
     });
 
-    it("MOD-05 updateLearnStatus：learning→mastered", () => {
+    it("MOD-08 updateLearnStatus：learning→mastered", () => {
       const m = call("modules.updateLearnStatus", { id: moduleId, learnStatus: "mastered" }) as KnowledgeModule;
       expect(m.learnStatus).toBe("mastered");
     });
 
-    it("MOD-06 updateLearnStatus：mastered→needs_review", () => {
+    it("MOD-09 updateLearnStatus：mastered→needs_review", () => {
       const m = call("modules.updateLearnStatus", { id: moduleId, learnStatus: "needs_review" }) as KnowledgeModule;
       expect(m.learnStatus).toBe("needs_review");
     });
 
-    it("MOD-07 updateLearnStatus：非法值拒绝（BAD_REQUEST）", () => {
+    it("MOD-10 updateLearnStatus：非法值拒绝（BAD_REQUEST）", () => {
       expect(() =>
         call("modules.updateLearnStatus", { id: moduleId, learnStatus: "invalid_status" }),
       ).toThrowError(/状态|非法|不允许/);

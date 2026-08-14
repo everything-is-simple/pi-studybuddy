@@ -1,643 +1,244 @@
-# T-M5-004 任务启动提示词：S1-S5 结构化学习页面逐控件修订
+# T-M5-004 续作 / 复验治理提示词：S1-S5 结构化学习页面逐控件修订
 
-> 本文件是 `.pi/prompts/task-execution/` 下的受控任务提示词。
+> **资产定位**：`.pi/prompts/task-execution/` 下的受控参考资产；配合 `00-标准任务执行提示词.md` 使用。
 >
-> 它不是 `.plan/`，不等于任务已登记、已获开工授权、已建立分支，也不授权 commit、merge、push。
+> **不是执行计划**：本文件不替代唯一 `.plan/T-M5-004-s1-s5-structured-learning-ui.md`，不授权开新计划、扩张范围、修改任务状态、写真实业务数据，亦不授权 `commit` / `merge` / `push`。
 >
-> 只有用户明确选择并批准 T-M5-004 开工后，执行 Agent 才能进入本任务实施。
+> **快照日期**：2026-08-13。任何静态快照均服从实时 `AGENTS.md`、`docs/00`、`docs/04`、唯一 `.plan/`、`.record/` 与 Git 事实；冲突时停止业务施工，先报告并修复治理漂移。
 
 ---
 
-## 0. 任务身份
+## 0. 交接目标与当前裁决
 
-你是 `H:\pi-studybuddy` 的实施 Agent。
-
-当前任务：
+你是 `H:\pi-studybuddy` 的续作 / 复验 Agent。仅处理当前已登记的唯一任务：
 
 ```text
 task-id：T-M5-004
 标题：S1-S5 结构化学习页面逐控件修订
 里程碑：M5 用户可用性验收 + UI 修订 + 一键交付
-Todo 状态：pending
-优先级：P0
+实时状态（2026-08-13 快照）：in_progress
+实时分支（2026-08-13 快照）：agent/T-M5-004-test-database-real-data
+实时基线（2026-08-13 快照）：HEAD = master = origin/master = dacec56
 ```
 
-任务目标不是“页面能渲染”或“RPC 已接线”，而是：
+**本轮核心任务不是重复实现已交付的控件，也不是把自动化 E2E 描述成 UAT。**应当以原生真机 UAT 的缺口为中心，完成或请求裁决以下阻断项：
 
-> 让 S1-S5 纳入范围内的每个用户可见控件，在真实 Electron 中具备真实可达、真实可用、可解释、可恢复的成功/失败/禁用/重试语义，并且不破坏 T-M5-002 与 T-M5-003 已验收闭环。
+1. S1 的任务 / 考试 / 冲刺相关用户闭环必须是“可见 UI 创建 → 使用 / 操作 → 重启持久化回查”，不能仅证明课程创建和 S1 可达。
+2. S2、S3、S4 若不存在合法的纯 UI 前置数据创建入口，必须先进行**范围裁决**；不能用 `webContents.executeJavaScript`、CDP、RPC/handler 直调、运行中 seed RPC 或数据库预置把它们伪装为真机 UAT。
+3. 当前专用 SQLite 测试数据库、真实 Electron 自动化 E2E 与组件级 mock renderer 测试仍可作为各自类别的自动化证据，但必须与“原生真机 UAT”严格分栏。
+4. 在 UAT 完整证据、范围裁决和双独立审查均闭环前，T-M5-004 **不得报告 done，也不得进入 Git 收口**。
 
-禁止因为看到本提示词、Todo 中存在 pending 行，或前一任务已完成，就自行：
+本提示词 supersedes 旧版 T-M5-004 “任务启动提示词”中以下已经失效的静态表述：
 
-- 创建 `.plan`
-- 修改 Todo 状态
-- 创建或切换分支
-- 编写业务代码
-- 启动 T-M5-005~008
-- commit / merge / push
+- `Todo 状态：pending`；
+- “只有正式开工后才允许建立 plan / 分支”的启动阶段措辞；
+- 旧基线 `master=origin/master=6d95ead`；
+- 任何将 renderer 自动化或早期 UAT 流水表述为“8 路径纯 UI 完整真机 UAT”的措辞。
 
----
-
-## 1. 强制权威恢复顺序
-
-实施前严格按以下顺序读取，并记录实际版本、状态和冲突：
-
-1. `AGENTS.md`
-2. `docs/00-文档索引-Index.md`
-3. `docs/04-任务清单-Todo-List.md`
-4. `.plan/00-当前任务.md`（若存在）
-5. 相关设计文档：
-   - `docs/01-TRD-技术需求-Technical-Requirements.md`
-   - `docs/02-PRD-产品需求-Product-Requirements.md`
-   - `docs/03-架构设计-Architecture-Design.md`
-   - `docs/05-数据模型-ERD-Data-Model.md`
-   - `docs/06-API契约-API-Contracts.md`
-   - `docs/07-工作流-Workflow.md`
-   - `docs/08-测试验收-Test-Plan.md`
-   - `docs/09-使用者介面-UI-Design.md`
-6. 前序任务计划与记录：
-   - `.plan/T-M5-001-ui-acceptance-audit.md`
-   - `.record/T-M5-001-实施记录.md`
-   - `.plan/T-M5-002-first-run-s1-ui.md`
-   - `.record/T-M5-002-实施记录.md`
-   - `.plan/T-M5-003-chat-session-model-closure.md`
-   - `.record/T-M5-003-实施记录.md`
-7. T-M5-001 运行证据：
-   - `H:\pi-studybuddy-tmp\runs\T-M5-001\control-inventory.md`
-   - `H:\pi-studybuddy-tmp\runs\T-M5-001\gap-register.md`
-   - `H:\pi-studybuddy-tmp\runs\T-M5-001\ui-function-dependency-matrix.md`
-   - `H:\pi-studybuddy-tmp\runs\T-M5-001\review-a-implementation-ux.md`
-8. 当前 renderer、typed RPC、contract、handler、测试和真实 Electron E2E fixture。
-
-禁止依赖本 Prompt 的静态快照覆盖 live 仓库事实。
+它**不删除历史记录**。历史“曾 done / 曾 Git 收口”的叙述已由 2026-08-13 的复查事实 supersede，必须保留其可审计性。
 
 ---
 
-## 2. 开工前必须核验的 Git 与治理状态
+## 1. 权威恢复顺序（每次续作都必须执行）
 
-先运行：
+按 AGENTS.md §0 顺序读取、摘要并记录版本 / 任务状态 / 冲突：
+
+1. `AGENTS.md`；
+2. `docs/00-文档索引-Index.md`；
+3. `docs/04-任务清单-Todo-List.md`；
+4. `.plan/00-当前任务.md`；
+5. `.plan/T-M5-004-s1-s5-structured-learning-ui.md`（唯一实时执行计划，不重写其历史裁决）；
+6. `.record/T-M5-004-实施记录.md`（特别是“测试阶段数据库修正”与“2026-08-13 原生可见 UI 复查补证”）；
+7. 相关权威设计条款：
+   - `docs/06-API契约-API-Contracts.md`；
+   - `docs/07-工作流-Workflow.md`；
+   - `docs/08-测试验收-Test-Plan.md`，尤其 §6.6、§9.1、§9.3；
+   - `docs/09-使用者介面-UI-Design.md`；
+8. T-M5-001 的 `control-inventory.md`、`gap-register.md`、依赖矩阵和审查证据；
+9. 当前 renderer、preload、typed RPC、contract、main / agent-host handler、测试与 Electron 启动器。
+
+立即运行并在续作证据中记录：
 
 ```powershell
 git status --short --branch
 git log --oneline --decorate -5
 git branch --show-current
 git rev-parse HEAD
+git rev-parse master
 git rev-parse origin/master
 git branch --list "agent/T-M5-004*"
 ```
 
-开工门禁必须同时满足：
+### 1.1 本快照已知事实（必须再核验）
 
-- T-M5-003 已在 Todo 登记 done；
-- T-M5-003 具备 Todo 证据、master 复验、origin/master 推送三项完成事实；
-- 用户已明确选择并批准 T-M5-004 开工；
-- `.plan/` 中没有其他正在执行的任务；
-- `.plan/00-当前任务.md`、Todo、分支和计划不存在互相矛盾；
-- 工作区 dirty 修改均可确认归属；
-- 没有需要覆盖未知修改的文件；
-- 不需要 `reset --hard`、`clean -fd`、`stash`、`--no-verify`、强推或非 ff-only 合并。
+- `dacec56` 是本快照中 `HEAD=master=origin/master`；当前工作分支为 `agent/T-M5-004-test-database-real-data`。
+- 工作区已有可追溯的未收口修改：测试数据库 helper、E2E 启动 / test-main 调整、UUID 检查和 renderer 自动化重命名、`src/main/data-root-init.ts` Windows SQLite 连接生命周期修正，以及 plan / record / docs 的同步。不得覆盖、删除、stash、reset 或 clean。
+- 2026-08-13 最近一次完整自动化复验：`verify --stage=full` 通过，unit/integration **130 files / 1183 tests**、真实 Electron E2E **33 files / 141 tests**、contract **127/127**、安全 **6/6**、UUID **7/7**；这只是历史自动化证据，后续变更后须以实际结果重新记录。
+- 专用 SQLite 测试库已建立，且已移除运行时 `test.seedModule`。`initializeDataRoot()` 已在返回前关闭建库 SQLite 连接，以避免 Windows WAL/SHM 锁竞争。
+- `tests/e2e/t-m5-004-uat-renderer.test.ts` 的 `webContents.executeJavaScript` 路径是 **renderer 自动化 E2E**，不是 §6.6 原生真机 UAT。
+- 原生 OS 鼠标 / 键盘补证仅证明“首次创建学期和课程 → S1 可达 → 同隔离根重启仍可见课程”；继续进入 S1 任务表单时误入无关工作台，未创建或完成任务。因此它不能证明 S1 任务闭环，更不能证明 S2/S3/S4 完整闭环。
 
-本 Prompt 生成时 live Git 为：
-
-```text
-master=origin/master=6d95ead
-```
-
-但部分治理文档仍保留 T-M5-003 的历史事实：
-
-```text
-master=origin/master=48c93e2
-```
-
-实施时必须以 live Git 为准，记录并修复治理事实漂移；不得删除历史记录，也不得未经授权直接改写治理基线。
-
-只有正式开工后才允许：
-
-```text
-docs/04：T-M5-004 pending → in_progress
-.plan：建立唯一 T-M5-004 计划
-分支：agent/T-M5-004-s1-s5-structured-learning-ui
-运行根：H:\pi-studybuddy-tmp\runs\T-M5-004\
-```
+若任一事实不一致，以实时 SoT 和 Git 为准；记录偏差、权威依据、影响与修正，不得静默选择对完成更有利的旧记录。
 
 ---
 
-## 3. M5 进度与前序任务边界
+## 2. 已交付范围、未交付边界和任务不变量
 
-### 3.1 T-M5-001
+### 2.1 已有实现 / 自动化证据（不得无故回退）
 
-已完成：
+| 区域 | 已交付控件 / 语义 |
+|---|---|
+| 首页 / S1 | `tasks.complete` 完成动作、刷新、固定中文失败、简报 / 任务 / 考试加载重试、考试详情、归档禁用 |
+| S2 资料 | 转换资料预览（`files.previewMarkdown` / `files.read`）、失败重试、`note_generating` 重新生成笔记、列表重试、归档禁用 |
+| S2 笔记 | 思维导图、模块证据“查看来源”真实回链、失败重试、归档禁用 |
+| S3 练习 | 错题“加入错题”、成功 / 固定中文失败、重复点击防线、静态空态假 action 清除 |
+| S4 错题 | 筛选、详情失败重试、显式“重做正确 / 重做错误”、历史与状态刷新；用户已裁决方案 A：`mistakes.get` 返回兼容的 question 摘要（题干 / 题型 / 我的答案 / 正确答案 / 解析） |
+| S5 冲刺 | 未确认考试时前端禁用 + 后端拒绝固定中文错误；生成失败回到 idle 并可重试 |
 
-- 全 UI/功能/依赖验收审计；
-- 逐控件 inventory；
-- P0/P1/P2 缺口登记；
-- 安装包和依赖边界审计；
-- 两份独立审查。
+### 2.2 不变量
 
-T-M5-001 的缺口登记是本任务的输入证据，但不代表本任务可以无边界修复所有问题。
+- **不新增未经裁决的 API / schema / handler / Stream / 全局状态。**已有 `mistakes.get` DTO 的向后兼容字段扩展是已裁决例外；方法总数保持 contract 127/127，除非用户另行裁决。
+- renderer 只消费后端事实，不自行伪造状态；写操作必须 busy 防重、错误可恢复、归档前后端双层拒绝、异步请求避免旧上下文覆盖和卸载后更新。
+- 作答前不得向 renderer 泄漏 `correct_answer`；DOM、截图、JSON、日志均不得含完整 UUID、绝对路径 / file URI、密钥、错误栈、SQL、资料原文。
+- 所有测试和 UAT 只使用 `H:\pi-studybuddy-tmp\runs\T-M5-004\...`；绝不读取、复制、写入或查询 `%LOCALAPPDATA%\PiStudyBuddy`。
+- 外部 AI / OCR / WPS / whisper 等不接真实外部服务；S3 / S5 的确定性生成器只是受控测试替代，不能被叙述为真实 AI 成功。
+- 不启动 T-M5-005～T-M5-008；不扩展到 S6 / S7 / TTS / 备份 / 设置 / 发行验收。
 
-### 3.2 T-M5-002
+### 2.3 证据类别必须分离
 
-已完成：
+| 类别 | 允许的前置数据 / 驱动 | 可证明什么 | 绝不能声称什么 |
+|---|---|---|---|
+| unit / integration / mounted renderer | `createMockRpcClient` 或合成 fixture | 组件级 loading / error / retry / 禁用 / 竞态语义 | 真机 UAT、完整主路径 |
+| 真实 Electron 自动化 E2E | 启动前建立专用 SQLite 测试库；运行中仅正式业务 RPC | main→preload→piBridge→TCP/RPC→handler→renderer 链路 | 原生人工 UI 操作 |
+| 原生真机 UAT | 全新隔离根；可见 OS 鼠标 / 键盘操作；数据也由 UI 创建 | 每个纳入用户闭环的创建→使用→重启持久化 | fixture、DB seed、CDP / `executeJavaScript` 结果 |
 
-- 首次启动向导；
-- 学期/课程/考试/任务基础管理；
-- S1 管理面板；
-- AppShell 学期/课程上下文刷新；
-- 归档学期写保护；
-- 真机 UAT 和重启持久化。
-
-本任务不得重复实现第二套 S1 管理逻辑，也不得破坏已验收的首次启动路径。
-
-### 3.3 T-M5-003
-
-已完成：
-
-- 空数据根无生产 fixture 会话；
-- 真实会话新建、切换、重命名、删除、导出和重启持久化；
-- 真实模型状态、失败可见和重试；
-- 真实错题选择；
-- 真实资料引用；
-- turn_end 的真实会话归属。
-
-本任务不得重新引入：
-
-```text
-defaultSessionFixture()
-sess-001
-mist-001
-sess-new
-```
-
-不得重做会话、模型和对话闭环。发现回归时，只做最小回归修复并记录证据。
+禁止运行中 `test.*` seed RPC；禁止把 Electron E2E 中的数据库夹具称为真机 UAT。
 
 ---
 
-## 4. T-M5-004 纳入范围
+## 3. 当前阻断项：先做可行性审计，再实施
 
-### 4.1 首页 / S1 残余动作
-
-在不破坏 T-M5-002 的前提下：
-
-- 让首页简报、任务、考试条目具有真实进入、查看、完成或明确不可操作语义；
-- 修复首页静态按钮、无 action 按钮或无法解释的空态；
-- 处理无学期、无课程、无任务、无考试、加载失败、失败重试；
-- 使用已有 AppShell 学期/课程上下文；
-- 不新增第二套全局上下文；
-- 既有契约无法表达时，先写 RED 并停工请求裁决。
-
-### 4.2 S2 资料
-
-纳入：
-
-- 通过真实文件选择 capability 导入资料；
-- MIME、大小、路径、归档只读校验；
-- 上传、转换、生成笔记的 loading / success / empty / failure / retry；
-- 资料列表刷新；
-- 文件查看、预览和可解释状态；
-- 转换失败不能静默或伪装成功；
-- AI 不可用时保留可查看的原文或明确失败恢复入口。
-
-不纳入：
-
-- OCR/Python/WPS 的分发、许可、安装和随包自包含；
-- 运行依赖装配；
-- 猜测外部工具路径；
-- 真实 WPS/OCR/AI 服务。
-
-这些属于 T-M5-006 或后续任务。
-
-### 4.3 S2 笔记
-
-纳入：
-
-- NotesTab 内的局部显式资料选择；
-- 资料列表为空态；
-- 读取笔记；
-- 新建、编辑、保存、取消；
-- 保存成功后的真实刷新；
-- 保存失败后的固定中文错误和重试；
-- Markdown、公式、Mermaid、思维导图和 source evidence 回链；
-- 知识模块学习状态更新；
-- 归档学期只读；
-- 请求竞态、切换上下文和组件卸载防线。
-
-硬约束：
+先在 `H:\pi-studybuddy-tmp\runs\T-M5-004\uat\` 新建 / 更新以下**证据文件**（不创建第二份 `.plan/`）：
 
 ```text
-不新增 AppShell 跨 Tab materialId 全局状态；
-不默认选择第一个资料；
-不硬编码 materialId；
-不以“资料回链”静态文字冒充可点击证据回链。
+uat-feasibility-audit.md
+uat-scope-decision-request.md        # 只有遇到无合法 UI 前置入口时创建
+UAT-报告.md
+native-uat-evidence.json
 ```
 
-### 4.4 S3 练习
+### 3.1 对每个纳入用户可见闭环做 10 列审计
 
-纳入：
-
-- 知识模块多选；
-- 题目数量选择；
-- 开始练习；
-- 题目加载；
-- 单选、多选、填空；
-- 上一题、下一题；
-- 提交；
-- 结果读取；
-- 题目失败重试；
-- 结果失败重试；
-- 计时、超时提交；
-- 提交中禁用；
-- 重复点击防线。
-
-安全约束：
-
-- 作答前不得向 renderer 暴露 `correct_answer`；
-- 作答前不得暴露 `acceptable_answers`；
-- 作答前不得暴露 `explanation`；
-- AI/生成失败不得创建空练习 session；
-- 不得显示假成功。
-
-### 4.5 S4 错题与薄弱点
-
-纳入：
-
-- 全部 / 需复习 / 已掌握筛选；
-- 错题详情；
-- 题干、答案、解析、作答历史；
-- AI 错因建议；
-- 六分类错因确认；
-- 重做正确；
-- 重做错误；
-- 状态刷新；
-- evidence_count 变化；
-- weak point 相关状态；
-- 失败和重试；
-- 归档学期只读。
-
-硬约束：
-
-- AI 建议必须标记为建议或不确定；
-- 学生确认后才形成事实；
-- S4 不能改写 S3 原始作答事实；
-- “已掌握”不是不可回退终态；
-- 不得用短 ID、静态文本或 fixture 冒充完整复盘。
-
-### 4.6 S5 冲刺
-
-纳入：
-
-- 已确认考试选择；
-- 未确认考试门控；
-- 模拟考题数/时间；
-- 生成试卷；
-- 开始模拟考；
-- 作答；
-- 上一题/下一题；
-- 提交；
-- 结果；
-- 模块分析；
-- 结果读取重试；
-- 空态、失败态、禁用态。
-
-硬约束：
-
-- 未确认考试不得生成模拟考；
-- 不得通过 renderer 字面量绕过考试确认；
-- 速背卡和冲刺计划的确定性只读 DTO 语义必须保留；
-- 速背卡朗读、掌握标记、冲刺计划动作属于 T-M5-005，不得扩张纳入。
-
----
-
-## 5. 明确不纳入范围
-
-以下内容禁止在本任务中顺手实现：
-
-- T-M5-002 首次启动和 S1 基础 CRUD 重做；
-- T-M5-003 对话、会话、模型和文件引用重做；
-- S6 报告生成、冻结、导出、投递；
-- S7 课堂采集、录音转写；
-- 全局 TTS 控制条；
-- 速背卡朗读；
-- 速背卡掌握标记；
-- 备份、恢复、调度；
-- 设置页；
-- 状态栏、上下文栏整体 UX；
-- 响应式和无障碍总修订；
-- OCR/Python/WPS/whisper 随包自包含；
-- setup、portable zip、升级和卸载验收；
-- 新增 API、schema、handler、Stream 或跨 Tab 全局状态；
-- 真实外部服务；
-- 生产数据、真实学生资料、真实凭证。
-
----
-
-## 6. 影响面追踪矩阵
-
-任何业务实现前，必须先生成：
-
-```text
-H:\pi-studybuddy-tmp\runs\T-M5-004\traceability-matrix.md
-```
-
-矩阵至少包含：
-
-| 设计条款 | 控件 ID | 当前组件 | 既有 RPC/handler | 状态机 | RED 测试 | 成功语义 | 失败语义 | 禁用语义 | 重试语义 | UAT 证据 | 任务归属 |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-
-必须覆盖：
-
-```text
-CTRL-HOME-01
-CTRL-MATERIAL-01~05
-CTRL-NOTE-01~05
-CTRL-PRACTICE-01~05
-CTRL-MISTAKE-01~04
-CTRL-CRAM-01~03
-```
-
-以下必须明确标注为 T-M5-005，不能误收：
-
-```text
-CTRL-CRAM-04
-CTRL-CRAM-05
-```
-
-矩阵必须回答：
-
-1. 控件是否绑定真实 RPC，而非只显示按钮；
-2. 成功后是否展示真实结果并刷新状态；
-3. 失败是否固定中文、无路径/UUID/栈，并提供恢复入口；
-4. 是否覆盖 loading、empty、disabled、readonly、archived；
-5. 是否有重复点击防线；
-6. 是否有异步竞态和卸载保护；
-7. 是否需要 API、schema、handler 或全局状态变化；
-8. 若需要变化，是否应立即停止并请求裁决。
-
----
-
-## 7. TDD 开发流程
-
-严格执行：
-
-```text
-RED → GREEN → REFACTOR
-```
-
-### 7.1 RED
-
-先写失败测试，不得先实现。
+| 控件 / 路径 ID | 权威来源 | UI 起点 | UI 可创建前置数据？ | UI 可使用 / mutation？ | UI 可重启回查？ | 归档 / 错误 / 重试 | 自动化证据位置 | 原生 UAT 证据位置 | 结论 / 裁决需求 |
+|---|---|---|---|---|---|---|---|---|---|
 
 至少覆盖：
 
-- 空态；
-- 成功；
-- 失败；
-- 禁用；
-- 只读；
-- 归档；
-- 重试；
-- 重复点击；
-- 竞态；
-- 卸载；
-- 切换课程；
-- 切换学期；
-- 切换资料；
-- 答案泄漏；
-- 未确认考试拦截；
-- 固定中文错误；
-- DOM 脱敏。
+1. S1：课程上下文 → 任务创建 / 完成 → 刷新 → 重启；考试查看 / 确认与冲刺入口的适用路径。
+2. S2 资料：选择文件 → 导入 / 转换 → 预览或失败重试 → 笔记关联 / 重启。
+3. S2 笔记：可见资料选择 → 打开 / 编辑 / 保存或取消 → 来源回链 / 重启。
+4. S3 练习：合法 UI 产生或选择模块 → 开始 → 作答 / 翻题 / 提交 → 结果 / 错题 → 重启。
+5. S4 错题：合法 UI 产生错题 → 筛选 / 详情 / 完整复盘 → AI 建议或固定失败恢复 → 重做正确和错误 → 状态刷新 / 重启。
+6. S5 冲刺：已确认考试门控 → 生成 / 开始模拟考 → 作答 / 提交 / 结果 / 重试 → 重启；未确认考试的前后端拦截另列负向路径。
 
-RED 证据必须记录：
+### 3.2 范围裁决的硬规则
 
-- 命令；
-- 失败断言；
-- 失败原因；
-- 对应设计条款；
-- 测试文件；
-- 运行输出路径。
+如果某路径没有用户可见、权威范围内的前置数据创建入口：
 
-禁止：
+1. 不得绕过 UI；
+2. 不得自行新增 API、隐藏开发入口、数据库按钮、seed handler 或测试后门；
+3. 不得把“空态可达”计作“创建→使用→重启”的完整闭环；
+4. 生成 `uat-scope-decision-request.md`，每一项必须写明：
+   - 缺少的 UI 前置入口和实际观察；
+   - 对应控制项、设计条款、当前页面 / RPC / handler；
+   - 可选方案（例如：A 纳入本任务补真实 UI；B 明确从 T-M5-004 UAT 范围移出并登记后续 task-id；C 仅保留自动化 fixture 证据且明确不能作为 UAT）；
+   - 对 API / schema / 范围 / 前序验收的影响；
+   - 推荐方案与原因；
+   - 需要用户作出的唯一裁决。
+5. 停止该路径的业务施工，继续只做不依赖该裁决的审计 / 证据整理；在用户裁决前，不可把 T-M5-004 标为完成。
 
-- 删除测试；
-- 放宽断言；
-- 使用待测实现自动生成 golden；
-- 用 fixture 结果伪装生产结果；
-- 先实现后补测试。
-
-### 7.2 GREEN
-
-只写使当前 RED 通过的最小实现：
-
-- 优先复用 typed RPC；
-- 优先复用 `useTabData`；
-- 优先复用 AppShell 已有上下文；
-- 复用已有错误净化；
-- 复用已有归档只读防线；
-- 复用已有文件 capability 和 allowed-roots；
-- 所有 mutation 有 busy/重复提交防线；
-- 所有异步请求有上下文/请求版本/挂载保护；
-- renderer 不直接展示内部异常对象。
-
-### 7.3 REFACTOR
-
-只有定向测试全绿后才允许：
-
-- 整理公共 loading/error/empty/retry 组件；
-- 统一按钮禁用语义；
-- 统一可访问名称；
-- 消除重复代码；
-- 整理测试 fixture 边界；
-- 完善脱敏证据。
-
-不得在 REFACTOR 阶段扩大任务范围。
+**2026-08-13 已知需优先审计的范围问题**：S2 / S3 / S4 纯 UI 创建入口；以及 S1 任务 / 考试 / 冲刺完整闭环。不得假定它们已被覆盖。
 
 ---
 
-## 8. 真机 UAT 硬门槛
+## 4. 原生真机 UAT 执行纪律
 
-自动化测试通过不等于任务完成。
+### 4.1 环境与禁止项
 
-必须使用：
+- 使用真实 Electron、全新数据根 `H:\pi-studybuddy-tmp\runs\T-M5-004\native-uat-<timestamp>\`。
+- 启动前确认该根为空或本次专属；不得种子、不得写数据库、不得调用 handler / RPC 绕过界面、不得 CDP、不得 `webContents.executeJavaScript`。
+- 仅使用可见 OS 级鼠标、键盘、窗口操作；应用关闭后以**同一隔离根**重新启动以验证持久化。
+- 任何 automation helper 只可用于观察 / 截图采集而不得向 renderer 注入数据或调用业务逻辑。若无法证明该边界，证据降级为自动化，不得标为原生 UAT。
+- 不使用真实课程名称、资料原文、密钥或真实数据根。
+
+### 4.2 每个合格路径的最低步骤
 
 ```text
-真实 Electron
-全新隔离数据根：
-H:\pi-studybuddy-tmp\runs\T-M5-004\
+1. 首次启动；通过可见 UI 创建前置上下文。
+2. 进入目标页 / 控件；记录可达性。
+3. 通过 UI 执行目标“使用”动作；记录成功状态或固定中文失败恢复。
+4. 覆盖适用的 disabled / archived / retry / duplicate-click / privacy 观察。
+5. 关闭应用，以同一隔离根重新启动。
+6. 回到目标页，确认本路径产生的列表、详情、状态或结果可被 UI 回查。
 ```
 
-禁止：
+“首次创建学期和课程 → S1 可达 → 重启课程仍在”只能作为环境建立及 S1 可达性证据，不能替代其中的任务 / 考试 / 冲刺使用闭环。
 
-- handler 直调；
-- 直接 RPC 绕过 UI；
-- 数据库预置业务数据；
-- CDP 注入业务状态；
-- fixture 渲染替代真实用户路径；
-- 写入 `%LOCALAPPDATA%\PiStudyBuddy`。
+### 4.3 证据格式
 
-### 8.1 UAT 路径
-
-至少覆盖：
-
-1. 首页/S1：
-   - 空态；
-   - 学期/课程选择；
-   - 简报、任务、考试；
-   - 本任务纳入的进入/查看/完成动作；
-   - 刷新；
-   - 重启持久化。
-
-2. S2 资料：
-   - UI 文件选择；
-   - 上传；
-   - 转换；
-   - 失败；
-   - 重试；
-   - 查看；
-   - 预览；
-   - 生成笔记或 AI 不可用时的固定失败恢复。
-
-3. S2 笔记：
-   - 局部资料选择；
-   - 读取；
-   - 编辑；
-   - 保存；
-   - 取消；
-   - 模块状态更新；
-   - 保存失败重试；
-   - 重启后验证。
-
-4. S3 练习：
-   - 模块选择；
-   - 题数选择；
-   - 开始；
-   - 作答；
-   - 翻题；
-   - 提交；
-   - 结果；
-   - 失败重试；
-   - 答案不泄漏。
-
-5. S4 错题：
-   - 筛选；
-   - 详情；
-   - 题干/答案/解析；
-   - AI 错因建议；
-   - 六分类确认；
-   - 重做正确；
-   - 重做错误；
-   - 状态刷新。
-
-6. S5 冲刺：
-   - 已确认考试；
-   - 未确认考试拦截；
-   - 生成/开始模拟考；
-   - 作答；
-   - 提交；
-   - 结果；
-   - 失败重试。
-
-7. 跨上下文：
-   - 切换课程；
-   - 切换学期；
-   - 切换页面；
-   - 旧响应不能覆盖新上下文；
-   - 归档学期写入控件禁用；
-   - host 仍拒绝越权写入。
-
-8. 重启：
-   - 关闭应用；
-   - 重新启动同一隔离数据根；
-   - 复核本任务产生的持久化结果；
-   - 复核列表、状态、当前上下文和重试入口。
-
-### 8.2 UAT 证据
-
-每个步骤必须保存：
+为每步保存非敏感截图和 JSON / DOM 摘要，并在 `UAT-报告.md` 中至少列出：
 
 ```text
-动作
+UAT ID
+页面 / 控件 ID
+数据根
+前置创建步骤（纯 UI）
+实际操作（纯 UI）
 预期
 实际结果
-控件 ID
-成功/失败/禁用/重试分类
-DOM 或截图路径
-JSON 结构化结果
+成功 / 失败 / 禁用 / 重试 / 重启回查分类
+截图、DOM 摘要、JSON 路径
+是否含敏感泄漏（必须为否）
+结论：通过 / 不通过 / 等待范围裁决
 ```
 
-建议目录：
-
-```text
-H:\pi-studybuddy-tmp\runs\T-M5-004\uat\
-├── UAT-报告.md
-├── step-01.json
-├── step-01.png
-├── step-02.json
-├── step-02.png
-└── ...
-```
-
-报告必须区分：
-
-```text
-真机纯 UI UAT
-真实 Electron 自动化 E2E
-mounted renderer 测试
-fixture 集成测试
-```
-
-不能把自动化 E2E 或 fixture 测试写成真机 UAT。
+保留负向结果。任何导航误入、控件不可达、无法创建前置数据、错误文案不合规或重启丢失都必须记录为不通过，而不是选择性省略。
 
 ---
 
-## 9. 安全与隐私
+## 5. TDD 与测试数据库边界
 
-所有 renderer DOM、截图、JSON、日志和报告不得出现：
+若范围裁决允许继续对具体缺陷施工，严格执行 RED → GREEN → REFACTOR：
 
-- 完整 UUID；
-- 绝对路径；
-- `file://`；
-- API key；
-- provider 凭证；
-- 数据库 SQL；
-- 错误栈；
-- 学生资料原文；
-- 家长渠道地址；
-- 完整模型输出；
-- 内部异常对象。
+1. **RED**：测试先对应权威条款；保存失败命令、失败断言和原因。不得删测试或用实现生成 golden 伪造通过。
+2. **GREEN**：仅实现当前闭环所需的最小变更；复用 typed RPC、错误净化、归档防线、请求版本 / mounted guard 与已有 UI 组件。
+3. **REFACTOR**：定向全绿后才消除重复；不改变已验证行为。
 
-测试只能写入：
+数据库型自动化测试遵守 `docs/08 §9.1`：
 
-```text
-H:\pi-studybuddy-tmp\runs\T-M5-004\
-```
+- 在每个专属运行根创建独立 `global.db` 与 `semester/<semester-id>/sem.db`；
+- 优先通过正式 schema / handler 建立学期、课程、任务、考试、资料等；无公开创建 RPC 的前置实体仅可在 Electron 启动**前**写入专属库，并保留真实 FK / CHECK / trigger；
+- 创建 helper 返回前关闭 SQLite 连接；Windows WAL / SHM 句柄不得阻塞清理或抢占随后 Electron 数据根；
+- 运行期只走正式业务 RPC；不得恢复或新增运行中 `test.*` seed RPC；
+- mock renderer 只承担组件语义，不承担系统数据验收。
 
-不得写入：
-
-```text
-%LOCALAPPDATA%\PiStudyBuddy
-```
-
-外部 AI、SMTP、飞书、WPS、OCR、whisper 全部使用受控 mock 或验证固定失败路径，不连接真实服务。
+任何测试数据库修正都必须有测试证明：隔离根正确、真实业务根未触碰、连接已关闭、Electron 能以该库启动、正式 RPC 可读取 / 写入预期数据。
 
 ---
 
-## 10. Node24 质量门
+## 6. 质量门、独立审查与完成条件
 
-同一 PowerShell 进程前置：
+### 6.1 命令基线
+
+在同一个 PowerShell 进程前置：
 
 ```powershell
 $env:Path = "C:\node-v24.14.0-win-x64;$env:Path"
-node --version
-pnpm --version
+node --version  # 必须为 v24.14.0
+pnpm --version  # 必须为 11.20.0
 ```
 
-必须确认：
-
-```text
-node v24.14.0
-pnpm 11.20.0
-```
-
-至少运行：
+至少依序运行受影响定向测试后，再运行：
 
 ```powershell
 pnpm type-check
@@ -652,143 +253,67 @@ node scripts/check-uuid-leak.mjs
 git diff --check
 ```
 
-同时运行：
+实际版本、测试数量、退出码、日志位置必须以当次运行写入 `.record`，不得复制历史数字充数。自动化全绿不是 UAT 通过的替代。
 
-- T-M5-004 定向 unit/integration 测试；
-- renderer mounted 测试；
-- 受影响的真实 Electron E2E；
-- 失败、重试、归档、竞态、卸载、重复 mutation 和脱敏测试；
-- 真机 UAT。
+### 6.2 双独立审查
 
-实际测试数量、退出码和证据路径必须以本次运行结果为准，不得预填历史数字。
+审查 A（业务 / UI）必须核对：每个纳入控件真实动作、成功 / 失败 / 禁用 / 重试、归档只读、跨上下文竞态、S1-S5 用户闭环与 UAT 证据分类。
 
----
+审查 B（系统 / 安全 / 治理）必须核对：Electron→preload→piBridge→TCP/RPC→handler→renderer 链路；contract 一致性；答案 / UUID / 路径 / 栈泄漏；专用 SQLite 与生产数据边界；`test.*` seed RPC 未复活；UAT 无注入；Todo / plan / record / master / origin 同步性。
 
-## 11. 双独立审查
+P0、P1、contract 缺口、原生 UAT 不足、范围裁决未取得或治理漂移未处置时，结论只能是 `in_progress`。
 
-至少两名独立审查者分别输出审查结果，再合并去重。
+### 6.3 T-M5-004 完成的不可替代条件
 
-### 审查 A：业务与 UI
+只有同时满足下列条件，才可请求用户 Git 收口授权：
 
-重点检查：
+- 所有纳入且经用户确认的用户可见闭环具备原生真机 UAT 的“创建→使用→重启持久化”证据；
+- 无法通过 UI 形成前置数据的项目，已得到明确的用户范围裁决并同步到 Todo / plan / record，且不再错误计入本任务闭环；
+- 定向测试、完整质量门、真实 Electron 自动化 E2E 全绿；
+- 审查 A / B 均无未处置 P0 / P1；
+- docs/04、`.plan`、`.record` 的当前 `in_progress / done` 事实一致；
+- 用户已单独授权 Git 收口。
 
-- S1-S5 控件是否真实可用；
-- 成功/失败/禁用/重试；
-- 状态机；
-- 归档只读；
-- 竞态/卸载；
-- T-M5-002 回归；
-- T-M5-003 回归；
-- 是否把静态按钮误判为可用。
-
-### 审查 B：系统、安全与治理
-
-重点检查：
-
-- Electron → preload → piBridge → TCP/RPC → handler → renderer 全链路；
-- contract 与 handler 一致性；
-- 作答前答案泄漏；
-- UUID/路径/密钥/栈泄漏；
-- fixture 与生产边界；
-- UAT 是否纯 UI；
-- 是否越界到 T-M5-005~008；
-- Todo、plan、record、master、origin/master 是否同步。
-
-P0/P1、contract 缺口、UAT 证据不足或治理漂移未处置前，不得报告完成。
+**在最后一项之前，禁止 `git add`、commit、merge、push。**获得授权后仍只可显式 `git add <path>`，仅 ff-only 合并；禁止 `git add -A`、`git add .`、`stash`、`reset --hard`、`clean -fd`、`--no-verify`、强推。
 
 ---
 
-## 12. 受控收尾顺序
+## 7. 停止与用户裁决模板
 
-只有所有实现、自动化测试、真实 Electron E2E、真机 UAT 和独立审查均通过后，才允许执行：
+遇到以下任一项立即停止相关业务施工并报告：
 
-1. 复验当前任务定向测试、完整质量门、最小端到端路径和真机 UAT；
-2. 更新 `docs/04-任务清单-Todo-List.md`：
-   - T-M5-004 状态；
-   - 实际交付；
-   - 测试证据；
-   - UAT 证据；
-   - Git 事实；
-3. 创建唯一八章记录：
-   - `.record/T-M5-004-实施记录.md`
-4. 如果 API 合同确实变化，再同步 `docs/06` 和相关设计文档；
-5. 在唯一计划和 `.plan/00-当前任务.md` 标记本地完成；
-6. 运行文档治理、contract、安全、UUID 和 diff-check；
-7. 停止并报告，等待用户对 Git 收口和下一任务的单独授权。
+- 当前任务、唯一 plan、分支、Git、Todo 或 record 的 live 事实矛盾；
+- 需要新增 API / schema / handler / Stream / 全局状态而未获裁决；
+- UAT 只能依赖注入、CDP、RPC、handler、数据库或 runtime seed；
+- 无法在可见 UI 内创建本路径前置数据；
+- 发现真实业务根被触碰或证据含敏感数据；
+- 发现问题属于 T-M5-005～T-M5-008；
+- 需要危险 Git 操作；
+- 质量门或独立审查发现 P0 / P1。
 
-禁止自动：
+停止报告固定包含：
 
 ```text
-commit
-merge
-push
-启动 T-M5-005
-启动 T-M5-006
-启动 T-M5-007
-启动 T-M5-008
+1. 已读取的权威文件及版本
+2. live Git（branch / HEAD / master / origin/master / dirty files）
+3. 已完成的审计 / RED / UAT 证据路径
+4. 触发条件与最小复现步骤
+5. 对任务范围、API、测试、UAT、Git 的影响
+6. 可选裁决方案、推荐方案与需要用户回答的唯一问题
+7. 在裁决前明确不会执行的动作
 ```
-
-只有用户另行授权 Git 收口后，才执行 Git 操作。
 
 ---
 
-## 13. 强制停止条件
+## 8. 本资产的完成定义
 
-遇到以下任一情况，立即停止业务施工并报告：
+本资产仅表示：T-M5-004 已有一份与 **2026-08-13** 当前事实一致的续作 / 复验治理上下文，明确了自动化、专用测试数据库与原生真机 UAT 的边界，列出了范围裁决、审计、质量门与 Git 停止条件。
 
-- T-M5-003 的 Todo/master/origin/master 完成链无法核验；
-- 用户没有明确批准 T-M5-004；
-- 存在其他 in_progress 任务或计划；
-- Todo、plan、分支、master 状态互相冲突；
-- 工作区存在未知 dirty 修改；
-- 需要新增 API、schema、handler、Stream 或全局状态；
-- 既有 contract 无法表达所需闭环；
-- 需要猜测或安装 OCR/WPS/Python/whisper/模型；
-- 需要真实外部 AI 或其他外部服务；
-- 只能通过 RPC、handler、数据库或 CDP 绕过 UI；
-- DOM 或证据出现 UUID、路径、密钥、资料原文或错误栈；
-- 发现问题属于 T-M5-005~008；
-- 发现 T-M5-002 或 T-M5-003 回归且无法最小修复；
-- Git 操作需要 reset、clean、stash、强推或非 ff-only 合并；
-- 真机 UAT 无法完成或证据不足。
+它不表示：
 
-停止报告必须包含：
-
-```text
-已读取的权威文件
-live Git 状态
-触发的停止条件
-RED/审计证据路径
-需要用户裁决的唯一问题
-```
-
-不得在停止报告后顺带启动其他任务。
-
----
-
-## 14. 本 Prompt 的完成定义
-
-本 Prompt 资产完成，只表示以下内容已经明确：
-
-- T-M5-004 的任务身份；
-- 当前工程进度；
-- 前序任务边界；
-- 纳入范围与非目标；
-- 开工门禁；
-- RED→GREEN→REFACTOR 流程；
-- 真机 UAT 标准；
-- 质量门；
-- 双独立审查；
-- 受控收尾；
-- 强制停止条件。
-
-本 Prompt 不表示：
-
-- T-M5-004 已开工；
-- Todo 已改为 in_progress；
-- `.plan` 已建立；
-- 分支已建立；
-- 代码已修改；
-- 测试已通过；
-- Git 已提交、合并或推送；
-- T-M5-005~008 已被选择。
+- T-M5-004 已完成；
+- S1 或 S2/S3/S4 的原生真机闭环已完成；
+- 用户已作出范围裁决；
+- 双独立审查已完成；
+- Git 已获授权或已收口；
+- T-M5-005～T-M5-008 已启动。

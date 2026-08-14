@@ -45,6 +45,8 @@ describe("T-M1-007 S2 TextExtractor 单件测试", () => {
     mkdirSync(ISOLATION_DIR, { recursive: true });
     sampleIn = join(ISOLATION_DIR, "sample.pdf");
     writeFileSync(sampleIn, "not a real pdf");
+    writeFileSync(join(ISOLATION_DIR, "plain.md"), "# 极限与连续\n\nMarkdown 正文。", "utf8");
+    writeFileSync(join(ISOLATION_DIR, "plain.txt"), "纯文本正文。", "utf8");
     missingPath = join(ISOLATION_DIR, "does-not-exist.pdf");
   });
 
@@ -132,7 +134,17 @@ describe("T-M1-007 S2 TextExtractor 单件测试", () => {
       });
     });
 
-    it("REAL-04 支持格式白名单公开（分派矩阵）", () => {
+    it("REAL-04 md/txt 本地文本 → 原样提取，无需 PDF 解析器", async () => {
+      const extractor: TextExtractor = createRealTextExtractor();
+      await expect(extractor.extract(join(ISOLATION_DIR, "plain.md"), "md")).resolves.toEqual({
+        text: "# 极限与连续\n\nMarkdown 正文。",
+      });
+      await expect(extractor.extract(join(ISOLATION_DIR, "plain.txt"), "txt")).resolves.toEqual({
+        text: "纯文本正文。",
+      });
+    });
+
+    it("REAL-05 支持格式白名单公开（分派矩阵）", () => {
       const extractor: TextExtractor = createRealTextExtractor();
       expect(typeof extractor.extract).toBe("function");
     });

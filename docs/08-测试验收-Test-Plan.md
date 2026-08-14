@@ -1,9 +1,9 @@
 # 08 测试验收计划
 
-**版本**：v0.1.5
-**日期**：2026-08-12
-**状态**：✅ 已审查批准（v0.1.5 新增 §6.6 用户端到端测试铁律：每任务收尾前除自动化全测试外必须执行真机 UAT，用户 2026-08-12 明确指令）
-**状态**：✅ 已审查批准（用户 2026-08-07 批准）
+**版本**：v0.1.7
+**日期**：2026-08-13
+**状态**：✅ 已审查批准（v0.1.7：测试数据库隔离边界与 SQLite 连接生命周期修订；真机 UAT 铁律保持；唯一 `test.turnEndIndex` 窄桥接例外已登记）
+**批准基线**：用户于 2026-08-07 批准；v0.1.6 为测试数据库治理修订，v0.1.7 为唯一 `test.turnEndIndex` 窄桥接例外登记。
 **上游**：[02-PRD v0.1.4 §7](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§8/§9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2 §6](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.6](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.3 §8/§9](./07-工作流-Workflow.md)
 **下游**：04-Todo、09-UI
 **血统**：ai-studybuddy 已验证测试纪律迁移（342 后端 + 149 前端 + 24 E2E + 真实冒烟，不复制实现）
@@ -594,6 +594,10 @@ E2E-13 对话 L3 会话检索
 - 测试启动时设置环境变量 `PI_STUDYBUDDY_DATA_ROOT=H:\pi-studybuddy-tmp\runs\<test-task-id>`
 - 测试结束后 `finally` 清理 tmp（S7 原始音频同此）
 - E2E 每条用例独立 `test-task-id`，互不干扰
+- **专用测试数据库**：数据库型测试须在运行根建立专属 `global.db` 与 `semester/<semester-id>/sem.db`；测试可用合成学习内容在该专属库中建立前置数据，但不得连接、复制、覆盖或查询 `%LOCALAPPDATA%\PiStudyBuddy`。
+- **测试库建立边界**：优先经正式 schema 与正式 handler 创建学期、课程、任务、考试、资料等实体；当前无公开创建 RPC 的前置实体只能在 Electron 启动前写入专属测试库，并须保留真实 FK/CHECK/触发器约束。不得提供用于创建、预置或篡改业务数据的 `test.*` RPC，也不得在运行中的应用 handler 中 seed。
+- **唯一既存 E2E 桥接例外（须显式登记）**：`tests/e2e/test-main.js` 的隔离 loopback 测试子进程仅以 `test.turnEndIndex` 转接生产纯函数 `indexTurnEndChunks`，模拟 E2E 环境未启动的 pi `turn_end` 钩子；它不出现在生产 contract/agent-host、不得作为 renderer 可达方法、不得预置 S1-S7 业务实体，并且只在独立运行根内执行。任何新增 `test.*` 例外均须先修改本条、补测试并经任务范围裁决。
+- **连接生命周期**：建库辅助函数返回前必须关闭 SQLite 连接；Windows WAL/SHM 句柄不得阻止专属库清理，也不得与随后真实 Electron 进程争抢数据根。
 
 ### 9.2 合成夹具原则
 
@@ -715,6 +719,7 @@ pytest scripts/wps-bridge/   # Python 桥单件
 ## 12. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.6 | 2026-08-13 | 测试数据库治理修订：§9.1 明确数据库型测试在 `H:\pi-studybuddy-tmp\runs\<task-id>` 下建立专属 `global.db` + `semester/<id>/sem.db`，优先正式 schema/handler 建前置数据，禁止运行中的 `test.*` seed RPC；建库后关闭 SQLite 连接，消除 Windows WAL/SHM 锁。依据：用户明确“测试阶段数据不依赖 mock 数据，建立专门测试数据库”+ AGENTS.md §5.3/§9.5。 |
 | v0.1.4 | 2026-08-09 | 交叉审查修订：增加真实 Electron 代表性 business RPC（`semesters.list`）与无模型 `agent.send` 生产路由断言；强化契约覆盖为遇到未解析 spread/缺失 handler 直接失败；测试夹具仅限显式 VITEST 注入。 |
 | v0.1.3 | 2026-08-08 | §4.2 model_select 断言落点修订：`~/.pi/agent/models.json` → `<dataRoot>/config/models.json`（T-M3-005 裁决 1，AGENTS.md §9.5 物理隔离；与 03-Arch §2.3 supersedes 同步） |
 | v0.1.2 | 2026-08-08 | §6 E2E 框架由 Playwright 改为 vitest + Electron 启动。原因：pi-studybuddy 是 Electron 单体（无独立后端），ai-studybuddy 的 Playwright webServer 模式不适用；参考 pi-desktop `scripts/test-browser-agent-e2e.mjs` 范式，采用 vitest + `_electron.launch()` 直接启动，通过 `webContents.executeJavaScript` 驱动 UI 交互。依据：AGENTS.md §6.4 禁止过度工程化 + 用户批准 T-M1-010 方案 A。影响：§1.2 测试金字塔 + §2 分层总览 + §6 标题与说明 + §10.2 目录结构 + §10.3 运行命令，无 E2E 用例设计变更 |

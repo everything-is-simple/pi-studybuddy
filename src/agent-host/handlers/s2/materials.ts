@@ -250,7 +250,7 @@ export function createMaterialHandlers(ctx: S2Context) {
         return runWpsConversion(ctx, db, job.id, existing);
       }
       // 文本提取 job（convert_*/ocr_image）：注入对应 extractor/ocr 时执行真实提取（07-WF §2.3）
-      const extractFn = resolveExtractionFn(ctx, jobType);
+      const extractFn = resolveExtractionFn(ctx, jobType, existing.file_type as string);
       if (extractFn) {
         return runTextConversion(ctx, db, job.id, existing, extractFn);
       }
@@ -294,7 +294,7 @@ export function createMaterialHandlers(ctx: S2Context) {
         return runWpsConversion(ctx, db, job.id, existing);
       }
       // 文本提取 job：重试同样执行真实提取（07-WF §2.3）
-      const extractFn = resolveExtractionFn(ctx, jobType);
+      const extractFn = resolveExtractionFn(ctx, jobType, existing.file_type as string);
       if (extractFn) {
         return runTextConversion(ctx, db, job.id, existing, extractFn);
       }
@@ -431,6 +431,7 @@ function safeWpsErrorMessage(e: unknown): string {
 function resolveExtractionFn(
   ctx: S2Context,
   jobType: JobType,
+  materialFileType: string,
 ): ((filePath: string) => Promise<TextExtractResult>) | undefined {
   switch (jobType) {
     case "convert_pdf":
@@ -438,8 +439,7 @@ function resolveExtractionFn(
     case "convert_pptx":
     case "convert_xlsx": {
       if (!ctx.textExtractor) return undefined;
-      const fileType = jobType.replace("convert_", "");
-      return (fp) => ctx.textExtractor!.extract(fp, fileType);
+      return (fp) => ctx.textExtractor!.extract(fp, materialFileType);
     }
     case "ocr_image": {
       if (!ctx.ocr) return undefined;

@@ -24,15 +24,22 @@ const DATA_ROOT_SUBDIRS = [
 
 /**
  * 初始化业务数据根：建 global.db + 创建子目录。
+ *
+ * `createGlobalDb` 为建库和 integrity 检查打开 SQLite 连接；这里不持有该连接，必须在
+ * 返回前关闭，否则 Windows 上的 WAL/SHM 句柄会阻止专用测试数据库清理或后续 Electron
+ * 进程独占打开同一数据根。
+ *
  * @param dataRoot 业务数据根路径（resolveDataRoot() 解析）
  * @returns global.db 文件路径
  */
 export function initializeDataRoot(dataRoot: string): string {
-  const { path: globalDbPath } = createGlobalDb(dataRoot);
-
-  for (const sub of DATA_ROOT_SUBDIRS) {
-    mkdirSync(path.join(dataRoot, sub), { recursive: true });
+  const global = createGlobalDb(dataRoot);
+  try {
+    for (const sub of DATA_ROOT_SUBDIRS) {
+      mkdirSync(path.join(dataRoot, sub), { recursive: true });
+    }
+    return global.path;
+  } finally {
+    global.db.close();
   }
-
-  return globalDbPath;
 }

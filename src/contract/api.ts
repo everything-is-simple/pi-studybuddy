@@ -192,6 +192,10 @@ export interface Api {
 
   /* ---- §3.4 S2：知识模块 ---- */
   "modules.list": { params: { courseId?: string; learnStatus?: string }; result: KnowledgeModule[] };
+  "modules.create": {
+    params: { courseId: string; materialId: string; moduleName: string; summary?: string; importance?: number; difficulty?: number };
+    result: KnowledgeModule;
+  };
   "modules.get": { params: { id: string }; result: KnowledgeModule };
   "modules.updateLearnStatus": { params: { id: string; learnStatus: string }; result: KnowledgeModule };
 

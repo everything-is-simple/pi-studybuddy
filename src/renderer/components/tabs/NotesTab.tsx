@@ -110,6 +110,9 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
   const [actionKey, setActionKey] = useState<string | undefined>();
   const [actionError, setActionError] = useState<string | undefined>();
   const [moduleOverrides, setModuleOverrides] = useState<Record<string, KnowledgeModule>>({});
+  const [createdModules, setCreatedModules] = useState<KnowledgeModule[]>([]);
+  const [moduleDraftName, setModuleDraftName] = useState("");
+  const [moduleDraftSummary, setModuleDraftSummary] = useState("");
   const [mindMapState, setMindMapState] = useState<{ status: "loading" | "ready" | "error"; content?: string } | undefined>();
   const [evidenceState, setEvidenceState] = useState<{ materialId: string; content?: string; status: "loading" | "ready" | "error" } | undefined>();
   const mindMapRequestRef = useRef(0);
@@ -150,6 +153,9 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
     setNoteStatus("idle");
     setActionError(undefined);
     setModuleOverrides({});
+    setCreatedModules([]);
+    setModuleDraftName("");
+    setModuleDraftSummary("");
     setMindMapState(undefined);
     setEvidenceState(undefined);
     return () => {
@@ -160,7 +166,9 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
 
   const effectiveNote = rpc ? selectedNote : note;
   const displayedNoteMarkdown = effectiveNote ? safeRendererText(effectiveNote.noteMarkdown, "笔记内容因包含敏感内部信息已隐藏。") : "";
-  const allModules = rpc ? moduleResource.data : modules ?? [];
+  const allModules = rpc
+    ? [...moduleResource.data, ...createdModules.filter((created) => !moduleResource.data.some((loaded) => loaded.id === created.id))]
+    : modules ?? [];
   const visibleModules = rpc
     ? allModules.filter((module) => module.materialId === selectedMaterialId)
     : allModules;
@@ -175,6 +183,8 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
     setDraftMarkdown("");
     setEditing(false);
     setActionError(undefined);
+    setModuleDraftName("");
+    setModuleDraftSummary("");
     setMindMapState(undefined);
     setEvidenceState(undefined);
     if (!rpc || !materialId) {
@@ -258,6 +268,37 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
     }
   }
 
+  async function createModule(): Promise<void> {
+    if (!rpc || !effectiveCourseId || !selectedMaterialId || isReadOnly) return;
+    const moduleName = moduleDraftName.trim();
+    if (!moduleName) return;
+    const materialId = selectedMaterialId;
+    const contextVersion = viewContextRef.current;
+    const action = "module-create:" + materialId + ":" + contextVersion;
+    setActionKey(action);
+    setActionError(undefined);
+    try {
+      const created = await rpc.call("modules.create", {
+        courseId: effectiveCourseId,
+        materialId,
+        moduleName,
+        summary: moduleDraftSummary.trim() || undefined,
+      });
+      if (!mountedRef.current || contextVersion !== viewContextRef.current || selectedMaterialId !== materialId) return;
+      setCreatedModules((current) => [...current.filter((item) => item.id !== created.id), created]);
+      setModuleDraftName("");
+      setModuleDraftSummary("");
+    } catch (error) {
+      if (mountedRef.current && contextVersion === viewContextRef.current && selectedMaterialId === materialId) {
+        setActionError(rpcErrorCode(error) === "BAD_REQUEST" ? "该资料下已存在同名知识模块，请修改模块名称。" : "知识模块创建失败，请稍后重试。");
+      }
+    } finally {
+      if (mountedRef.current && contextVersion === viewContextRef.current) {
+        setActionKey((current) => current === action ? undefined : current);
+      }
+    }
+  }
+
   async function updateModule(module: KnowledgeModule): Promise<void> {
     if (!rpc || isReadOnly) return;
     const learnStatus = nextLearnStatus(module.learnStatus);
@@ -314,20 +355,59 @@ export function NotesTab({ note, modules, rpc, courseId, academicContext, onSpea
   if (rpc && !selectedMaterialId) {
     return <TabContainer>{selector}<EmptyState message="请选择资料查看笔记" /></TabContainer>;
   }
+  const moduleCreateBusy = actionKey?.startsWith("module-create:" + selectedMaterialId + ":") === true;
+  const moduleCreationForm = rpc ? (
+    <div style={{ padding: 12, border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 16 }}>
+      <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>创建知识模块</h3>
+      <label style={{ display: "block", fontSize: 12, marginBottom: 4 }}>
+        模块名称
+        <input aria-label="知识模块名称" value={moduleDraftName} onChange={(event) => setModuleDraftName(event.target.value)} disabled={isReadOnly || moduleCreateBusy} style={{ display: "block", width: "100%", boxSizing: "border-box", marginTop: 4, padding: "6px 8px" }} />
+      </label>
+      <label style={{ display: "block", fontSize: 12, marginBottom: 8 }}>
+        摘要（可选）
+        <textarea aria-label="知识模块摘要" value={moduleDraftSummary} onChange={(event) => setModuleDraftSummary(event.target.value)} disabled={isReadOnly || moduleCreateBusy} style={{ display: "block", width: "100%", minHeight: 56, boxSizing: "border-box", marginTop: 4, padding: "6px 8px" }} />
+      </label>
+      <button type="button" disabled={isReadOnly || moduleCreateBusy || !moduleDraftName.trim()} onClick={() => void createModule()}>创建知识模块</button>
+    </div>
+  ) : null;
+
   if (rpc && noteStatus === "loading") {
-    return <TabContainer>{selector}<div role="status">正在加载笔记…</div></TabContainer>;
+    return <TabContainer>{selector}{moduleCreationForm}<div role="status">正在加载笔记…</div></TabContainer>;
   }
   if (rpc && noteStatus === "error") {
-    return <TabContainer>{selector}<div role="alert">暂时无法加载该资料的笔记，请稍后重试。</div></TabContainer>;
+    return <TabContainer>{selector}{moduleCreationForm}<div role="alert">暂时无法加载该资料的笔记，请稍后重试。</div></TabContainer>;
   }
   if (!effectiveNote && !editing) {
-    return <TabContainer>{selector}<EmptyState message={noteStatus === "notFound" ? "该资料暂无笔记" : "暂无笔记，请先生成笔记"} />{rpc && noteStatus === "notFound" ? <button type="button" disabled={isReadOnly} onClick={() => { setDraftMarkdown(""); setEditing(true); }}>新建笔记</button> : null}</TabContainer>;
+    return (
+      <TabContainer>
+        {selector}
+        {moduleCreationForm}
+        <EmptyState message={noteStatus === "notFound" ? "该资料暂无笔记" : "暂无笔记，请先生成笔记"} />
+        {rpc && noteStatus === "notFound" ? <button type="button" disabled={isReadOnly} onClick={() => { setDraftMarkdown(""); setEditing(true); }}>新建笔记</button> : null}
+        {visibleModules.length > 0 ? <div style={{ marginTop: 16 }}>
+          <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>知识模块</h3>
+          {visibleModules.map((baseModule) => {
+            const module = moduleOverrides[baseModule.id] ?? baseModule;
+            const moduleBusy = actionKey?.startsWith("module:" + module.id + ":") === true;
+            return <div key={module.id} style={{ padding: "10px 12px", border: "1px solid var(--border, #e0e0e0)", borderRadius: 4, marginBottom: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <strong>{safeRendererText(module.moduleName, "知识模块", 80)}</strong>
+                <span style={{ fontSize: 12, color: learnStatusColor(module.learnStatus), fontWeight: 600 }}>{learnStatusLabel(module.learnStatus)}</span>
+              </div>
+              {module.summary ? <div style={{ fontSize: 12, color: "var(--text-muted, #888)", marginTop: 4 }}>{safeRendererText(module.summary, "", 400)}</div> : null}
+              {rpc ? <button type="button" disabled={isReadOnly || moduleBusy} onClick={() => void updateModule(module)} style={{ marginTop: 8 }}>{nextLearnStatusLabel(module.learnStatus)}</button> : null}
+            </div>;
+          })}
+        </div> : null}
+      </TabContainer>
+    );
   }
 
   const noteActionBusy = actionKey?.startsWith("note:" + selectedMaterialId + ":") === true;
   return (
     <TabContainer>
       {selector}
+      {moduleCreationForm}
       {actionError ? <div role="alert">{actionError}</div> : null}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <h2 style={{ margin: 0, fontSize: 16 }}>笔记预览</h2>

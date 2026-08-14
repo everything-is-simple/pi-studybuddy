@@ -137,7 +137,22 @@ describe("T-M1-007 S2 资料转换管道集成测试", () => {
       }
     });
 
-    it("CONV-03 状态机：已 converted 的资料重复 convert 被拒绝（仅 pending/conversion_failed 可转换）", async () => {
+    it("CONV-03 md/txt → 保持 convert_pdf 作业类型但向提取器传入实际文本类型", async () => {
+      const cases: Array<[string, string, string]> = [
+        ["notes.md", "text/markdown", "md"],
+        ["notes.txt", "text/plain", "txt"],
+      ];
+      for (const [name, mime, fileType] of cases) {
+        const m = upload(f, name, mime);
+        const job = await convert(f, m.id);
+        expect(job.jobType).toBe("convert_pdf");
+        expect(job.status).toBe("completed");
+        const norm = normRow(f, m.id);
+        expect(norm!.content).toBe(`这是 ${fileType} 文档的 mock 文本提取结果。`);
+      }
+    });
+
+    it("CONV-04 状态机：已 converted 的资料重复 convert 被拒绝（仅 pending/conversion_failed 可转换）", async () => {
       const m = upload(f, "idem.pdf", "application/pdf");
       await convert(f, m.id);
       // 第二次 convert 应被状态机拒绝，而非重复写 normalized_texts

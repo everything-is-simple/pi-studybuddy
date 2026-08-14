@@ -8,6 +8,7 @@
  *       docx  → jszip + mammoth（word/document.xml → 文本）
  *       pptx  → jszip（ppt/slides/slide*.xml → 文本）
  *       xlsx  → jszip（xl/sharedStrings.xml → 文本）
+ *       txt/md → UTF-8 本地纯文本读取
  *       image → 由 OcrAdapter 处理（本组件不接管）
  *   - 错误消息固定文案，不泄漏路径/stdout/stderr/密钥（AGENTS.md §9.3）
  *
@@ -43,7 +44,7 @@ const MSG_NOT_CONFIGURED = "文档文本提取未配置，请在设置中指定�
 const MSG_EXTRACT_FAILED = "文档文本提取失败，请检查文件是否完整或已损坏";
 
 /** 支持提取的 file_type（07-WF §2.3 分派矩阵；image 走 OcrAdapter） */
-const SUPPORTED_TYPES = ["pdf", "docx", "pptx", "xlsx"] as const;
+const SUPPORTED_TYPES = ["pdf", "docx", "pptx", "xlsx", "txt", "md"] as const;
 
 /**
  * Mock Adapter：确定性返回固定文本，不调真实库（AGENTS.md §5.4 全 mock）。
@@ -261,6 +262,9 @@ export function createRealTextExtractor(): TextExtractor {
 
       try {
         switch (fileType) {
+          case "txt":
+          case "md":
+            return { text: buf.toString("utf8") };
           case "pdf":
             return { text: await extractPdf(buf) };
           case "docx":

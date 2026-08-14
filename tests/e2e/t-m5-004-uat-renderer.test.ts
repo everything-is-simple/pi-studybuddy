@@ -1,8 +1,8 @@
 /**
- * T-M5-004 真机 UAT v2（真实 Electron + 全新隔离数据根 + 纯 UI 操作，08-Test §6.6 硬门槛）
+ * T-M5-004 Electron renderer 自动化闭环（非原生真机 UAT）
  *
- * 本版回应独立复验批评：v1 仅验证空态/可达性，不满足 §6.6「创建→使用→重启回查」闭环铁律。
- * v2 在**纯 UI** 下走通本任务范围内**有真实 UI 创建入口**的闭环：
+ * 本用例验证真实 Electron renderer 中的 DOM 自动化闭环，覆盖创建、使用、重启持久化。
+ * 它通过 `webContents.executeJavaScript` 驱动 renderer，因此是自动化 E2E，**不得作为 08-Test §6.6 要求的原生可见 UI 真机 UAT 证据**。
  *
  *   01 空数据 → UI 向导创建学期/课程（FirstRunWizard）
  *   02 S1 学习计划面板：UI 新增任务（tasks.create）→ 新增考试（exams.add）→ 确认考试（exams.confirm）
@@ -14,9 +14,9 @@
  *
  * 无纯 UI 数据创建入口的闭环（S2 资料文件对话框、S2 笔记/知识模块 AI 生成、S3 练习依赖模块、
  * S4 错题依赖练习）→ 本任务登记为 P0/P1 功能缺口（依赖真实 AI / 系统文件对话框），
- * 不以空态可达性冒充 UAT 成功，不 seed / 不 handler 直调 / 不直写库。
+ * 不以空态可达性冒充用户验收成功；本用例不 seed / 不 handler 直调 / 不直写库。
  *
- * 证据：每步脱敏 JSON + DOM 快照 + PNG 截图（capturePage）；UAT-报告.md 逐步登记
+ * 证据：每步脱敏 JSON + DOM 快照 + PNG 截图（capturePage）；renderer-automation-报告.md 逐步登记
  * 动作/预期/实际/控件/成功失败禁用重试分类。运行产物仅落 H:\pi-studybuddy-tmp\runs\T-M5-004\。
  */
 import { describe, expect, it } from "vitest";
@@ -38,7 +38,7 @@ function sanitizeEvidence(text: string): string {
   return text.replace(UUID_RE, "[id]");
 }
 
-/** UI 操作工具（注入每个 step 的 JS 作用域；纯 DOM 操作，不改应用状态） */
+/** Renderer 自动化工具（注入每个 step 的 JS 作用域；经可见控件事件触发业务状态）。 */
 const UI_HELPERS = `
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const waitFor = async (predicate, message, timeoutMs = 25000) => {
@@ -234,21 +234,33 @@ app.setPath("userData", path.join(dataRoot, ".electron-user-data"));
 const { initializeDataRoot } = require(path.join(projectRoot, "dist/main/data-root-init.js"));
 initializeDataRoot(dataRoot);
 let emitted = false;
+async function captureNonEmptyPng(win) {
+  if (!evidenceDir) return false;
+  const pngPath = path.join(evidenceDir, stepName + ".png");
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      if (win.isMinimized()) win.restore();
+      if (!win.isVisible()) win.show();
+      win.focus();
+      await win.webContents.executeJavaScript(
+        "new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
+      ).catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const image = await win.webContents.capturePage();
+      const png = image.toPNG();
+      if (png.length > 0) {
+        fs.writeFileSync(pngPath, png);
+        return true;
+      }
+    } catch { /* 重试直到 renderer 完成绘制 */ }
+  }
+  return false;
+}
 function emit(result) {
   if (emitted) return;
   emitted = true;
   fs.writeFileSync(path.join(dataRoot, "renderer-result.json"), JSON.stringify(result), "utf8");
   process.stdout.write(JSON.stringify(result) + "\n");
-  // 截图证据（主进程 capturePage；失败不阻塞结果）
-  try {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (win && evidenceDir) {
-      win.webContents.capturePage().then((image) => {
-        const png = path.join(evidenceDir, stepName + ".png");
-        fs.writeFileSync(png, image.toPNG());
-      }).catch(() => {});
-    }
-  } catch {}
   setTimeout(() => app.quit(), 200);
 }
 function fail() { emit({ phase: "failed", error: "真实 Electron renderer UAT 失败" }); }
@@ -261,6 +273,7 @@ app.whenReady().then(async () => {
     if (!win) throw new Error("BrowserWindow missing");
     const ui = ${JSON.stringify(UI_HELPERS)};
     const result = await win.webContents.executeJavaScript(ui + "\n" + ${JSON.stringify(stepJs)});
+    await captureNonEmptyPng(win);
     emit({ phase: "ready", result });
   } catch (error) { fail(); }
 });
@@ -296,8 +309,8 @@ async function runPhase(name: string, js: string): Promise<{ name: string; resul
   }
 }
 
-describe("T-M5-004 真机 UAT v2（真实 Electron 纯 UI 完整闭环）", () => {
-  it("阶段 A+B：UI 创建学期/课程/任务/考试确认 → 首页完成查看 → 冲刺模拟考 → 重启回查", async () => {
+describe("T-M5-004 Electron renderer 自动化闭环（非原生真机 UAT）", () => {
+  it("阶段 A+B：renderer 自动化创建/使用/重启持久化", async () => {
     fs.rmSync(CASE_ROOT, { recursive: true, force: true });
     fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
 
@@ -317,11 +330,11 @@ describe("T-M5-004 真机 UAT v2（真实 Electron 纯 UI 完整闭环）", () =
     const pngBSize = fs.existsSync(pngB) ? fs.statSync(pngB).size : 0;
 
     const report = [
-      "# T-M5-004 真机 UAT v2 报告",
+      "# T-M5-004 Electron renderer 自动化闭环报告（非原生真机 UAT）",
       "",
       `- 日期：${new Date().toISOString()}`,
       "- 环境：真实 Electron（node_modules/electron），全新隔离数据根",
-      `- 数据根：${CASE_ROOT}（纯 UI 操作，不 seed / 不 handler / 不直写库）`,
+      `- 数据根：${CASE_ROOT}（renderer DOM 自动化；不 seed / 不 handler / 不直写库）`,
       `- 证据目录：${EVIDENCE_DIR}（不进 Git）`,
       "",
       "## 阶段 A（创建→使用）",
@@ -346,7 +359,7 @@ describe("T-M5-004 真机 UAT v2（真实 Electron 纯 UI 完整闭环）", () =
       `| phase-a-create-use.png | ${pngASize} bytes |`,
       `| phase-b-restart-persist.png | ${pngBSize} bytes |`,
       "",
-      "## 功能缺口登记（无纯 UI 数据创建入口，不冒充 UAT 成功）",
+      "## 功能缺口登记（无原生可见 UI 数据创建入口，不冒充真机 UAT 成功）",
       "",
       "| 闭环 | 原因 | 归属 |",
       "|---|---|---|",
@@ -355,9 +368,9 @@ describe("T-M5-004 真机 UAT v2（真实 Electron 纯 UI 完整闭环）", () =
       "| S3 练习 | 依赖 AI 生成知识模块（modules.list 为空时正确空态） | 依赖真实 AI，UAT 人工路径待 T-M5-007 |",
       "| S4 错题 | 依赖 S3 练习产生错题（mistakes.list 为空时正确空态） | 依赖练习数据，UAT 人工路径待 T-M5-007 |",
     ].join("\n");
-    fs.writeFileSync(path.join(EVIDENCE_DIR, "UAT-报告.md"), report, "utf8");
+    fs.writeFileSync(path.join(EVIDENCE_DIR, "renderer-automation-报告.md"), report, "utf8");
 
-    // 硬断言：纯 UI 可走通的闭环必须全部成功
+    // 硬断言：renderer DOM 自动化闭环必须全部成功；不等同于原生真机 UAT。
     const a = phaseA.result?.result;
     const b = phaseB.result?.result;
     expect(phaseA.exitCode, JSON.stringify(phaseA)).toBe(0);

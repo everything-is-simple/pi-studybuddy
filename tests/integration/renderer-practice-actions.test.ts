@@ -146,6 +146,50 @@ describe("T-M5-004 CTRL-PRACTICE 加入错题与静态按钮", () => {
     expect(archiveCalls).toEqual([{ practiceAnswerId: "pa-1" }]);
   });
 
+  it("RED 5: 重启后读取已完成练习，点击可见入口后展示持久化结果且不泄漏会话标识", async () => {
+    const listCalls: Array<{ courseId: string }> = [];
+    const resultCalls: Array<{ sessionId: string }> = [];
+    const persistedSession: PracticeSession = {
+      ...session(),
+      id: "persisted-session-private-id",
+      status: "graded",
+      totalScore: 5,
+      maxScore: 5,
+      correctCount: 1,
+      submittedAt: "2026-08-13T00:00:00.000Z",
+      gradedAt: "2026-08-13T00:00:00.000Z",
+    };
+    const rpc = createMockRpcClient({
+      "modules.list": () => [moduleItem("mod-a", "course-b", "极限基本概念")],
+      "practice.listSessions": (params: unknown) => {
+        listCalls.push(params as { courseId: string });
+        return [persistedSession];
+      },
+      "practice.getResult": (params: unknown) => {
+        resultCalls.push(params as { sessionId: string });
+        return result();
+      },
+    });
+    host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root?.render(React.createElement(PracticeTab, {
+      rpc, academicContext: { semesterId: "sem-b", courseId: "course-b" },
+    })));
+    await flush();
+
+    expect(listCalls).toEqual([{ courseId: "course-b" }]);
+    expect(host.textContent).toContain("已完成练习");
+    expect(host.textContent).not.toContain("persisted-session-private-id");
+    const readButton = Array.from(host.querySelectorAll("button")).find((item) => item.textContent?.includes("查看结果"));
+    expect(readButton, "已完成练习必须提供可见的结果读取入口").toBeTruthy();
+    await act(async () => readButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    await flush();
+
+    expect(resultCalls).toEqual([{ sessionId: "persisted-session-private-id" }]);
+    expect(host.textContent).toContain("练习结果");
+    expect(host.textContent).not.toContain("persisted-session-private-id");
+  });
   it("RED 4: 加入错题失败显示固定中文错误且不泄漏异常", async () => {
     const rpc = createMockRpcClient({
       "modules.list": () => [moduleItem("mod-a", "course-b", "极限与连续")],

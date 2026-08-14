@@ -145,7 +145,7 @@ function ResultView({ questions, result, elapsedMs, showSubmittedButton = false,
       <div style={{ padding: 16, background: "var(--bg-panel, #f5f5f5)", borderRadius: 4, marginBottom: 16, textAlign: "center" }}>
         <h2 style={{ fontSize: 16, margin: "0 0 8px 0" }}>练习结果</h2>
         <div style={{ fontSize: 24, fontWeight: 700, color: "#1976d2" }}>{result.totalScore} / {result.maxScore}</div>
-        <div style={{ fontSize: 13, color: "var(--text-muted, #888)", marginTop: 4 }}>正确：{result.correctCount} / {questions.length} 题　用时：{formatElapsed(elapsedMs)}</div>
+        <div style={{ fontSize: 13, color: "var(--text-muted, #888)", marginTop: 4 }}>正确：{result.correctCount} / {questions.length || result.items.length} 题　用时：{formatElapsed(elapsedMs)}</div>
         {showSubmittedButton && <button type="button" disabled style={{ ...buttonStyle(true), marginTop: 12 }}>已提交</button>}
       </div>
       {result.items.map((item, idx) => (
@@ -182,6 +182,15 @@ function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Pr
     enabled: Boolean(effectiveCourseId),
     initialData: [],
     load: (client) => client.call("modules.list", { courseId: effectiveCourseId! }),
+  });
+  // T-M5-004：重启后的结果读取只复用既有只读 RPC；不新增 API/handler/schema/跨 Tab 状态。
+  // 历史读取失败不能阻断新练习入口，故不与模块读取共用阻断状态。
+  const completedSessionResource = useTabData<PracticeSession[]>({
+    rpc,
+    key: `practice-completed-sessions:${effectiveCourseId ?? ""}`,
+    enabled: Boolean(effectiveCourseId),
+    initialData: [],
+    load: (client) => client.call("practice.listSessions", { courseId: effectiveCourseId! }),
   });
   const [selectedModuleIds, setSelectedModuleIds] = React.useState<string[]>([]);
   const [questionCount, setQuestionCount] = React.useState(5);
@@ -275,10 +284,13 @@ function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Pr
   }
 
   function loadResultForSession(sessionToLoad: PracticeSession, contextVersion: number): void {
+    setSession(sessionToLoad);
     setPhase("result_loading");
     void rpc.call("practice.getResult", { sessionId: sessionToLoad.id })
       .then((loadedResult) => {
         if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setQuestions(loadedResult.items.map((item) => item.question));
+        setElapsedMs(loadedResult.elapsedMs);
         setResult(loadedResult);
         setActionError(undefined);
         setPhase("result");
@@ -455,6 +467,19 @@ function RuntimePracticeTab({ rpc, courseId, academicContext }: Required<Pick<Pr
           </select>
           <div style={{ marginTop: 16 }}><button type="button" disabled={cannotStart} style={buttonStyle(cannotStart)} onClick={startPractice}>{phase === "creating" ? "正在创建…" : "开始练习"}</button></div>
         </>
+      )}
+      {completedSessionResource.status === "loading" && <p role="status" style={{ marginTop: 20 }}>正在读取已完成练习…</p>}
+      {completedSessionResource.status === "error" && <p role="alert" style={{ marginTop: 20 }}>暂时无法读取已完成练习，请稍后重试。</p>}
+      {completedSessionResource.status === "ready" && completedSessionResource.data.filter((item) => item.status === "submitted" || item.status === "graded").length > 0 && (
+        <section aria-label="已完成练习" style={{ marginTop: 24, borderTop: "1px solid var(--border, #e0e0e0)", paddingTop: 16 }}>
+          <h3 style={{ fontSize: 14, margin: "0 0 8px" }}>已完成练习</h3>
+          {completedSessionResource.data.filter((item) => item.status === "submitted" || item.status === "graded").map((completedSession, index) => (
+            <div key={completedSession.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "8px 0" }}>
+              <span style={{ fontSize: 13 }}>练习 {index + 1} · 正确：{completedSession.correctCount ?? "—"} / {completedSession.questionCount} 题</span>
+              <button type="button" style={buttonStyle(false)} onClick={() => loadResultForSession(completedSession, contextVersionRef.current)}>查看结果</button>
+            </div>
+          ))}
+        </section>
       )}
     </TabContainer>
   );

@@ -199,6 +199,103 @@ describe("T-M5-004 CTRL-NOTE 思维导图与证据回链", () => {
     expect(host.textContent).toContain("来源原文内容");
   });
 
+  it("RED 4: 当前资料已显式选择时，可见模块创建表单调用 modules.create 并立即刷新局部列表", async () => {
+    const calls: Array<{ courseId: string; materialId: string; moduleName: string; summary?: string }> = [];
+    const created = moduleItem("mod-created", "mat-a", "极限定义");
+    const rpc = createMockRpcClient({
+      "materials.list": () => [material("mat-a", "course-b", "讲义.md")],
+      "modules.list": () => [],
+      "notes.get": () => note("mat-a"),
+      "modules.create": (params: unknown) => {
+        calls.push(params as { courseId: string; materialId: string; moduleName: string; summary?: string });
+        return created;
+      },
+    });
+    host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root?.render(React.createElement(NotesTab, {
+      rpc, academicContext: { semesterId: "sem-b", courseId: "course-b" },
+    })));
+    await flush();
+
+    const select = host.querySelector<HTMLSelectElement>("#notes-material-select");
+    await act(async () => {
+      select!.value = "material-1";
+      select!.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await flush();
+
+    const nameInput = host.querySelector<HTMLInputElement>('input[aria-label="知识模块名称"]');
+    expect(nameInput, "显式选择资料后应有模块名称输入框").toBeTruthy();
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(nameInput, "极限定义");
+      nameInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const createButton = Array.from(host.querySelectorAll("button")).find((item) => item.textContent?.includes("创建知识模块"));
+    expect(createButton, "应有可见的创建知识模块按钮").toBeTruthy();
+    await act(async () => (createButton as HTMLButtonElement).click());
+    await flush();
+
+    expect(calls).toEqual([{ courseId: "course-b", materialId: "mat-a", moduleName: "极限定义", summary: undefined }]);
+    expect(host.textContent).toContain("极限定义");
+  });
+
+  it("MOD-UI-01：同名模块被 host 拒绝时展示可操作的脱敏提示", async () => {
+    const rpc = createMockRpcClient({
+      "materials.list": () => [material("mat-a", "course-b", "讲义.md")],
+      "modules.list": () => [],
+      "notes.get": () => note("mat-a"),
+      "modules.create": () => Promise.reject({ code: "BAD_REQUEST", message: "internal details must not enter DOM" }),
+    });
+    host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root?.render(React.createElement(NotesTab, { rpc, courseId: "course-b" })));
+    await flush();
+    const select = host.querySelector<HTMLSelectElement>("#notes-material-select");
+    await act(async () => { select!.value = "material-1"; select!.dispatchEvent(new Event("change", { bubbles: true })); });
+    await flush();
+    const nameInput = host.querySelector<HTMLInputElement>("input[aria-label=\"知识模块名称\"]");
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(nameInput, "极限定义");
+      nameInput!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const createButton = Array.from(host.querySelectorAll("button")).find((item) => item.textContent?.includes("创建知识模块"));
+    await act(async () => (createButton as HTMLButtonElement).click());
+    await flush();
+    expect(host.textContent).toContain("该资料下已存在同名知识模块，请修改模块名称。");
+    expect(host.textContent).not.toContain("internal details must not enter DOM");
+  });
+
+  it("RED 5: 资料暂无笔记时，已持久化知识模块仍必须在选中资料后可见", async () => {
+    const rpc = createMockRpcClient({
+      "materials.list": () => [material("mat-a", "course-b", "讲义.md")],
+      "modules.list": () => [moduleItem("mod-persisted", "mat-a", "极限基本概念")],
+      "notes.get": () => Promise.reject({ code: "NOT_FOUND", message: "not found" }),
+    });
+    host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root?.render(React.createElement(NotesTab, {
+      rpc, academicContext: { semesterId: "sem-b", courseId: "course-b" },
+    })));
+    await flush();
+
+    const select = host.querySelector<HTMLSelectElement>("#notes-material-select");
+    await act(async () => {
+      select!.value = "material-1";
+      select!.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await flush();
+
+    expect(host.textContent).toContain("该资料暂无笔记");
+    expect(host.textContent).toContain("知识模块");
+    expect(host.textContent).toContain("极限基本概念");
+  });
+
   it("RED 4: 归档学期只读时编辑/保存/模块状态按钮禁用", async () => {
     const rpc = createMockRpcClient({
       "materials.list": () => [material("mat-a", "course-b", "讲义.md")],

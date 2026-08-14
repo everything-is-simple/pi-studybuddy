@@ -1,7 +1,7 @@
 # 06 API 契约
 
-**版本**：v0.1.8
-**日期**：2026-08-10
+**版本**：v0.1.9
+**日期**：2026-08-13
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.4 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)
 **下游**：07-Workflow、08-Test、09-UI
@@ -234,6 +234,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
 | `modules.list` | `{ courseId?, learnStatus? }` | `KnowledgeModule[]` | |
+| `modules.create` | `{ courseId, materialId, moduleName, summary?, importance?, difficulty? }` | `KnowledgeModule` | 用户在 NotesTab 对已显式选择资料创建模块；校验课程与资料归属，写入 `source_evidence_json`，`ai_generated=0`；归档学期拒绝 |
 | `modules.get` | `{ id }` | `KnowledgeModule` | 含 source_evidence 回链 |
 | `modules.updateLearnStatus` | `{ id, learnStatus }` | `KnowledgeModule` | 状态机 not_started→learning→mastered→needs_review |
 
@@ -572,6 +573,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 ## 7. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.9 | 2026-08-13 | **用户明确同意的最小闭环扩展**：新增 `modules.create`（`courseId`、当前 NotesTab 显式选择的 `materialId`、模块名称及可选摘要/重要度/难度），用于让 S2 资料经可见 UI 形成可练习知识模块并进入 S3/S4 真机 UAT。原因：用户裁决 S2/S3/S4 创建前置条件必须属于 T-M5-004，现有生产契约仅有 list/get/updateLearnStatus，无法在禁止 DB 预置、直调与真实外部 AI 的边界内建立练习前置。影响：typed RPC 方法数 127→128；新增最小 S2 handler 与 NotesTab 局部入口；不改 SQLite schema/Stream/跨 Tab 全局状态，不连真实外部 AI。依据：用户 2026-08-13 “同意” + AGENTS.md §2、§5、§7、§11。 |
 | v0.1.8 | 2026-08-10 | 修正 T-M4-011 文件导入契约：main 的 open-file dialog 返回一次性 `importToken/fileName/fileSize`，生产 S2 renderer 以 capability 调用 `materials.upload`，host 消费 token 并从 staging 源文件取得真实大小；`FileMeta.path` 不用于 S2 生产上传；无新增 RPC 方法。 |
 | v0.1.7 | 2026-08-10 | T-M4-011 资料上传契约落地：生产 S2 `materials.upload` 使用 Electron 选择器返回的 `FileMeta.path`，host 校验普通文件并复制到业务 storage，真实大小来自 `stat`；S2 写操作在 host 侧拒绝 archived 学期；无新增 RPC 方法。 |
 | v0.1.6 | 2026-08-09 | 交叉审查修订：新增 `MODEL_NOT_CONFIGURED`；明确生产 `agent.send` 只能路由到业务数据根配置构造的真实 session，测试夹具必须显式注入；同步实际文件/技能/模型安全占位 handler 与契约覆盖检查。 |

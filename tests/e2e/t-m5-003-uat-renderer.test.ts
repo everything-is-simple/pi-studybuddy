@@ -173,6 +173,26 @@ const sanitize = (s) => String(s).replace(UUID_RE, "[id]");
 const steps = ${JSON.stringify(steps)};
 const helpers = ${JSON.stringify(UI_HELPERS)};
 let emitted = false;
+async function captureNonEmptyPng(win, pngPath) {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      if (win.isMinimized()) win.restore();
+      if (!win.isVisible()) win.show();
+      win.focus();
+      await win.webContents.executeJavaScript(
+        "new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))",
+      ).catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const image = await win.webContents.capturePage();
+      const png = image.toPNG();
+      if (png.length > 0) {
+        fs.writeFileSync(pngPath, png);
+        return true;
+      }
+    } catch { /* 重试直到 renderer 完成绘制 */ }
+  }
+  return false;
+}
 function emit(result) {
   if (emitted) return;
   emitted = true;
@@ -225,9 +245,8 @@ app.whenReady().then(async () => {
       const index = "step-" + String(i + 1).padStart(2, "0") + "-" + step.name;
       let pngPath = "";
       try {
-        const image = await win.webContents.capturePage();
         pngPath = path.join(evidenceDir, index + ".png");
-        fs.writeFileSync(pngPath, image.toPNG());
+        await captureNonEmptyPng(win, pngPath);
       } catch { /* 截图失败不阻塞证据 */ }
       fs.writeFileSync(path.join(evidenceDir, index + ".json"), sanitize(JSON.stringify({ step: step.name, result }, null, 2)), "utf8");
       fs.writeFileSync(path.join(evidenceDir, index + ".html"), sanitize(dom), "utf8");

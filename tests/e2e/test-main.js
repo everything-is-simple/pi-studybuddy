@@ -21,7 +21,7 @@
 const path = require("node:path");
 
 // 从 dist/ 加载编译产物（E2E 前置：pnpm build）
-const { createGlobalDb } = require("../../dist/data/global");
+const { initializeDataRoot } = require("../../dist/main/data-root-init");
 const { ping } = require("../../dist/agent-host/handlers/ping");
 const { S1Context, createS1Handlers } = require("../../dist/agent-host/handlers/s1");
 const { S2Context, createS2Handlers } = require("../../dist/agent-host/handlers/s2");
@@ -70,10 +70,8 @@ if (!dataRoot) {
   process.exit(1);
 }
 
-// 初始化 global.db（首次启动建库）
-const fs = require("node:fs");
-fs.mkdirSync(dataRoot, { recursive: true });
-createGlobalDb(dataRoot);
+// 初始化真实业务数据根；initializeDataRoot 会关闭建库连接，避免 Windows WAL 锁。
+initializeDataRoot(dataRoot);
 
 // 创建业务上下文（默认 mock Adapter）
 const s1Ctx = new S1Context(dataRoot);
@@ -131,47 +129,12 @@ const allHandlers = {
 };
 
 /**
- * 测试专用 seed：为课程种入一条知识模块（E2E-04 前置）。
- *
- * 生产无"创建知识模块"RPC——模块由 S2 笔记生成 job processor 创建（E2E 不执行该
- * processor，tests/integration 同样直接 SQL 写入）。E2E 用 seed 直写 semester.db，
- * 复用真实 materials.upload 产物满足 knowledge_modules.material_id FK。
- */
-allHandlers["test.seedModule"] = (params) => {
-  const { courseInstanceId, materialId, moduleName } = params;
-  const activeSemesters = s1Ctx.globalDb
-    .prepare("SELECT id FROM semesters WHERE deleted_at IS NULL")
-    .all();
-  for (const s of activeSemesters) {
-    const db = s1Ctx.semesterDb(s.id);
-    const course = db
-      .prepare("SELECT 1 FROM course_instances WHERE id = @id AND deleted_at IS NULL")
-      .get({ id: courseInstanceId });
-    if (!course) continue;
-    const moduleId = "seed-module-" + moduleName;
-    const ts = new Date().toISOString();
-    db.prepare(
-      `INSERT INTO knowledge_modules
-        (id, course_instance_id, material_id, module_name, importance, learn_status,
-         source_evidence_json, ai_generated, created_at, updated_at)
-       VALUES (@id, @cid, @mid, @name, 3, 'not_started', '[]', 1, @ts, @ts)`,
-    ).run({
-      id: moduleId,
-      cid: courseInstanceId,
-      mid: materialId,
-      name: moduleName,
-      ts,
-    });
-    return { id: moduleId, courseInstanceId, moduleName };
-  }
-  throw { code: "BAD_REQUEST", message: "未找到该课程，无法种入知识模块" };
-};
-
-/**
  * 测试专用 turn_end 增量索引（E2E-13 前置，模拟 pi 扩展 turn_end 钩子）。
  *
  * 生产在 pi 扩展层 pi.on("turn_end") 调用 indexTurnEndChunks（studybuddy-extension.ts）。
- * E2E 子进程不跑 pi 内核，故用 test.turnEndIndex 直调生产 indexTurnEndChunks 纯函数，
+ * E2E 子进程不跑 pi 内核，故仅在隔离 loopback 测试进程用 test.turnEndIndex 转接
+ * 生产 indexTurnEndChunks 纯函数；它不在 production contract/agent-host 注册，不能 seed S1-S7
+ * 业务实体。详见 08-Test §9.1 的已登记唯一例外。
  * 验证 L3 增量索引 + 跨进程持久化（二次 launch 后 sessions.search 命中）。
  */
 allHandlers["test.turnEndIndex"] = (params) => {
