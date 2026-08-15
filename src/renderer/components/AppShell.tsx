@@ -543,6 +543,15 @@ export function AppShell({
           {academicContext.semesterId && academicContext.courseId && (
             <button type="button" onClick={() => setPlanningView({ type: "manage", semesterId: academicContext.semesterId!, courseId: academicContext.courseId! })} style={planningButtonStyle}>管理学习计划</button>
           )}
+          {academicContext.semesterId && academicContext.courseId && (
+            <button
+              type="button"
+              onClick={() => dispatchView({ type: "selectTab", tabId: "backup" })}
+              style={planningButtonStyle}
+            >
+              备份恢复
+            </button>
+          )}
           <div style={{ fontWeight: 600, margin: "14px 0 8px", color: "var(--text, #222)" }}>会话</div>
           {/* T-M5-003：会话操作失败可见（固定中文错误，无静默 catch） */}
           {operationError && (

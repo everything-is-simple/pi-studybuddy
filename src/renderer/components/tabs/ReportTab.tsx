@@ -14,6 +14,7 @@
  * §11.1 隐私边界：所有 ID 走 ShortId 组件（不展示完整 UUID）。
  */
 import React from "react";
+import type { PiBridge } from "../../../contract/desktop";
 import type { TypedRpcClient } from "../../rpc-client";
 import type { SemesterCourseContext } from "../../semester-course-state";
 import { useTabData } from "./useTabData";
@@ -27,6 +28,17 @@ import type {
 import { TabContainer } from "../common/TabContainer";
 import { EmptyState } from "../common/EmptyState";
 import { ShortId } from "../common/ShortId";
+
+declare global {
+  interface Window {
+    __PI_REPORT_EXPORT_DIR_FIXTURE__?: string;
+  }
+}
+
+function bridgeDialog(): Pick<PiBridge, "showDialog"> | undefined {
+  const bridge = globalThis.window?.piBridge;
+  return bridge && typeof bridge.showDialog === "function" ? bridge : undefined;
+}
 
 interface Props {
   /** 报告列表（静态渲染兼容） */
@@ -174,7 +186,7 @@ function reportSpeechText(content: { summary?: string; sections: ReportSection[]
 }
 
 /** 不显示 RPC 原始异常，避免 UUID、绝对路径和堆栈进入 renderer。 */
-function reportErrorText(action: "list" | "generate" | "get" | "freeze" | "deliver" | "retry" | "targets"): string {
+function reportErrorText(action: "list" | "generate" | "get" | "freeze" | "deliver" | "retry" | "targets" | "createTarget"): string {
   switch (action) {
     case "list": return "暂时无法加载报告，请稍后重试。";
     case "generate": return "暂时无法生成报告，请稍后重试。";
@@ -183,6 +195,7 @@ function reportErrorText(action: "list" | "generate" | "get" | "freeze" | "deliv
     case "deliver": return "暂时无法投递报告，请稍后重试。";
     case "retry": return "暂时无法重试投递，请稍后重试。";
     case "targets": return "暂时无法加载投递渠道，请稍后重试。";
+    case "createTarget": return "暂时无法保存本地导出设置，请稍后重试。";
   }
 }
 
@@ -225,14 +238,20 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
   const [selectedReportKey, setSelectedReportKey] = React.useState<string | undefined>();
   const [listToken, setListToken] = React.useState(0);
   const [deliveryToken, setDeliveryToken] = React.useState(0);
+  const [targetToken, setTargetToken] = React.useState(0);
   const [actionError, setActionError] = React.useState<string | undefined>();
+  const [targetNotice, setTargetNotice] = React.useState<string | undefined>();
+  const [exportDirectorySelected, setExportDirectorySelected] = React.useState(false);
   const [frozen, setFrozen] = React.useState(false);
+  const frozenReportKeysRef = React.useRef<Set<string>>(new Set());
   const mountedRef = React.useRef(true);
   const contextVersionRef = React.useRef(0);
+  const exportDirectoryRef = React.useRef("");
   const generateInFlightRef = React.useRef(false);
   const freezeInFlightRef = React.useRef(false);
   const deliverInFlightRef = React.useRef(false);
   const retryInFlightRef = React.useRef(false);
+  const createTargetInFlightRef = React.useRef(false);
 
   const reportsResource = useTabData<ParentReport[]>({
     rpc,
@@ -258,7 +277,7 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
   });
   const targetsResource = useTabData<ParentReportTarget[]>({
     rpc,
-    key: `report-targets:${effectiveSemesterId ?? ""}`,
+    key: `report-targets:${effectiveSemesterId ?? ""}:${targetToken}`,
     enabled: Boolean(effectiveSemesterId),
     initialData: [],
     load: (client) => client.call("reportTargets.list", { semesterId: effectiveSemesterId! }),
@@ -274,20 +293,24 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
 
   React.useEffect(() => {
     contextVersionRef.current += 1;
+    frozenReportKeysRef.current.clear();
     setSelectedReportKey(undefined);
     setActionError(undefined);
     setFrozen(false);
-    generateInFlightRef.current = false;
     freezeInFlightRef.current = false;
     deliverInFlightRef.current = false;
     retryInFlightRef.current = false;
+    createTargetInFlightRef.current = false;
+    exportDirectoryRef.current = "";
+    setExportDirectorySelected(false);
+    setTargetNotice(undefined);
   }, [effectiveSemesterId]);
 
   function openDetail(report: ParentReport): void {
     contextVersionRef.current += 1;
     setSelectedReportKey(report.reportKey);
     setActionError(undefined);
-    setFrozen(false);
+    setFrozen(frozenReportKeysRef.current.has(report.reportKey));
   }
 
   function backToList(): void {
@@ -319,9 +342,8 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
         setActionError(reportErrorText("generate"));
       });
   }
-
   function freezeReport(): void {
-    if (!selectedReportKey || isReadOnly || freezeInFlightRef.current) return;
+    if (!selectedReportKey || isReadOnly || frozen || freezeInFlightRef.current) return;
     freezeInFlightRef.current = true;
     const contextVersion = contextVersionRef.current;
     setActionError(undefined);
@@ -329,9 +351,9 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
       .then((report) => {
         freezeInFlightRef.current = false;
         if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        frozenReportKeysRef.current.add(report.reportKey);
         setFrozen(true);
         setActionError(undefined);
-        // 刷新详情以展示冻结后状态（privacyCheckPassed）
         setListToken((token) => token + 1);
         setSelectedReportKey(report.reportKey);
       })
@@ -341,6 +363,7 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
         setActionError(reportErrorText("freeze"));
       });
   }
+
 
   function deliverReport(channel: ReportChannel): void {
     if (!selectedReportKey || isReadOnly || deliverInFlightRef.current) return;
@@ -377,6 +400,57 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
         retryInFlightRef.current = false;
         if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
         setActionError(reportErrorText("retry"));
+      });
+  }
+
+  function selectExportDirectory(): void {
+    if (isReadOnly || createTargetInFlightRef.current) return;
+    const fixture = globalThis.window?.__PI_REPORT_EXPORT_DIR_FIXTURE__;
+    if (fixture) {
+      exportDirectoryRef.current = fixture;
+      setExportDirectorySelected(true);
+      setActionError(undefined);
+      return;
+    }
+    const bridge = bridgeDialog();
+    if (!bridge) {
+      setActionError(reportErrorText("createTarget"));
+      return;
+    }
+    setActionError(undefined);
+    void bridge.showDialog({ type: "open", title: "选择报告导出目录", directory: true })
+      .then((result) => {
+        if (!mountedRef.current || result.canceled || !result.rawPath) return;
+        exportDirectoryRef.current = result.rawPath;
+        setExportDirectorySelected(true);
+      })
+      .catch(() => {
+        if (mountedRef.current) setActionError(reportErrorText("createTarget"));
+      });
+  }
+
+  function createLocalExportTarget(): void {
+    if (!effectiveSemesterId || isReadOnly || !exportDirectoryRef.current || createTargetInFlightRef.current) return;
+    createTargetInFlightRef.current = true;
+    const contextVersion = contextVersionRef.current;
+    setActionError(undefined);
+    void rpc.call("reportTargets.create", {
+      semesterId: effectiveSemesterId,
+      targetName: "本地导出",
+      channelType: "local_export",
+      channelConfigJson: JSON.stringify({ dir: exportDirectoryRef.current }),
+    })
+      .then(() => {
+        createTargetInFlightRef.current = false;
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        exportDirectoryRef.current = "";
+        setExportDirectorySelected(false);
+        setTargetNotice("本地导出已配置");
+        setTargetToken((token) => token + 1);
+      })
+      .catch(() => {
+        createTargetInFlightRef.current = false;
+        if (mountedRef.current && contextVersion === contextVersionRef.current) setActionError(reportErrorText("createTarget"));
       });
   }
 
@@ -451,17 +525,16 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
         )}
         <button type="button" disabled={!onSpeakText || !reportSpeechText(content)} onClick={() => onSpeakText?.(reportSpeechText(content), { title: "家长报告" })} style={{ padding: "4px 12px", fontSize: 12 }}>朗读报告</button>
 
-        {/* 冻结入口 */}
         <div style={{ marginTop: 12, marginBottom: 12 }}>
           <button
             type="button"
             disabled={isReadOnly || frozen}
+            onClick={freezeReport}
             style={{
               padding: "6px 16px", fontSize: 13, cursor: isReadOnly || frozen ? "not-allowed" : "pointer",
               border: "1px solid var(--border, #e0e0e0)", background: isReadOnly || frozen ? "#9e9e9e" : "#1976d2",
               color: "#fff", borderRadius: 4, opacity: isReadOnly || frozen ? 0.7 : 1,
             }}
-            onClick={freezeReport}
           >
             {frozen ? "已冻结" : "冻结报告"}
           </button>
@@ -548,6 +621,19 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
         {actionError && <p role="alert" style={{ color: "#c62828", fontSize: 13 }}>{actionError}</p>}
       </div>
 
+      <div style={PANEL_STYLE}>
+        <strong style={{ fontSize: 14 }}>本地投递设置</strong>
+        {targetsResource.data.some((target) => target.channelType === "local_export" && target.enabled === 1) ? (
+          <p role="status" style={{ margin: "8px 0 0", fontSize: 13, color: "#2e7d32" }}>本地导出已配置</p>
+        ) : (
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+            <button type="button" disabled={isReadOnly} onClick={selectExportDirectory} style={{ padding: "4px 12px", fontSize: 12 }}>选择导出目录</button>
+            {exportDirectorySelected && <span role="status" style={{ fontSize: 12, color: "#2e7d32" }}>已选择导出目录</span>}
+            <button type="button" disabled={isReadOnly || !exportDirectorySelected} onClick={createLocalExportTarget} style={{ padding: "4px 12px", fontSize: 12 }}>保存本地导出</button>
+          </div>
+        )}
+        {targetNotice && <p role="status" style={{ margin: "8px 0 0", fontSize: 13, color: "#2e7d32" }}>{targetNotice}</p>}
+      </div>
       {/* 报告列表 */}
       <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>报告历史</h3>
       {reportsResource.status === "empty" && <EmptyState message="暂无报告，请生成家长报告" />}

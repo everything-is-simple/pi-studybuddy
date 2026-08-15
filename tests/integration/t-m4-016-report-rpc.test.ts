@@ -214,13 +214,12 @@ describe("T-M4-016 ReportTab RPC 接线", () => {
     expect(host.textContent).toContain("学习节奏");
   });
 
-  it("S6-RED-04 冻结：点击冻结只调一次 freeze，冻结状态展示隐私检查", async () => {
-    const calls: Array<{ method: string; params: unknown }> = [];
+  it("S6-RED-04 冻结：点击冻结只调一次 freeze，冻结状态展示隐私检查并在返回后保留", async () => {
     const freeze = vi.fn(() => weeklyReport);
     const rpc = createMockRpcClient({
       "reports.list": () => [weeklyReport],
       "reports.get": () => weeklyReport,
-      "reports.freeze": (params: unknown) => { calls.push({ method: "reports.freeze", params }); return freeze(params); },
+      "reports.freeze": freeze,
       "deliveries.list": () => [],
       "reportTargets.list": () => [],
     });
@@ -233,7 +232,41 @@ describe("T-M4-016 ReportTab RPC 接线", () => {
     await flush();
     expect(freeze).toHaveBeenCalledTimes(1);
     expect(freeze).toHaveBeenCalledWith({ reportKey: "report-weekly-1" });
+    expect(host.textContent).toContain("已冻结");
     expect(host.textContent).toContain("隐私检查通过");
+
+    await act(async () => button(host!, "返回列表").click());
+    await flush();
+    await act(async () => button(host!, "查看详情").click());
+    await flush();
+    expect(host.textContent).toContain("已冻结");
+    expect(button(host!, "已冻结").disabled).toBe(true);
+  });
+  it("S6-RED-05 切换学期后不继承相同 reportKey 的冻结状态", async () => {
+    const sem1Report = { ...weeklyReport, semesterId: "sem-1", reportKey: "report-collision" };
+    const sem2Report = { ...weeklyReport, semesterId: "sem-2", reportKey: "report-collision" };
+    const rpc = createMockRpcClient({
+      "reports.list": (params: unknown) => (params as { semesterId: string }).semesterId === "sem-1" ? [sem1Report] : [sem2Report],
+      "reports.get": (params: unknown) => (params as { reportKey: string }).reportKey === "report-collision" ? sem1Report : sem2Report,
+      "reports.freeze": () => sem1Report,
+      "deliveries.list": () => [],
+      "reportTargets.list": () => [],
+    });
+    host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+    await act(async () => root?.render(React.createElement(ReportTab, { rpc, academicContext: { semesterId: "sem-1" } } as React.ComponentProps<typeof ReportTab>)));
+    await flush();
+    await act(async () => button(host!, "查看详情").click());
+    await flush();
+    await act(async () => button(host!, "冻结报告").click());
+    await flush();
+    expect(host.textContent).toContain("已冻结");
+
+    await act(async () => root?.render(React.createElement(ReportTab, { rpc, academicContext: { semesterId: "sem-2" } } as React.ComponentProps<typeof ReportTab>)));
+    await flush();
+    await act(async () => button(host!, "查看详情").click());
+    await flush();
+    expect(host.textContent).not.toContain("已冻结");
+    expect(button(host!, "冻结报告").disabled).toBe(false);
   });
 
   it("S6-RED-05 投递状态可视化：deliveries.list 展示 sent/failed/未配置渠道状态", async () => {
@@ -359,5 +392,41 @@ describe("T-M4-016 ReportTab RPC 接线", () => {
     await act(async () => { button(host!, "冻结").click(); });
     await flush();
     expect(calls).toHaveLength(0);
+  });
+
+  it("S6-RED-09 本地导出目标：目录仅留在 capability 内存值，保存后刷新渠道且 DOM 不泄漏路径", async () => {
+    const calls: Array<{ method: string; params: unknown }> = [];
+    const showDialog = vi.fn(async () => ({ canceled: false, rawPath: "H:\\pi-studybuddy-tmp\\runs\\T-M5-005\\exports" }));
+    Object.assign(window, { piBridge: { showDialog } });
+    const rpc = createMockRpcClient({
+      "reports.list": () => [],
+      "reportTargets.list": () => [],
+      "reportTargets.create": (params: unknown) => {
+        calls.push({ method: "reportTargets.create", params });
+        return exportTarget;
+      },
+    });
+    host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+    await act(async () => root?.render(React.createElement(ReportTab, { rpc, semesterId: "sem-1" })));
+    await flush();
+
+    await act(async () => button(host!, "选择导出目录").click());
+    await flush();
+    expect(showDialog).toHaveBeenCalledWith({ type: "open", title: "选择报告导出目录", directory: true });
+    expect(host.textContent).toContain("已选择导出目录");
+    expect(host.textContent).not.toContain("H:\\pi-studybuddy-tmp");
+
+    await act(async () => button(host!, "保存本地导出").click());
+    await flush();
+    expect(calls).toContainEqual({
+      method: "reportTargets.create",
+      params: {
+        semesterId: "sem-1",
+        targetName: "本地导出",
+        channelType: "local_export",
+        channelConfigJson: JSON.stringify({ dir: "H:\\pi-studybuddy-tmp\\runs\\T-M5-005\\exports" }),
+      },
+    });
+    expect(host.textContent).toContain("本地导出已配置");
   });
 });

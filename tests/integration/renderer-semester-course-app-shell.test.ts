@@ -145,4 +145,23 @@ describe("AppShell 学期/课程真实交互（T-M4-007）", () => {
     expect(findButton(host, "笔记").getAttribute("aria-selected")).toBe("true");
     expect(host.textContent).toContain("2026 秋 / 最新课程");
   });
+
+  it("选中课程后提供可见备份恢复入口，并切换到备份面板", async () => {
+    const rpc = createMockRpcClient({
+      "semesters.list": () => [fallSemester],
+      "courses.list": () => [course("course-1", "备份课程")],
+      "backup.list": () => [],
+      "backup.listSchedules": () => [],
+    });
+    host = document.createElement("div");
+    document.body.append(host);
+    root = createRoot(host);
+    await act(async () => root?.render(React.createElement(AppShell, { rpc })));
+    await flushRenderer();
+    await click(findButton(host, "2026 秋"));
+    await click(findButton(host, "备份课程"));
+    await click(findButton(host, "备份恢复"));
+    expect(host.querySelector('button[role="tab"][aria-selected="true"]')?.textContent).toContain("备份");
+    expect(host.textContent).toContain("手动备份");
+  });
 });

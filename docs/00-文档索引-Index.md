@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.188
+**版本**：v0.1.190
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -126,7 +126,7 @@
 - [x] 2026-08-14 T-M5-004 Git 收口完成：功能 `47639f9` 已快进合并 master；本地收口登记 `715add3` 已成功推送并核验 `master=origin/master=715add3`；不自动启动后续任务。
 - [x] `docs/traceability/` 六项基线资产已完成，供 T-M5-005~008 依任务范围消费。
 - [x] 13-测试与运维-Testing-and-Operations.md v0.1.3 ✅ 已审查批准：T-M5-009 已完成受控 Git 收口，六项追溯基线资产由 T-M5-005 按范围消费；本文的 ACT/ERR/DATA、真实测试、真机 UAT 与发布运维门禁保持不变。
-- [x] T-M5-005 功能/证据提交 `112da31` 和治理事实提交 `87d40f8` 已推送 master；核验 `HEAD=origin/master=87d40f8` 且 `112da31` 为祖先。Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍为 in_progress：完整原生 UAT和独立审查未完成；T-M5-006~008 保持 pending，安装器全程排除。
+- [x] T-M5-005 当前工作台验证暂停，用户将重装干净 Windows 并运行 setup，在真实已安装应用中完成 S6 报告投递重启回读、真实备份恢复后业务数据完整性/重启回读、TTS 原生已复习持久化/重启回读；该交接不等同于 T-M5-007 全功能 UAT 或 T-M5-008 最终发行。当前工作区不读取、不暂存安装器；任务仍 in_progress，T-M5-006~008 不启动。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。

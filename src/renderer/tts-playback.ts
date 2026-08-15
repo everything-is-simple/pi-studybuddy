@@ -76,7 +76,7 @@ export function useTtsPlayback(rpc?: TypedRpcClient): TtsPlayback {
   const [error, setError] = useState<string | undefined>(undefined);
 
   const lastTextRef = useRef("");
-  const targetRef = useRef<{ refType?: string; refId?: string } | undefined>(undefined);
+  const targetRef = useRef<TtsSpeakTarget | undefined>(undefined);
   const playbackIdRef = useRef<string | undefined>(undefined);
   const busyRef = useRef(false);
   const mountedRef = useRef(true);
@@ -95,8 +95,8 @@ export function useTtsPlayback(rpc?: TypedRpcClient): TtsPlayback {
       if (!isTtsStateEvent(payload)) return;
       if (playbackIdRef.current && payload.playbackId !== playbackIdRef.current) return;
       setStatus({ state: payload.state, position: payload.position, duration: payload.duration });
-      // 09-UI §5.4：朗读完成（stopped）可标记已复习
-      if (payload.state === "stopped" && targetRef.current) {
+      // 09-UI §5.4：只有能实际写入复习事件的来源，朗读完成后才可标记。
+      if (payload.state === "stopped" && targetRef.current?.refType && targetRef.current.refId) {
         setCanMarkReviewed(true);
       }
     });
@@ -151,7 +151,7 @@ export function useTtsPlayback(rpc?: TypedRpcClient): TtsPlayback {
         ...current,
         state: action === "play" ? "playing" : action === "pause" ? "paused" : "stopped",
       }));
-      if (action === "stop" && targetRef.current) setCanMarkReviewed(true);
+      if (action === "stop" && targetRef.current?.refType && targetRef.current.refId) setCanMarkReviewed(true);
     } catch {
       if (mountedRef.current) setError(MSG_CONTROL_FAILED);
     }

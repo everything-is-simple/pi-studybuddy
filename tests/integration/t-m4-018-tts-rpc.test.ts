@@ -86,7 +86,7 @@ function createTtsMockRpc(options: TtsMockOptions = {}): {
 }
 
 /** 挂钩 + 控制条组装 harness（模拟 AppShell 的接线方式，.ts 文件用 createElement） */
-function TtsHarness({ rpc }: { rpc: TypedRpcClient }): React.JSX.Element {
+function TtsHarness({ rpc, target = { title: "物理笔记", refType: "note", refId: "material-1" } }: { rpc: TypedRpcClient; target?: { title?: string; refType?: string; refId?: string } }): React.JSX.Element {
   const tts = useTtsPlayback(rpc);
   return React.createElement(
     "div",
@@ -109,7 +109,7 @@ function TtsHarness({ rpc }: { rpc: TypedRpcClient }): React.JSX.Element {
     }),
     React.createElement(
       "button",
-      { type: "button", onClick: () => void tts.speak("牛顿第二定律，力等于质量乘以加速度。", { title: "物理笔记", refType: "note", refId: "material-1" }) },
+      { type: "button", onClick: () => void tts.speak("牛顿第二定律，力等于质量乘以加速度。", target) },
       "外部触发朗读",
     ),
   );
@@ -170,12 +170,13 @@ async function clickButton(host: HTMLDivElement, label: string): Promise<void> {
 
 async function mount(
   rpc: TypedRpcClient,
+  target?: { title?: string; refType?: string; refId?: string },
 ): Promise<{ host: HTMLDivElement; root: Root }> {
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
   await act(async () => {
-    root.render(React.createElement(TtsHarness, { rpc }));
+    root.render(React.createElement(TtsHarness, { rpc, target }));
   });
   await flush();
   return { host, root };
@@ -446,6 +447,20 @@ describe("T-M4-018 TTS 控制条 RPC 接线", () => {
     });
     // 标记后按钮消失（防重复）
     expect(buttons(host, "标记已复习").length).toBe(0);
+  });
+
+  it("C-RED-08b 只有标题的朗读停止后不提供无法持久化的已复习操作", async () => {
+    const { rpc, calls, emitState } = createTtsMockRpc();
+    const mounted = await mount(rpc, { title: "家长报告" });
+    root = mounted.root;
+    host = mounted.host;
+
+    await clickButton(host, "外部触发朗读");
+    emitState({ playbackId: "pb-1", state: "stopped", position: 5000, duration: 5000 });
+    await flush();
+
+    expect(host.textContent).not.toContain("标记已复习");
+    expect(calls.some((call) => call.method === "events.markReviewed")).toBe(false);
   });
 
   it("C-RED-09 竞态/卸载：speak 未完成时卸载组件，resolve 后不执行 setState", async () => {

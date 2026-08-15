@@ -34,10 +34,10 @@
 | ACT-S5-002 | 生成并开始模拟考 | CTRL-CRAM-02 | 题数/时间确认后生成 | mock-exams handlers | DATA-BIZ-011 | ERR-DEPENDENCY-001 | UAT-S5-002 | 已证实 |
 | ACT-S5-003 | 提交模拟考并读取结果 | CTRL-CRAM-03 | 提交后结果页可见，重启后再读 | mock-exams submit/result | DATA-BIZ-011/DATA-BIZ-012 | ERR-STATE-001 | UAT-S5-003 | 已证实 |
 | ACT-S6-001 | 查看报告并朗读脱敏详情 | CTRL-REPORT-01..05 | 报告详情可见后点击朗读 | ReportTab + existing TTS callback | DATA-BIZ-* 待细化 | ERR-STATE-001 | renderer contract test；原生详情未覆盖 | 部分证据 |
-| ACT-S7-001 | 合规确认并选择 WAV | CTRL-CAPTURE-01..04 | 勾选授权后选择受支持文件 | CaptureTab + native file dialog | DATA-FILE-* 待细化 | ERR-FILE-001/ERR-DEPENDENCY-001 | 原生 UAT 37/38/39；未完成转写 | 部分证据/阻塞 |
+| ACT-S7-001 | 合规确认并选择 WAV | CTRL-CAPTURE-01..04 | 勾选授权后选择受支持文件 | CaptureTab + native file dialog | DATA-FILE-* 待细化 | ERR-FILE-001/ERR-DEPENDENCY-001 | 原生 UAT 37/38/39；成功转写与结果重启回读属于 T-M5-006 依赖范围 | 部分证据/依赖阻塞 |
 | ACT-TTS-001 | 从速背卡/报告/转写结果朗读 | CTRL-TTS-01..03 + Tab text zones | 可见文本且目标内容非空 | AppShell `onSpeakText` + useTtsPlayback | review event only after explicit mark | ERR-DEPENDENCY-001 | renderer contract + E2E regression；native content entry not reached | 部分证据 |
 | ACT-BACKUP-001 | 选择覆盖恢复并确认风险 | CTRL-BACKUP-01..04 | `overwrite` first shows confirm/cancel; confirm invokes restore | BackupPanel + backup.restore | DATA-FILE-003 | ERR-BACKUP-001 | renderer contract + RPC regression；native restore not covered | 部分证据 |
-| ACT-SETTINGS-001 | 打开设置并保存通用偏好 | CTRL-SETTINGS-01..06 | Save action and fixed feedback visible | SettingsPage + settings RPC | DATA-CFG-003 | ERR-SQLITE-001 | native UAT 21/22; restart value readback not covered | 部分证据 |
+| ACT-SETTINGS-001 | 打开设置并保存通用偏好 | CTRL-SETTINGS-01..06 | Save action and fixed feedback visible | SettingsPage + settings RPC | DATA-CFG-003 | ERR-SQLITE-001 | native UAT 21/22/60；隔离 settings.json 回读 61 | 已证实 |
 
 ## 3. 控件输入基线（未等同于动作）
 

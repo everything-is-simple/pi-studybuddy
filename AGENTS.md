@@ -1,8 +1,8 @@
 # AGENTS.md — pi-studybuddy 仓库操作宪章
 
-**版本**：v0.1.138
-**日期**：2026-08-14
-**状态**：📝 M5 进行中（v0.1.138：T-M5-005 功能/证据提交 `112da31` 与治理事实提交 `87d40f8` 均已推送 master，核验 `HEAD=origin/master=87d40f8`；Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍为 in_progress：原生 UAT 未覆盖 S6 完整报告/投递、S7 成功转写、真实备份恢复、设置值重启回读和 TTS 已复习持久化；不启动 T-M5-006~008。安装器全程排除；T-M5-009 的受控文档消费路径验收例外不外推。）
+**版本**：v0.1.140
+**日期**：2026-08-15
+**状态**：📝 M5 进行中（v0.1.140：T-M5-005 当前代码/自动化/部分隔离原生 UAT 已完成，任务保持 in_progress。用户决定暂置当前工作台客观缺口，重装干净 Windows 后运行 setup，在真实已安装应用中完成 S6 报告投递重启回读、真实备份恢复后业务数据完整性与重启回读、TTS 原生已复习持久化与重启回读。当前工作区不读取、不暂存安装器；新系统安装验收是用户授权的下一步真实验证，不等同于 T-M5-007 全功能 UAT 或 T-M5-008 最终发行。T-M5-006~008 不启动。）
 **适用**：对人和 AI agent 同等约束（仿 pi 生态 AGENTS.md 约定，作为 context file 自动注入 system prompt）
 
 > 本文件是 pi-studybuddy 仓库的最高治理文件。任何 AI、开发者或自动化工具在对话中断后，只读本文件与 [docs/00-文档索引](./docs/00-文档索引-Index.md) 即可恢复系统身份、权威来源、当前任务和禁止事项；**不得依赖聊天记忆代替仓库文档**。
@@ -476,7 +476,8 @@ node scripts/check-desktop-security.mjs     # 08-Test §5.7 安全不变量（3 
 ## §12 修订记录
 
 | 版本 | 日期 | 变更 |
-| v0.1.138 | 2026-08-14 | T-M5-005 Git 治理事实提交 `87d40f8` 已推送 master，核验 `HEAD=origin/master=87d40f8c98233aa182bc8821c19f174a53fbd71c`；功能提交 `112da31` 是其祖先。至此当前已验证改动的任务分支推送、ff-only 合并、master 完整门禁、治理回填和远端同位均已登记。任务仍为 in_progress：完整原生 UAT、两名独立审查和用户签收未完成；不启动 T-M5-006~008，安装器未读取、未暂存。依据：用户授权 + §4.5/§7/§8.2/§8.4/§11。 |
+| v0.1.139 | 2026-08-15 | 实时核验发现当前 `master` 与 `origin/master` 同位于 `2442646cfcfa07c0b1f84de882816a9990c2bd24`；此前 v0.1.138 的 `87d40f8` 为历史治理事实提交，仍是当前提交的祖先。同步当前状态中的 Git 同位事实与剩余原生 UAT缺口；不改变 T-M5-005 `in_progress`、不启动 T-M5-006~008、不读取/暂存安装器。原因：恢复会话后的实时 Git 核验；依据：AGENTS.md §4.5/§7/§8.4/§11.1。 |
+| v0.1.140 | 2026-08-15 | 用户决定暂置 T-M5-005 当前工作台缺口并重装干净 Windows，在新系统运行 setup 完成三条真实已安装应用闭环：S6 报告投递重启回读、真实备份恢复后业务数据完整性/重启回读、TTS 原生已复习持久化/重启回读。当前工作区不读取、不暂存安装器；该安装验收不等同于 T-M5-007 全功能 UAT 或 T-M5-008 最终发行。任务保持 in_progress，不启动 T-M5-006~008。依据：用户明确授权 + AGENTS.md §4.5/§7/§8.4/§11。 |
 | v0.1.137 | 2026-08-14 | 同步 T-M5-005 Git 收口的已发生事实：功能/证据提交 `112da31` 已推送 `agent/T-M5-005-s6-s7-tts-backup-settings-ux`，ff-only 合并并推送 master；首次核验 `HEAD=origin/master=112da31`。Node24 master `verify --stage=full` 通过（unit/integration 132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build、smoke、docs-governance）。任务仍为 in_progress，完整原生 UAT与独立审查未完成；本次仅回填事实，不报告完成。安装器未读取、未暂存。依据：用户授权 + §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.136 | 2026-08-14 | T-M5-005 Git 收口中间事实：功能/证据提交 `112da31` 已推送 `agent/T-M5-005-s6-s7-tts-backup-settings-ux`，已 ff-only 合并并推送 master；`HEAD=origin/master=112da31` 已核验。Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build、smoke、docs-governance）。任务保持 in_progress，完整原生 UAT 与独立审查未完成；本治理登记推送和同位核验后再更新当前收口事实。安装器未读取、未暂存。依据：用户授权 + §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.135 | 2026-08-14 | 用户明确授权 T-M5-005 当前已验证改动的提交、任务分支推送、master ff-only 合并、master 推送与远端同位核验；授权不扩大为任务完成或后续任务启动。任务仍须完成原生 Electron UAT、独立审查和用户签收；安装器 `omp-windows-x64-v17.3.3.exe` 明确排除。依据：用户明确指令 + §4.5/§7/§8/§11。 |

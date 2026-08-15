@@ -36,11 +36,16 @@ const UI_JS = `(async () => {
       rawSensitiveTextInDom: /secret\.ts|stackFrame|sk-secret/i.test(result),
     };
   }
+  window.__PI_REPORT_EXPORT_DIR_FIXTURE__ = "H:/pi-studybuddy-tmp/runs/T-M4-016/e2e-renderer/exports";
+  await click("选择导出目录");
+  await waitFor(() => document.body.textContent?.includes("已选择导出目录"), "export directory not selected");
+  await click("保存本地导出");
+  await waitFor(() => document.body.textContent?.includes("本地导出已配置"), "local export target not configured");
   // 生成报告（默认周报）
   await click("生成报告");
   await waitFor(() => document.body.textContent?.includes("学习节奏"), "report detail missing");
   const detail = document.body.textContent || "";
-  // 冻结报告
+  // 学生确认冻结后，reports.freeze 重新执行 UUID 泄漏检测和 hash 一致性校验。
   await click("冻结报告");
   await waitFor(() => document.body.textContent?.includes("已冻结"), "freeze failed");
   const frozen = document.body.textContent || "";
@@ -84,9 +89,7 @@ function seedFixture() {
  db.prepare("UPDATE mistakes SET error_cause = @cause, error_cause_confirmed_by = 'student' WHERE id = 'm016-mistake'").run({cause:"异常，C:\\private\\secret.ts；/home/student/private.txt；inline Error: hidden at stackFrame；api-key: sk-secret"});
  db.prepare("INSERT INTO mistake_evidence (id,mistake_id,evidence_type,recorded_at,created_at) VALUES ('m016-evidence','m016-mistake','initial_wrong',@ts,@ts)").run({ts});
  db.prepare("INSERT INTO weak_points (id,course_instance_id,knowledge_module_id,evidence_count,status,first_evidenced_at,last_evidenced_at,created_at,updated_at) VALUES ('m016-weak',@cid,'m016-module',2,'active',@ts,@ts,@ts,@ts)").run({cid:course.id,ts});
- // S6 报告目标：local_export 已配置（真实地址在 credential-vault，channelConfigJson 仅别名）
- const globalDb = s1.globalDb;
- globalDb.prepare("INSERT INTO parent_report_targets (id,semester_id,target_name,channel_type,channel_config_json,credential_key,enabled,created_at,updated_at) VALUES ('m016-target',@sid,'本地导出','local_export',@cfg,NULL,1,@ts,@ts)").run({sid:semester.id,cfg:JSON.stringify({dir:path.join(dataRoot,"reports")}),ts});
+ // S6 报告目标由 renderer 的「选择导出目录→保存本地导出」可见路径创建；禁止预置绕过该路径。
  // S6 报告记录（脱敏聚合快照，不含敏感字段）
  const content = JSON.stringify({
    summary: "本周学习节奏平稳，建议保持练习频率。",
@@ -102,9 +105,9 @@ function seedFixture() {
  db.prepare("INSERT INTO parent_reports (report_key,semester_id,report_type,period_start,period_end,content_json,content_hash,rule_generated,ai_polished,ai_model,prompt_version,privacy_check_passed,generated_at,created_at) VALUES ('m016-report',@sid,'weekly','2026-08-01','2026-08-07',@cj,@ch,1,1,'mock','v1',1,@ts,@ts)").run({sid:semester.id,cj:content,ch:contentHash,ts});
  s2.dispose(); s1.dispose(); return { semesterId: semester.id, courseId: course.id, reportKey: "m016-report" };
  }
- const seeded = seedFixture(); if (process.env.T_M4_016_ARCHIVED === "1") { const s1 = new S1Context(dataRoot); createS1Handlers(s1)["semesters.archive"]({id: seeded.semesterId}); s1.dispose(); } let emitted=false; function emit(result){if(emitted)return;emitted=true;fs.writeFileSync(path.join(dataRoot,"renderer-result.json"),JSON.stringify(result),"utf8");process.stdout.write(JSON.stringify(result)+"\\n");setTimeout(()=>app.quit(),50);} function fail(){emit({phase:"failed",error:"真实 Electron renderer E2E 失败"});}
-process.on("uncaughtException",fail);process.on("unhandledRejection",fail);try{require(path.join(projectRoot,"dist/main/main.js"));}catch(error){fail();}
-app.whenReady().then(async()=>{try{const win=BrowserWindow.getAllWindows()[0];if(!win)throw new Error("BrowserWindow missing");emit({phase:"ready",result:await win.webContents.executeJavaScript(${JSON.stringify(UI_JS)})});}catch(error){fail();}});setTimeout(()=>fail(),30000);`;
+const seeded = seedFixture(); if (process.env.T_M4_016_ARCHIVED === "1") { const s1 = new S1Context(dataRoot); createS1Handlers(s1)["semesters.archive"]({id: seeded.semesterId}); s1.dispose(); } let emitted=false; function emit(result){if(emitted)return;emitted=true;fs.writeFileSync(path.join(dataRoot,"renderer-result.json"),JSON.stringify(result),"utf8");process.stdout.write(JSON.stringify(result)+"\\n");setTimeout(()=>app.quit(),50);} function fail(error){const message=error instanceof Error?error.message:String(error??"真实 Electron renderer E2E 失败");emit({phase:"failed",error:message});}
+process.on("uncaughtException",fail);process.on("unhandledRejection",fail);try{require(path.join(projectRoot,"dist/main/main.js"));}catch(error){fail(error);}
+app.whenReady().then(async()=>{try{const win=BrowserWindow.getAllWindows()[0];if(!win)throw new Error("BrowserWindow missing");emit({phase:"ready",result:await win.webContents.executeJavaScript(${JSON.stringify(UI_JS)})});}catch(error){fail(error);}});setTimeout(()=>fail(new Error("真实 Electron renderer E2E 超时")),30000);`;
 }
 
 async function runProbe(archived = false): Promise<{ exitCode: number | null; result?: any }> {
