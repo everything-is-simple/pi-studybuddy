@@ -1,7 +1,7 @@
 # T-M5-010 唯一执行计划：设置、投递、学期备份与数据根迁移闭环
 
 **任务 ID**：T-M5-010
-**状态**：in_progress
+**状态**：done
 **日期**：2026-08-15
 **里程碑**：M5 用户可用性验收 + 设置与数据资产修订
 **优先级**：P0
@@ -21,7 +21,7 @@
 | 任务登记 | `docs/04` 已登记 T-M5-010 in_progress | OK |
 | 数据边界 | 测试和 UAT 仅用 `H:\pi-studybuddy-tmp\runs\T-M5-010\` | OK |
 | 外部服务 | 自动化只用受控 SMTP/飞书 fake；真机投递仅在用户配置目标后经可见 UI 执行 | OK |
-| Git | 未获本任务 commit/merge/push 授权 | OK |
+| Git | 用户已授权；功能 `ef9eece` 已推送任务分支并 ff-only 合并 master；本治理登记提交纳入本轮推送和同位核验 | OK |
 
 ## 2. 目标与范围
 
@@ -55,7 +55,7 @@
 
 ## 6. 完成状态
 
-- [x] 2026-08-15：实现、隔离原生 UAT、两份独立审查与 Node24 `pnpm verify --stage=full` 已完成；用户已授权 Git 收口，待任务分支 push、master ff-only 合并、master 复验和 origin/master 同位核验。
+- [x] 2026-08-15：功能 `ef9eece` 已推送任务分支并 ff-only 合并 master；Node24 master `pnpm verify --stage=full` 通过（133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。本治理登记提交随后推送并核验 `master=origin/master`，任务 done。
 - [x] T-M5-005 继续 blocked；T-M5-006~008 不启动；不读取或暂存安装器，不写生产数据。
 
 ## 7. 非范围
