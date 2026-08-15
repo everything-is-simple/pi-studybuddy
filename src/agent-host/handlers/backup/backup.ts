@@ -18,9 +18,9 @@
 import { randomUUID } from "node:crypto";
 import type { BackupRecord, BackupSchedule, RestoreResult, BackupType } from "../../../contract/types";
 import type { BackupContext, BackupProgressEvent } from "./context";
-import { packCourse } from "./zip-packer";
+import { packCourse, packSemester } from "./zip-packer";
 import { restoreCourse } from "./zip-restorer";
-import { findSemesterByCourseId, listCourseIdsBySemester } from "./lookup";
+import { findSemesterByCourseId } from "./lookup";
 import { mapBackupRecord, mapBackupSchedule } from "./dto";
 import { notFound, badRequest, internalError, MSG } from "./errors";
 
@@ -152,27 +152,32 @@ export function handleBackupCourse(
   };
 }
 
-/**
- * backup.allCourses handler 工厂。
- * 全课程备份（遍历 course_instances 逐个 backup.course）。
- */
+/** 一个 ZIP 打包整个学期；不再误导为按课程拆分的多个备份。 */
 export function handleBackupAllCourses(
   ctx: BackupContext,
-): (params: unknown) => Promise<BackupRecord[]> {
-  return async (params: unknown): Promise<BackupRecord[]> => {
+): (params: unknown) => Promise<BackupRecord> {
+  return async (params: unknown): Promise<BackupRecord> => {
     const p = params as { semesterId: string; targetPath: string };
     if (!p.semesterId || !p.targetPath) throw badRequest("缺少必要参数");
+    const exists = ctx.globalDb.prepare("SELECT 1 FROM semesters WHERE id = @id AND deleted_at IS NULL").get({ id: p.semesterId });
+    if (!exists) throw notFound(MSG.SEMESTER_NOT_FOUND);
 
-    const courseIds = listCourseIdsBySemester(ctx, p.semesterId);
-    const records: BackupRecord[] = [];
-
-    for (const courseId of courseIds) {
-      const backupFn = handleBackupCourse(ctx);
-      const record = await backupFn({ courseInstanceId: courseId, targetPath: p.targetPath });
-      records.push(record);
+    const recordId = randomUUID();
+    const startedAt = now();
+    ctx.globalDb.prepare(
+      `INSERT INTO backup_records (id, semester_id, course_instance_id, backup_type, target_path, zip_filename, content_hash, file_size_bytes, status, started_at, created_at)
+       VALUES (@id, @semesterId, '', 'semester', @targetPath, '', '', 0, 'in_progress', @startedAt, @startedAt)`,
+    ).run({ id: recordId, semesterId: p.semesterId, targetPath: p.targetPath, startedAt });
+    try {
+      const packResult = packSemester(ctx, p.semesterId, p.targetPath, ctx.emit ? (event) => ctx.emit!(event) : undefined);
+      ctx.globalDb.prepare(
+        `UPDATE backup_records SET zip_filename = @zipFilename, content_hash = @contentHash, file_size_bytes = @fileSizeBytes, status = 'completed', completed_at = @completedAt WHERE id = @id`,
+      ).run({ id: recordId, zipFilename: packResult.zipFilename, contentHash: packResult.contentHash, fileSizeBytes: packResult.fileSizeBytes, completedAt: now() });
+    } catch {
+      updateBackupRecordStatus(ctx, recordId, "failed", "BACKUP_FAILED");
+      throw internalError(MSG.BACKUP_FAILED);
     }
-
-    return records;
+    return mapBackupRecord(ctx.globalDb.prepare("SELECT * FROM backup_records WHERE id = @id").get({ id: recordId }) as Record<string, unknown>);
   };
 }
 

@@ -49,13 +49,12 @@ describe("toolchain manager integration", () => {
     manager.dispose();
   }, 30_000);
 
-  it("MANAGER-03: manager.install() 返回 ToolchainStatus（不实际下载）", async () => {
+  it("MANAGER-03: manager.install() 明确拒绝无受控来源的自动安装", async () => {
     const manager = createToolchainManager();
-    const result = await manager.install("js.node");
-    expect(result.capabilityId).toBe("js.node");
-    // 安装后 install 目录存在
-    const installPath = path.join(ISOLATION_DIR, "toolchains", "js.node");
-    expect(fs.existsSync(installPath)).toBe(true);
+    await expect(manager.install("js.node")).rejects.toMatchObject({
+      code: "INSTALLER_UNAVAILABLE",
+      message: "当前版本不提供该工具的自动安装器",
+    });
     manager.dispose();
   }, 30_000);
 

@@ -68,12 +68,14 @@ describe("BackupPanel 手动备份（09-UI §6.1）", () => {
     expect(html).toContain("手动");
   });
 
-  it("渲染备份目标目录选择入口", () => {
+  it("渲染完整当前学期资产包目录选择入口", () => {
     const html = renderToStaticMarkup(
       React.createElement(BackupPanel, { backups: fixtureBackups }),
     );
     expect(html).toContain("备份目录");
     expect(html).toContain("选择备份目录");
+    expect(html).toContain("备份完整当前学期");
+    expect(html).not.toContain("备份全部课程");
   });
 });
 

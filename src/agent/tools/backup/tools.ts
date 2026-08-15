@@ -76,28 +76,27 @@ export function createBackupTools(ctx: BackupContext): ToolDefinition[] {
     // 2. studybuddy_backup_all_courses → backup.allCourses
     {
       name: "studybuddy_backup_all_courses",
-      label: "全课程备份",
+      label: "整学期备份",
       description:
-        "遍历指定学期下所有课程，逐个打包为 zip 备份文件。每个课程独立 zip，便于单独恢复。",
-      promptSnippet: "全课程备份：遍历 course_instances 逐个 backup.course",
+        "把指定学期的课程、学习记录、报告与资料文件打包为一个完整 ZIP，可整体恢复到目标学期。",
+      promptSnippet: "整学期备份：生成一个可整体恢复的学期资产包",
       parameters: Type.Object({
         semesterId: Type.String({ description: "学期 ID" }),
         targetPath: Type.String({ description: "备份目标目录（本地路径）" }),
       }),
       async execute(_toolCallId, params) {
-        const results = await handlers["backup.allCourses"](params) as Array<{
-          id: string;
+        const result = await handlers["backup.allCourses"](params) as {
           zipFilename: string;
           status: string;
-        }>;
+          fileSizeBytes: number;
+          contentHash: string;
+        };
         return {
           content: [
-            textContent(
-              `全课程备份完成：共 ${results.length} 个课程，全部状态 completed。`,
-            ),
-            jsonContent({ count: results.length, records: results }),
+            textContent(`整学期备份完成：${result.zipFilename}（${result.fileSizeBytes} 字节，状态 ${result.status}）。content_hash: ${result.contentHash.slice(0, 16)}...`),
+            jsonContent(result),
           ],
-          details: { count: results.length },
+          details: result,
         };
       },
     },

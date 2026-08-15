@@ -1,8 +1,7 @@
 # 06 API 契约
-
-**版本**：v0.1.9
-**日期**：2026-08-13
-**状态**：✅ 已审查批准（用户 2026-08-07 批准）
+**版本**：v0.1.10
+**日期**：2026-08-15
+**状态**：✅ 已审查批准（T-M5-010 实现与定向验证已完成；完整质量门、Git 收口和用户签收仍待）
 **上游**：[02-PRD v0.1.4 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)
 **下游**：07-Workflow、08-Test、09-UI
 **架构依据**：pi-desktop contract 类型化 IPC + 自研 MessagePort RPC（非 HTTP REST）
@@ -359,17 +358,17 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
-| `deliveries.deliver` | `{ reportKey, channel }` | `ReportDelivery` | 按 report_key+channel 去重；渠道独立失败隔离 |
-| `deliveries.retry` | `{ reportKey, channel }` | `ReportDelivery` | 最多重试 3 次；达上限 retained_locally |
-| `deliveries.list` | `{ reportKey? }` | `ReportDelivery[]` | |
+| `deliveries.deliver` | `{ reportKey, channel }` | `ReportDelivery` | 从已保存的同通道报告目标读取非秘密路由配置；按 report_key+channel 去重；状态/错误只暴露脱敏分类，渠道独立失败隔离 |
+| `deliveries.retry` | `{ reportKey, channel }` | `ReportDelivery` | 重用既有投递目标；最多重试 3 次，达上限 retained_locally |
+| `deliveries.list` | `{ reportKey? }` | `ReportDelivery[]` | 用于投递状态、错误和可重试性回读 |
 
 #### 报告目标（reportTargets.*）
 
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
-| `reportTargets.list` | `{ semesterId }` | `ParentReportTarget[]` | |
-| `reportTargets.create` | `{ semesterId, targetName, channelType, channelConfig, credentialKey? }` | `ParentReportTarget` | 真实地址在 credential-vault |
-| `reportTargets.update` | `{ id, ...fields }` | `ParentReportTarget` | |
+| `reportTargets.list` | `{ semesterId }` | `ParentReportTarget[]` | 仅返回非秘密目标配置 |
+| `reportTargets.create` | `{ semesterId, targetName, channelType, channelConfig, credentialKey? }` | `ParentReportTarget` | `channelConfig` 不含收件地址、endpoint 或密钥；真实凭据只以 credential-vault 键名引用 |
+| `reportTargets.update` | `{ id, ...fields }` | `ParentReportTarget` | 不回显 credential 值；投递连通性、状态、错误和重试走 `deliveries.*`，不设 `reportTargets.testDelivery` |
 | `reportTargets.delete` | `{ id }` | `void` | 软删除 |
 
 ### 3.9 S7 课堂采集
@@ -393,7 +392,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
 | `backup.course` | `{ courseInstanceId, targetPath }` | `BackupRecord` | 单课程备份为 zip；写 backup_records |
-| `backup.allCourses` | `{ semesterId, targetPath }` | `BackupRecord[]` | 全课程备份（归档前后强制） |
+| `backup.allCourses` | `{ semesterId, targetPath }` | `BackupRecord` | 单一完整学期备份 zip（`backup_type=semester`），包含学期库、资料 storage、exports 和关联报告目标；归档前后强制 |
 | `backup.restore` | `{ zipPath, targetSemesterId, conflictResolution?: 'overwrite'\|'create_new' }` | `RestoreResult` | content_hash 校验完整性；同名冲突学生确认 |
 | `backup.list` | `{ semesterId?, courseInstanceId? }` | `BackupRecord[]` | 从 backup_records 读取 |
 | `backup.configureSchedule` | `{ semesterId, courseInstanceId?, cronExpression, timezone }` | `BackupSchedule` | 配置定期调度（每周一/每月一） |
@@ -404,11 +403,12 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 ```typescript
 {
   success: boolean,
-  restoredCourseId: string,
+  restoredCourseId: string, // 学期包恢复时为空字符串
   conflictResolved: 'overwrite' | 'create_new' | 'none',
   tablesImported: string[],
   filesRestored: number,
-  integrityCheck: 'ok' | 'warning'
+  integrityCheck: 'ok' | 'warning',
+  schemaVersion?: string
 }
 ```
 
@@ -426,12 +426,12 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
-| `models.list` | `{}` | `ModelProvider[]` | 受控 fixture（不读 ~/.pi；T-M3-002 裁决） |
+| `models.list` | `{}` | `ModelProvider[]` | 读取 `<dataRoot>/config/pi-models.json` 的非敏感 provider/model 目录；旧安装自动合并默认目录 |
 | `modelsConfig.get` | `{}` | `ModelConfig` | 读 `<dataRoot>/config/models.json`（存在则返回默认 provider/model） |
-| `modelsConfig.set` | `{ provider, model }` | `ModelConfig` | 持久化到 `<dataRoot>/config/models.json`（__studybuddy_managed 标记） |
-| `modelsConfig.test` | `{ provider, model, apiKey? }` | `{ ok: boolean, latencyMs: number, error? }` | 当前返回受控未启用结果，不对外探测 |
-| `models.addProvider` | `{ providerConfig }` | `ModelProvider` | 当前只做参数回显，不持久化、不联网 |
-| `models.probe` | `{ baseUrl, apiKey, providerType }` | `ModelInfo[]` | 当前显式拒绝；model-probe 尚未启用，不能假装执行外部探测 |
+| `modelsConfig.set` | `{ provider, model }` | `ModelConfig` | 持久化到 `<dataRoot>/config/models.json`（`__studybuddy_managed` 标记） |
+| `modelsConfig.test` | `{ provider, model, apiKey? }` | `{ ok, latencyMs, error? }` | 先在 `<dataRoot>/config/pi-models.json` 校验 provider/model，再对选中聊天模型发送最小 OpenAI-compatible 请求；优先临时 key，否则只在 host 从 vault 读取 `modelProvider:<provider>`；不传学生数据，不回显 key/base URL/远端正文 |
+| `models.probe` | `{ provider }` | `ModelInfo[]` | 用户主动触发 `/models` 目录发现；host 从 vault 读取该 provider 的 key，成功后仅将模型别名原子写入 `<dataRoot>/config/pi-models.json`；失败不覆盖原目录 |
+| `models.addProvider` | `{ providerConfig }` | `ModelProvider` | 当前只做参数回显，不持久化 |
 
 <!-- supersedes: v0.1.4 原写 models.list"从 ~/.pi/agent/models.json"、modelsConfig.set 未标落点；T-M3-005 裁决 1 改业务数据根 <dataRoot>/config/models.json（AGENTS.md §9.5 物理隔离，pi-studybuddy 不侵入 ~/.pi） -->
 

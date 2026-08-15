@@ -10,6 +10,8 @@ export const IPC_CHANNELS = {
   CONNECT_HOST: "desktop:connect-host",
   /** 目录选择（dialog.showOpenDialog） */
   SELECT_DIRECTORY: "desktop:select-directory",
+  /** 数据根迁移（main 复制校验后安排下一次启动切换） */
+  MIGRATE_DATA_ROOT: "desktop:migrate-data-root",
   /** 通用对话框（open/save/message） */
   SHOW_DIALOG: "desktop:show-dialog",
   /** 查询工具链发现结果 */

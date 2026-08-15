@@ -13,6 +13,7 @@ import { probeCapability } from "./probes/capabilities";
 import { normalizeAndDedupeCandidates } from "./candidate-normalizer";
 import { buildPublicToolchainState } from "./public-state";
 import { ToolCapabilityId, TOOL_CAPABILITY_IDS } from "./index";
+import { install as installToolchain } from "./installer";
 
 const RESCAN_TTL_MS = 60_000; // 60s
 
@@ -137,15 +138,13 @@ export function createToolchainManager(): ToolchainManager {
   }
 
   async function install(capabilityId: string): Promise<ToolchainStatus> {
-    // 本任务仅框架：installer 确保目录存在，不实际下载
-    const { install } = await import("./installer");
-    install(capabilityId);
-    // 安装后重扫
+    const result = installToolchain(capabilityId);
+    if (!result.success) {
+      throw { code: "INSTALLER_UNAVAILABLE", message: "当前版本不提供该工具的自动安装器" };
+    }
     const results = rescan();
-    const found = results.find((s) => s.capabilityId === capabilityId);
-    return (
-      found ?? buildPublicToolchainState(capabilityId, "unsupported")
-    );
+    return results.find((status) => status.capabilityId === capabilityId)
+      ?? buildPublicToolchainState(capabilityId, "unsupported");
   }
 
   function onChanged(cb: (statuses: ToolchainStatus[]) => void): void {

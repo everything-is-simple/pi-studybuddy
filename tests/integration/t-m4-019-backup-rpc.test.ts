@@ -258,7 +258,7 @@ describe("T-M4-019 备份恢复面板 RPC 接线", () => {
     expect(/\b[a-z]:[\\/][^\s]*/i.test(host.textContent ?? "")).toBe(false);
   });
 
-  it("C-RED-03 备份全部：backup.allCourses 只调一次，in-flight 防重复", async () => {
+  it("C-RED-03 学期备份：backup.allCourses 只调一次，in-flight 防重复", async () => {
     const pending = deferred<BackupRecord[]>();
     const { rpc, calls } = createBackupMockRpc({ backupAll: () => pending.promise });
     mockBridge({ canceled: false, rawPath: "H:\\backups\\studybuddy" });
@@ -267,7 +267,7 @@ describe("T-M4-019 备份恢复面板 RPC 接线", () => {
     host = mounted.host;
 
     await clickButton(host, "选择备份目录");
-    await clickButton(host, "备份全部课程");
+    await clickButton(host, "备份完整当前学期");
     await clickButton(host, "备份中…");
     const allCalls = calls.filter((c) => c.method === "backup.allCourses");
     expect(allCalls).toHaveLength(1);

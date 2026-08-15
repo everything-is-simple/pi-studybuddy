@@ -1,40 +1,48 @@
 /**
- * T-M3-002 RED: models.list 最小 handler（受控 fixture 数据源）
+ * models.list 必须读取业务数据根的运行时目录，而不是 ~/.pi 目录或内置 fixture。
  *
- * 权威依据：06-API §3.13（models.list 契约）+ AGENTS.md §9.5（物理隔离：
- * 不读真实 ~/.pi/agent/models.json，T-M3-002 用受控 fixture，真实读取属 T-M3-005）
- * + 08-Test §5.4（测试不连真实外部服务）。
- *
- * 安全：fixture 不含 apiKey/baseUrl（02-PRD §5.2 密钥只存 credential-vault）。
+ * 安全：返回的目录不含 apiKey/baseUrl（02-PRD §5.2 密钥边界）。
  */
-import { describe, it, expect } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { mkdirSync, rmSync } from "node:fs";
+import path from "node:path";
 import { createModelHandlers } from "../../src/agent-host/handlers/models";
 
-describe("models.list（06-API §3.13 + AGENTS.md §9.5 物理隔离）", () => {
-  const handlers = createModelHandlers();
+const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M5-005\\models-unit";
 
-  it("返回受控 fixture ModelProvider[]（不读真实 ~/.pi/agent）", () => {
-    const providers = handlers["models.list"]({});
+describe("models.list（06-API §3.13 + AGENTS.md §9.5 物理隔离）", () => {
+  beforeAll(() => {
+    rmSync(ISOLATION_DIR, { recursive: true, force: true });
+    mkdirSync(path.join(ISOLATION_DIR, "config"), { recursive: true });
+  });
+
+  afterAll(() => {
+    rmSync(ISOLATION_DIR, { recursive: true, force: true });
+  });
+
+  it("从隔离业务数据根返回默认目录，不读 ~/.pi/agent", () => {
+    const providers = createModelHandlers(ISOLATION_DIR)["models.list"]({});
     expect(Array.isArray(providers)).toBe(true);
     expect(providers.length).toBeGreaterThanOrEqual(2);
-    for (const p of providers) {
-      expect(p.id).toBeTruthy();
-      expect(p.name).toBeTruthy();
-      expect(p.providerType).toBeTruthy();
-      expect(Array.isArray(p.models)).toBe(true);
-      for (const m of p.models) {
-        expect(m.id).toBeTruthy();
-        expect(m.name).toBeTruthy();
+    expect(providers.find((provider) => provider.id === "deepseek")?.models.map((model) => model.id)).toEqual(
+      expect.arrayContaining(["deepseek-chat", "deepseek-reasoner"]),
+    );
+    for (const provider of providers) {
+      expect(provider.id).toBeTruthy();
+      expect(provider.name).toBeTruthy();
+      expect(provider.providerType).toBeTruthy();
+      expect(Array.isArray(provider.models)).toBe(true);
+      for (const model of provider.models) {
+        expect(model.id).toBeTruthy();
+        expect(model.name).toBeTruthy();
       }
     }
   });
 
-  it("fixture 不泄漏 apiKey（02-PRD §5.2 密钥边界）", () => {
-    const providers = handlers["models.list"]({});
-    const raw = JSON.stringify(providers);
+  it("目录不泄漏 apiKey", () => {
+    const raw = JSON.stringify(createModelHandlers(ISOLATION_DIR)["models.list"]({}));
     expect(raw).not.toContain("apiKey");
     expect(raw).not.toContain("api_key");
-    // 不泄漏真实密钥形态（sk-* / Bearer）
     expect(raw).not.toMatch(/sk-[A-Za-z0-9]{16,}/);
     expect(raw).not.toMatch(/Bearer\s+\S+/);
   });

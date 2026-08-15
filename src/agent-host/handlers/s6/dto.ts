@@ -47,14 +47,23 @@ export function mapDelivery(r: Row): ReportDelivery {
   };
 }
 
-/** mapTarget：parent_report_targets 行 → ParentReportTarget DTO */
+/** mapTarget：parent_report_targets 行 → ParentReportTarget DTO。绝对导出目录不出 host。 */
 export function mapTarget(r: Row): ParentReportTarget {
+  let channelConfigJson = r.channel_config_json as string;
+  if (r.channel_type === "local_export") {
+    try {
+      const config = JSON.parse(channelConfigJson) as Record<string, unknown>;
+      if (typeof config.dir === "string") channelConfigJson = JSON.stringify({ alias: "本地导出目录" });
+    } catch {
+      channelConfigJson = JSON.stringify({ alias: "本地导出目录" });
+    }
+  }
   return {
     id: r.id as string,
     semesterId: r.semester_id as string,
     targetName: r.target_name as string,
     channelType: r.channel_type as ParentReportTarget["channelType"],
-    channelConfigJson: r.channel_config_json as string,
+    channelConfigJson,
     credentialKey: (r.credential_key as string) ?? undefined,
     enabled: r.enabled as number,
     createdAt: r.created_at as string,

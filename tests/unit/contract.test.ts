@@ -390,6 +390,7 @@ describe("PiBridge 桥面（06-API §1.3）", () => {
     expectTypeOf<BridgeKeys>().toExtend<
       | "connectHost"
       | "selectDirectory"
+      | "scheduleDataRootMigration"
       | "showDialog"
       | "queryToolchains"
       | "getWindowState"

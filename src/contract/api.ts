@@ -333,7 +333,7 @@ export interface Api {
   };
   "backup.allCourses": {
     params: { semesterId: string; targetPath: string };
-    result: BackupRecord[];
+    result: BackupRecord;
   };
   "backup.restore": {
     params: { zipPath: string; targetSemesterId: string; conflictResolution?: "overwrite" | "create_new" };
@@ -364,7 +364,7 @@ export interface Api {
   "models.list": { params: {}; result: ModelProvider[] };
   "models.addProvider": { params: { providerConfig: Omit<ModelProvider, "models"> }; result: ModelProvider };
   "models.probe": {
-    params: { baseUrl: string; apiKey: string; providerType: string };
+    params: { provider: string };
     result: ModelInfo[];
   };
   "modelsConfig.get": { params: {}; result: ModelConfig };

@@ -1,25 +1,16 @@
 /**
- * pi-studybuddy toolchain installer（03-Arch §6.5 第 3 点）
+ * pi-studybuddy toolchain installer（03-Arch §6.5）。
  *
- * 安装到 app.getPath("userData") 托管目录，不修改系统 PATH/注册表。
- * 本任务仅框架——install() 返回 health=unverified，不实现实际下载。
- * 托管组件下载器（portable-git/node-lts/ripgrep bundled 等）在后续任务实现。
+ * 当前版本只负责发现/验证本机工具，不携带可校验的下载源或安装包。
+ * 因此禁止用创建空目录冒充安装成功；真实安装由受控依赖任务实现。
  */
-import fs from "node:fs";
-import { installDir, setBaseDir } from "./paths";
 
 export interface InstallResult {
-  success: boolean;
+  success: false;
   capabilityId: string;
-  installPath: string;
+  error: "INSTALLER_UNAVAILABLE";
 }
 
-/**
- * 安装指定 capability（框架实现：仅确保目录存在，不实际下载）。
- * 实际下载由后续任务补充。
- */
 export function install(capabilityId: string): InstallResult {
-  const dir = installDir(capabilityId);
-  fs.mkdirSync(dir, { recursive: true });
-  return { success: true, capabilityId, installPath: dir };
+  return { success: false, capabilityId, error: "INSTALLER_UNAVAILABLE" };
 }

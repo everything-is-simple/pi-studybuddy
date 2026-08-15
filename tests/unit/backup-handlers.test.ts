@@ -138,27 +138,27 @@ describe("T-M2-005 backup handler 单件测试", () => {
   });
 
   describe("backup.allCourses", () => {
-    it("BC-03 全课程备份 → 返回多个 BackupRecord", async () => {
+    it("BC-03 整学期备份 -> 一个可恢复的 BackupRecord", async () => {
       const targetPath = path.join(ISOLATION_DIR, "backups", "03");
-      const records = (await call("backup.allCourses", {
+      const record = (await call("backup.allCourses", {
         semesterId,
         targetPath,
-      })) as import("../../src/contract/types").BackupRecord[];
+      })) as import("../../src/contract/types").BackupRecord;
 
-      expect(records.length).toBe(2);
-      expect(records.every((r) => r.status === "completed")).toBe(true);
+      expect(record.backupType).toBe("semester");
+      expect(record.status).toBe("completed");
     });
   });
 
   describe("backup.list", () => {
     it("BC-04 按 semesterId 过滤", async () => {
       const records = (await call("backup.list", { semesterId })) as import("../../src/contract/types").BackupRecord[];
-      expect(records.length).toBe(3); // BC-01 + BC-03 两课程
+      expect(records.length).toBe(2); // BC-01 + BC-03
     });
 
     it("BC-05 按 courseInstanceId 过滤", async () => {
       const records = (await call("backup.list", { courseInstanceId: courseId1 })) as import("../../src/contract/types").BackupRecord[];
-      expect(records.length).toBe(2); // BC-01 + BC-03 中的 courseId1
+      expect(records.length).toBe(1); // BC-01
     });
   });
 

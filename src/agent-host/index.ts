@@ -78,6 +78,7 @@ async function safeReadModelCredential(service: CredentialService, provider: str
 function createBusinessHandlers(
   dataRoot: string,
   server?: RpcServer,
+  credentialGetterAsync?: (key: string) => Promise<string | null>,
 ): Record<string, (...args: unknown[]) => unknown> {
   const s1Ctx = new S1Context(dataRoot);
   // T-M4-025：生产注入真实 TextExtractor（pdf-parse/jszip/mammoth 本地库，非外部服务，08-Test §5.4）；
@@ -86,7 +87,10 @@ function createBusinessHandlers(
   const s3Ctx = new S3Context(dataRoot);
   const s4Ctx = new S4Context(dataRoot);
   const s5Ctx = new S5Context(dataRoot);
-  const s6Ctx = new S6Context(dataRoot);
+  const s6Ctx = new S6Context(dataRoot, {
+    productionDelivery: process.env.VITEST === undefined,
+    credentialGetterAsync,
+  });
 
   // S7 whisper.cpp 配置（03-Arch §3.3：CLI/模型路径只来自配置，不猜路径不回退云端）
   const whisperCliPath = process.env.PI_STUDYBUDDY_WHISPER_CLI ?? "";
@@ -178,16 +182,16 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     ...toolchainHandlers,
     ...createFileHandlers(fileWatch, { dataRoot }),
     ...createModelHandlers(dataRoot, {
+      credentialService,
       onModelConfigChange: process.env.VITEST === undefined ? replaceModelSession : undefined,
     }),
     ...createSkillHandlers(),
     ...createSessionHandlers({ store: sessionStore, dataRoot, exportDir: path.join(dataRoot, "exports") }),
     ...createAgentHandlers(server, sessionStore, studyBuddySessionRef, {
       ...(process.env.VITEST !== undefined ? { fixture: runMockFixture } : {}),
-      sessionIdRef: currentSessionIdRef,
     }),
     // T-M4-002 S1-S7/TTS/Backup 业务 handler（断裂1修复，03-Arch §6.2）
-    ...createBusinessHandlers(dataRoot, server),
+    ...createBusinessHandlers(dataRoot, server, process.env.VITEST === undefined ? (key) => credentialService.get(key) : undefined),
     // T-M4-003 credentials.*/settings.* handler（断裂5修复，06-API §3.14/§3.15）
     ...createCredentialHandlers(credentialService),
     ...createSettingsHandlers(dataRoot),

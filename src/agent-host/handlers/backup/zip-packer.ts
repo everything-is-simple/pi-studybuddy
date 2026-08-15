@@ -20,7 +20,21 @@ import path from "node:path";
 import type { BackupContext, BackupProgressEvent } from "./context";
 import type { BackupType } from "../../../contract/types";
 import { findSemesterByCourseId, getSemesterLabel, getCourseName } from "./lookup";
+import { badRequest, MSG } from "./errors";
 import { packDirectory } from "./zip";
+function resolveStoragePath(dataRoot: string, storageKey: string): { source: string; archiveRelative: string } {
+  const normalizedKey = storageKey.replaceAll("\\", "/");
+  const segments = normalizedKey.split("/");
+  if (!normalizedKey || path.posix.isAbsolute(normalizedKey) || segments.includes("..") || segments.includes(".")) {
+    throw badRequest(MSG.PATH_TRAVERSAL_DETECTED);
+  }
+  const root = path.resolve(dataRoot);
+  const source = path.resolve(root, ...segments);
+  if (source !== root && !source.startsWith(`${root}${path.sep}`)) {
+    throw badRequest(MSG.PATH_TRAVERSAL_DETECTED);
+  }
+  return { source, archiveRelative: segments.join("/") };
+}
 
 /** 当前 schema_version（05-ERD §8.1） */
 export const SCHEMA_VERSION = "1.0";
@@ -144,9 +158,11 @@ export function packCourse(
 
     let fileCount = exportedTables.length;
     for (const m of materials) {
-      const srcPath = path.join(ctx.dataRootPath, "storage", m.storage_key);
-      if (existsSync(srcPath)) {
-        copyFileSync(srcPath, path.join(storageDir, m.storage_key));
+      const storage = resolveStoragePath(ctx.dataRootPath, m.storage_key);
+      const archivePath = path.join(storageDir, storage.archiveRelative);
+      if (existsSync(storage.source)) {
+        mkdirSync(path.dirname(archivePath), { recursive: true });
+        copyFileSync(storage.source, archivePath);
         fileCount++;
       }
     }
@@ -197,6 +213,7 @@ export function packCourse(
       fileSizeBytes: zipBuf.length,
       manifest,
     };
+
   } finally {
     // 清理临时目录
     try {
@@ -204,6 +221,83 @@ export function packCourse(
     } catch {
       // 忽略清理失败
     }
+  }
+}
+
+/** 打包一个学期的所有数据库业务行与其资料文件。 */
+export function packSemester(
+  ctx: BackupContext,
+  semesterId: string,
+  targetPath: string,
+  emit?: (event: BackupProgressEvent) => void,
+): PackResult {
+  const db = ctx.semesterDb(semesterId);
+  const label = getSemesterLabel(ctx, semesterId);
+  const backupDate = new Date().toISOString().slice(0, 10);
+  const tempDir = path.join(ctx.dataRootPath, ".backup-tmp", `semester-${semesterId}-${Date.now()}`);
+  const dataDir = path.join(tempDir, "data");
+  const globalDir = path.join(tempDir, "global");
+  const storageDir = path.join(tempDir, "storage");
+  const exportsDir = path.join(tempDir, "exports");
+  mkdirSync(dataDir, { recursive: true });
+  mkdirSync(globalDir, { recursive: true });
+  mkdirSync(storageDir, { recursive: true });
+  mkdirSync(exportsDir, { recursive: true });
+  try {
+    const tableNames = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as Array<{ name: string }>).map(({ name }) => name);
+    const exportedTables: string[] = [];
+    for (const [index, table] of tableNames.entries()) {
+      const rows = db.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
+      if (rows.length > 0) {
+        writeFileSync(path.join(dataDir, `${table}.jsonl`), `${rows.map((row) => JSON.stringify(row)).join("\n")}\n`, "utf8");
+        exportedTables.push(table);
+      }
+      emit?.({ backupRecordId: "", phase: "packing", progress: Math.round((index + 1) / tableNames.length * 70) });
+    }
+    const storageKeys = db.prepare("SELECT storage_key FROM materials WHERE deleted_at IS NULL").all() as Array<{ storage_key: string }>;
+    for (const { storage_key } of storageKeys) {
+      const storage = resolveStoragePath(ctx.dataRootPath, storage_key);
+      const archivePath = path.join(storageDir, storage.archiveRelative);
+      if (existsSync(storage.source)) {
+        mkdirSync(path.dirname(archivePath), { recursive: true });
+        copyFileSync(storage.source, archivePath);
+      }
+    }
+    const targets = ctx.globalDb
+      .prepare("SELECT * FROM parent_report_targets WHERE semester_id = @semesterId AND deleted_at IS NULL")
+      .all({ semesterId }) as Record<string, unknown>[];
+    if (targets.length > 0) {
+      writeFileSync(path.join(globalDir, "parent_report_targets.jsonl"), `${targets.map((row) => JSON.stringify(row)).join("\n")}\n`, "utf8");
+    }
+    copySemesterExports(ctx.dataRootPath, semesterId, exportsDir);
+    const globalSize = computeDataSize(globalDir);
+    const exportsSize = computeDataSize(exportsDir);
+    const manifest: BackupManifest = {
+      course_instance_id: "",
+      course_name: "",
+      semester_id: semesterId,
+      semester_label: label,
+      backup_type: "semester",
+      backup_date: backupDate,
+      content_hash: "",
+      schema_version: SCHEMA_VERSION,
+      tables: exportedTables,
+      file_count: exportedTables.length + storageKeys.length + (targets.length > 0 ? 1 : 0) + countFiles(exportsDir),
+      total_size_bytes: computeDataSize(dataDir) + computeStorageSize(storageDir) + globalSize + exportsSize,
+    };
+    writeFileSync(path.join(tempDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
+    const contentHash = computeDirectoryHashExcludingManifestContentHash(tempDir);
+    manifest.content_hash = contentHash;
+    writeFileSync(path.join(tempDir, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
+    const zipFilename = sanitizeFilename(`${label}-${backupDate}-semester.zip`);
+    mkdirSync(targetPath, { recursive: true });
+    const zipPath = path.join(targetPath, zipFilename);
+    const zip = packDirectory(tempDir);
+    writeFileSync(zipPath, zip);
+    emit?.({ backupRecordId: "", phase: "completed", progress: 100 });
+    return { zipFilename, zipPath, contentHash, fileSizeBytes: zip.length, manifest };
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
   }
 }
 
@@ -285,6 +379,29 @@ function computeDataSize(dir: string): number {
 /** 计算目录大小（与 computeDataSize 同逻辑，语义化命名） */
 function computeStorageSize(dir: string): number {
   return computeDataSize(dir);
+}
+function copySemesterExports(dataRoot: string, semesterId: string, destination: string): void {
+  const source = path.join(dataRoot, "exports", semesterId);
+  if (!existsSync(source)) return;
+  copyDirectory(source, destination);
+}
+
+function copyDirectory(source: string, destination: string): void {
+  mkdirSync(destination, { recursive: true });
+  for (const item of readdirSync(source)) {
+    const sourcePath = path.join(source, item);
+    const destinationPath = path.join(destination, item);
+    if (statSync(sourcePath).isDirectory()) copyDirectory(sourcePath, destinationPath);
+    else copyFileSync(sourcePath, destinationPath);
+  }
+}
+
+function countFiles(dir: string): number {
+  if (!existsSync(dir)) return 0;
+  return readdirSync(dir).reduce((count, item) => {
+    const itemPath = path.join(dir, item);
+    return count + (statSync(itemPath).isDirectory() ? countFiles(itemPath) : 1);
+  }, 0);
 }
 
 /** 文件名安全化（移除非法字符） */

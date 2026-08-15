@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.190
+**版本**：v0.1.191
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -28,12 +28,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ v0.1.188 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态 + T-M5-005 功能/治理提交远端同位、完整门禁与部分 UAT、T-M5-004/T-M5-009 收口证据 |
+| 00 | 本文档 | ✅ v0.1.192 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；T-M5-005 已因外部干净机 UAT blocked，T-M5-010 设置、投递、学期备份与数据根迁移闭环正在 Git 收口。 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.188 | 任务登记 + 组件治理看板 + 完成门槛 + 里程碑规划；T-M5-001~004、009 done，T-M5-005 in_progress（功能/治理提交已推送 master、完整门禁与部分原生 UAT 已登记），T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.192 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009 done，T-M5-010 in_progress（Git 收口中），T-M5-005 blocked，T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.9 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -126,7 +126,7 @@
 - [x] 2026-08-14 T-M5-004 Git 收口完成：功能 `47639f9` 已快进合并 master；本地收口登记 `715add3` 已成功推送并核验 `master=origin/master=715add3`；不自动启动后续任务。
 - [x] `docs/traceability/` 六项基线资产已完成，供 T-M5-005~008 依任务范围消费。
 - [x] 13-测试与运维-Testing-and-Operations.md v0.1.3 ✅ 已审查批准：T-M5-009 已完成受控 Git 收口，六项追溯基线资产由 T-M5-005 按范围消费；本文的 ACT/ERR/DATA、真实测试、真机 UAT 与发布运维门禁保持不变。
-- [x] T-M5-005 当前工作台验证暂停，用户将重装干净 Windows 并运行 setup，在真实已安装应用中完成 S6 报告投递重启回读、真实备份恢复后业务数据完整性/重启回读、TTS 原生已复习持久化/重启回读；该交接不等同于 T-M5-007 全功能 UAT 或 T-M5-008 最终发行。当前工作区不读取、不暂存安装器；任务仍 in_progress，T-M5-006~008 不启动。
+- [x] 2026-08-15 T-M5-010 已完成设置、投递、学期备份与数据根迁移闭环的实现、隔离原生 UAT、两份独立审查和 Node24 `verify --stage=full`（133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6）。用户已授权 Git 收口；当前仍为 in_progress，待功能提交任务分支 push、master ff-only 合并、master 复验及 origin/master 同位核验后登记 done。T-M5-005 继续 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。
@@ -235,6 +235,8 @@
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.191 | 2026-08-15 | 用户裁决新安装暴露的设置页缺口必须完整修复，不能由既定干净机 UAT 替代。T-M5-005 改为 blocked，仅等待三条原生 UAT；新增并启动 T-M5-010「设置、投递、学期备份与数据根迁移闭环」为唯一执行任务，允许新增所需 API/schema/handler/迁移协议与隔离测试。T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户明确指令 + AGENTS.md §2/§4.4/§4.5/§5/§7/§9/§11。 |
+| v0.1.192 | 2026-08-15 | T-M5-010 已完成设置、投递、学期备份与数据根迁移闭环的实现、隔离原生 UAT、两份独立审查和 Node24 `verify --stage=full`（133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。用户已授权 Git 收口；任务保持 in_progress，待任务分支 push、master ff-only 合并、master 复验与 origin/master 同位核验后才可登记 done。T-M5-005 继续 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户明确授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.188 | 2026-08-14 | T-M5-005 治理事实提交 `87d40f8` 已推送 master，核验 `HEAD=origin/master=87d40f8c98233aa182bc8821c19f174a53fbd71c`，功能提交 `112da31` 为其祖先。当前已验证改动的任务分支推送、ff-only 合并、master 完整门禁、治理回填和远端同位均已登记；任务仍 in_progress，完整原生 UAT、独立审查和用户签收未完成。不启动 T-M5-006~008，安装器全程排除。 |
 | v0.1.187 | 2026-08-14 | 同步 T-M5-005 已发生 Git 事实：功能/证据提交 `112da31` 已推送任务分支，ff-only 合并并推送 master；首次核验 `HEAD=origin/master=112da31`，Node24 master `verify --stage=full` 通过（132 files/1199 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance）。任务仍 in_progress，完整原生 UAT、独立审查和用户签收未完成；不启动 T-M5-006~008，安装器全程排除。 |
 | v0.1.186 | 2026-08-14 | 同步 T-M5-005 Git 收口授权：用户已明确授权提交、推送任务分支、master ff-only 合并、master 推送及远端同位核验；实际提交和远端结果待执行后回填。任务仍 in_progress，未覆盖原生 S6/S7/备份/设置/TTS 完整闭环，不启动 T-M5-006~008；安装器 `omp-windows-x64-v17.3.3.exe` 全程排除。 |

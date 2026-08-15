@@ -11,13 +11,17 @@ import path from "node:path";
 import type { ReportPolisher } from "./report-polisher";
 import { createMockReportPolisher } from "./report-polisher";
 import type { DeliveryChannels } from "./delivery-channels";
-import { createMockDeliveryChannels } from "./delivery-channels";
+import { createMockDeliveryChannels, createProductionDeliveryChannels } from "./delivery-channels";
 
 export interface S6ContextOptions {
   reportPolisher?: ReportPolisher;
   deliveryChannels?: DeliveryChannels;
-  /** credential-vault.get 集成点（08-Test §5.4 不连真实 vault，测试用 mock 注入） */
+  /** 为真实运行时禁用远程 mock 成功渠道；测试仍显式注入 mock。 */
+  productionDelivery?: boolean;
+  /** 同步测试凭据读取器。 */
   credentialGetter?: (key: string) => string;
+  /** 生产 utilityProcess 凭据读取器；值只在 host 内存中短暂存在。 */
+  credentialGetterAsync?: (key: string) => Promise<string | null>;
 }
 
 export class S6Context {
@@ -26,14 +30,17 @@ export class S6Context {
   readonly reportPolisher: ReportPolisher;
   readonly deliveryChannels: DeliveryChannels;
   readonly credentialGetter: (key: string) => string;
+  readonly credentialGetterAsync?: (key: string) => Promise<string | null>;
 
   constructor(
     private readonly dataRoot: string,
     options?: S6ContextOptions,
   ) {
     this.reportPolisher = options?.reportPolisher ?? createMockReportPolisher();
-    this.deliveryChannels = options?.deliveryChannels ?? createMockDeliveryChannels();
+    this.deliveryChannels = options?.deliveryChannels
+      ?? (options?.productionDelivery ? createProductionDeliveryChannels() : createMockDeliveryChannels());
     this.credentialGetter = options?.credentialGetter ?? ((key: string) => key);
+    this.credentialGetterAsync = options?.credentialGetterAsync;
   }
 
   get globalDb(): DatabaseSync {

@@ -2,8 +2,7 @@
  * BackupPanel 备份恢复面板（T-M2-008 静态壳，T-M4-019 RPC 接线）
  *
  * 09-UI §6.1-§6.3 + 06-API §3.11 + 07-WF §5：
- *   - 手动备份：backup.course（此课程）/ backup.allCourses（全部）；目标目录经
- *     desktop dialog directory capability 选择（shell 层，完整路径不进入 DOM）
+ *   - 手动备份：backup.course（此课程）/ backup.allCourses（完整当前学期资产包）；目标目录经
  *   - 调度配置：backup.configureSchedule / listSchedules / toggleSchedule
  *   - 备份历史：backup.list（zipFilename/类型/大小/状态/时间，不显示 targetPath）
  *   - 从备份恢复：backup.restore（zip 选择 dialog rawPath + 冲突策略显式选择 → RestoreResult 摘要）
@@ -233,7 +232,7 @@ export function BackupPanel({
     }
   }
 
-  /** 备份全部课程（07-WF §5.1） */
+  /** 备份完整当前学期资产包（07-WF §5.1） */
   async function backupAll(): Promise<void> {
     if (!rpc || !effectiveSemesterId || !targetDirRef.current || backupBusy) return;
     setBackupBusy("all");
@@ -385,7 +384,7 @@ export function BackupPanel({
               borderRadius: 4,
             }}
           >
-            {backupBusy === "all" ? "备份中…" : "备份全部课程"}
+            {backupBusy === "all" ? "备份中…" : "备份完整当前学期"}
           </button>
           {!courseId && hasRpc && (
             <span style={{ fontSize: 11, color: "var(--text-muted, #888)" }}>请先选择课程</span>

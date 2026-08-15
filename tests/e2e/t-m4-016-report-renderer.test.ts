@@ -20,7 +20,7 @@ const UI_JS = `(async () => {
   const waitFor = async (predicate, message) => { const deadline = Date.now() + 15000; while (Date.now() < deadline) { const value = predicate(); if (value) return value; await wait(100); } throw new Error(message); };
   const button = (text) => Array.from(document.querySelectorAll("button")).find((item) => item.textContent?.includes(text));
   const click = async (text) => { const item = await waitFor(() => button(text), "button missing: " + text); item.click(); await wait(250); };
-  const selectByName = async (name, value) => { const item = await waitFor(() => document.querySelector('select[name="' + name + '"]'), "select missing: " + name); item.value = value; item.dispatchEvent(new Event("change", { bubbles: true })); await wait(250); };
+  const selectByLabel = async (label, value) => { const item = await waitFor(() => document.querySelector('select[aria-label="' + label + '"]'), "select missing: " + label); item.value = value; item.dispatchEvent(new Event("change", { bubbles: true })); await wait(250); };
   await click("T-M4-016 Renderer E2E");
   await wait(300);
   await click("报告");
@@ -36,10 +36,12 @@ const UI_JS = `(async () => {
       rawSensitiveTextInDom: /secret\.ts|stackFrame|sk-secret/i.test(result),
     };
   }
+  // Report target creation uses the generic directory chooser and target-save action.
   window.__PI_REPORT_EXPORT_DIR_FIXTURE__ = "H:/pi-studybuddy-tmp/runs/T-M4-016/e2e-renderer/exports";
+  await selectByLabel("投递渠道", "local_export");
   await click("选择导出目录");
-  await waitFor(() => document.body.textContent?.includes("已选择导出目录"), "export directory not selected");
-  await click("保存本地导出");
+  await waitFor(() => document.body.textContent?.includes("已选择目录"), "export directory not selected");
+  await click("保存目标");
   await waitFor(() => document.body.textContent?.includes("本地导出已配置"), "local export target not configured");
   // 生成报告（默认周报）
   await click("生成报告");

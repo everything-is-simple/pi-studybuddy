@@ -73,7 +73,7 @@ describe("T-M2-005 zip-restorer 单件测试", () => {
       .run({ id: courseId, semId: semesterId, name: courseName, now });
 
     const materialId = randomUUID();
-    const storageKey = `material-${materialId}.pdf`;
+    const storageKey = `semester/${semesterId}/storage/material-${materialId}.pdf`;
     semDb
       .prepare(
         `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at)
@@ -81,13 +81,12 @@ describe("T-M2-005 zip-restorer 单件测试", () => {
       )
       .run({ id: materialId, courseId, storageKey, now });
 
-    const storageDir = path.join(ISOLATION_DIR, "storage");
-    mkdirSync(storageDir, { recursive: true });
-    writeFileSync(path.join(storageDir, storageKey), Buffer.from("fake pdf content for restore"));
+    const storagePath = path.join(ISOLATION_DIR, storageKey);
+    mkdirSync(path.dirname(storagePath), { recursive: true });
+    writeFileSync(storagePath, Buffer.from("fake pdf content for restore"));
 
     semDb.close();
     globalDb.close();
-
     ctx = new BackupContext(ISOLATION_DIR);
 
     // 打包课程为 zip（供恢复测试用）
@@ -293,9 +292,12 @@ describe("T-M2-005 zip-restorer 单件测试", () => {
     });
 
     expect(result.filesRestored).toBe(1);
-    // storage 文件应存在
-    const storageDir = path.join(ISOLATION_DIR, "storage");
-    const files = readdirSync(storageDir);
-    expect(files.length).toBeGreaterThanOrEqual(1);
+    const restoredDb = new DatabaseSync(path.join(ISOLATION_DIR, "semester", targetSemId, "sem.db"));
+    const material = restoredDb
+      .prepare("SELECT storage_key FROM materials WHERE course_instance_id = @courseId")
+      .get({ courseId }) as { storage_key: string };
+    restoredDb.close();
+    expect(material.storage_key).toMatch(new RegExp(`^semester/${targetSemId}/storage/`));
+    expect(readFileSync(path.join(ISOLATION_DIR, material.storage_key), "utf8")).toBe("fake pdf content for restore");
   });
 });

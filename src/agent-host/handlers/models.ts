@@ -1,121 +1,147 @@
 /**
- * T-M3-002 + T-M3-005 models.* RPC handlers（06-API §3.13 + AGENTS.md §9.5 物理隔离）
+ * models.* RPC handlers（06-API §3.13 + AGENTS.md §9.5）。
  *
- * models.list：返回受控 fixture 模型列表（08-Test §5.4 全 mock）。
- * modelsConfig.get/set：读写业务数据根 config/models.json（T-M3-005 裁决 1/3，
- * 共用 model-config 模块，01-TRD 裁决 3 落点=业务数据根）。
- *
- * 边界裁决（用户 2026-08-08 批准）：
- *   - 06-API §3.13 spec 原文为"从 ~/.pi/agent/models.json 读取"，与 AGENTS.md §9.5
- *     物理隔离（pi-studybuddy 不侵入 ~/.pi）冲突
- *   - T-M3-002 用受控 fixture 数据源，**不读真实 ~/.pi/agent/models.json**；
- *     T-M3-005 裁决 1 改业务数据根 config/models.json（落点修订见 06-API §3.13 supersedes）
- *   - 契约语义不变（06-API §3.13 已在 spec）
- *
- * 安全（02-PRD §5.2 密钥边界）：fixture 不含 apiKey/baseUrl（密钥只存 credential-vault，
- * 模型列表只存别名/配置）。modelsConfig 读写 config 仅含 provider/model 别名。
+ * models.list 必须读取与生产 AgentSession 相同的业务数据根 pi-models.json。
+ * 这保证设置页展示的 provider/model ID 就是运行时可解析的 ID；密钥仍只在 vault。
  */
-import type { ModelProvider, ModelConfig } from "../../contract/types";
+import type { ModelConfig, ModelInfo, ModelProvider } from "../../contract/types";
+import type { CredentialService } from "../credential-client";
 import { readModelConfig, writeModelConfig } from "../../agent/model-config";
+import {
+  readRuntimeModelProviders,
+  readRuntimeProviderConnection,
+  writeRuntimeProviderModels,
+} from "../studybuddy-extension-loader";
 
-/**
- * 受控 fixture（T-M3-005 裁决 5：纳入用户提供的真实 provider 别名，无 apiKey/baseUrl）：
- *   - deepseek 文字模型（DeepSeek V4 Flash / Pro）
- *   - agnes 多媒体模型（agnes-2.5-* / agnes-image-* / agnes-video-*）
- */
-const MODEL_FIXTURE: ModelProvider[] = [
-  {
-    id: "deepseek",
-    name: "DeepSeek 直连（文本）",
-    providerType: "openai-compatible",
-    models: [
-      { id: "deepseek-chat", name: "DeepSeek Chat", input: ["text"] },
-      { id: "deepseek-reasoner", name: "DeepSeek Reasoner", input: ["text"] },
-    ],
-  },
-  {
-    id: "volcengine",
-    name: "火山方舟（文本/多模态）",
-    providerType: "openai-compatible",
-    models: [
-      { id: "deepseek-v4-flash-ga-260731", name: "DeepSeek V4 Flash", input: ["text"] },
-      { id: "deepseek-v4-pro-260425", name: "DeepSeek V4 Pro", input: ["text"] },
-      { id: "glm-5-2-260617", name: "GLM 5.2", input: ["text"] },
-      { id: "doubao-seedance-2-5-260628", name: "Doubao Seedance 2.5（视频生成）", input: ["text"], modality: "video" },
-      { id: "doubao-seed-2-0-lite-260428", name: "Doubao Seed 2.0 Lite", input: ["text", "image"] },
-      { id: "doubao-seed-2-0-mini-260428", name: "Doubao Seed 2.0 Mini", input: ["text", "image"] },
-      { id: "doubao-seed-2-1-turbo-260628", name: "Doubao Seed 2.1 Turbo", input: ["text", "image"] },
-    ],
-  },
-  {
-    id: "yunwu",
-    name: "云雾 API（文本）",
-    providerType: "openai-compatible",
-    models: [
-      { id: "gpt-5.6-terra", name: "GPT 5.6 Terra", input: ["text"] },
-      { id: "gpt-5.6-sol", name: "GPT 5.6 Sol", input: ["text"] },
-      { id: "gpt-5.6-luna", name: "GPT 5.6 Luna", input: ["text"] },
-      { id: "gpt-5.5", name: "GPT 5.5", input: ["text"] },
-      { id: "gpt-5.4", name: "GPT 5.4", input: ["text"] },
-      { id: "gpt-5.4-mini", name: "GPT 5.4 Mini", input: ["text"] },
-    ],
-  },
-  {
-    id: "agnes",
-    name: "Agnes（多媒体）",
-    providerType: "openai-compatible",
-    models: [
-      { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash", input: ["text", "image"] },
-      { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro", input: ["text", "image"] },
-      { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash（图像生成）", input: ["text", "image"], modality: "image" },
-      { id: "agnes-video-v2.0", name: "Agnes Video 2.0（视频生成）", input: ["text", "image"], modality: "video" },
-    ],
-  },
-  { id: "xiaojigpt", name: "小鸡 GPT 中转（待模型探测）", providerType: "openai-compatible", models: [] },
-  { id: "shayulajiao", name: "鲨鱼辣椒中转（待模型探测）", providerType: "openai-compatible", models: [] },
-  { id: "xiaojikiro", name: "小鸡 Kiro 中转（待模型探测）", providerType: "openai-compatible", models: [] },
-];
-
-/**
- * 构造 models.* handlers。
- * models.list：受控 fixture（不读真实 ~/.pi/agent）。
- * modelsConfig.get/set：读写业务数据根 config/models.json（T-M3-005 裁决 1/3）。
- * models.addProvider/probe/modelsConfig.test：保留完整 RPC 面；v0.1 不在 host 中探测外网，
- * 以明确的受控结果/错误取代“契约存在但生产未注册”。
- */
 export interface ModelHandlersOptions {
-  /** 在持久化新默认项前建立并切换生产 pi session，失败时保持原 session。 */
+  /** 在持久化新默认项前建立并切换生产 pi session。 */
   onModelConfigChange?: (config: ModelConfig) => Promise<void>;
+  /** 仅用于请求认证；永不读取或返回 key 内容。 */
+  credentialService?: Pick<CredentialService, "get">;
+  /** 受控注入仅供离线测试；生产使用全局 fetch。 */
+  fetchImpl?: typeof fetch;
+}
+
+function findModel(providers: ModelProvider[], providerId: string, modelId: string): boolean {
+  return providers.some((provider) => provider.id === providerId && provider.models.some((model) => model.id === modelId));
+}
+
+function isProviderId(value: unknown): value is string {
+  return typeof value === "string" && /^[a-z0-9._-]{1,160}$/i.test(value);
+}
+
+function modelsEndpoint(baseUrl: string): string {
+  return new URL("models", baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`).toString();
+}
+
+function chatEndpoint(baseUrl: string): string {
+  return new URL("chat/completions", baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`).toString();
+}
+
+function modelProbeError(status: number): { code: string; message: string } {
+  if (status === 401 || status === 403) return { code: "BAD_REQUEST", message: "API Key 验证失败，请检查后重试" };
+  if (status >= 500) return { code: "BAD_REQUEST", message: "模型服务暂时不可用，请稍后重试" };
+  return { code: "BAD_REQUEST", message: "模型服务连接失败，请检查配置后重试" };
+}
+
+async function fetchProvider(
+  fetchImpl: typeof fetch,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  try {
+    return await fetchImpl(url, { ...init, redirect: "error", signal: AbortSignal.timeout(15_000) });
+  } catch {
+    throw { code: "BAD_REQUEST", message: "模型服务连接失败，请检查网络和配置后重试" };
+  }
+}
+
+function modelsFromProbePayload(value: unknown): ModelInfo[] {
+  const data = value && typeof value === "object" ? (value as { data?: unknown }).data : undefined;
+  if (!Array.isArray(data)) return [];
+  const ids = new Set<string>();
+  for (const candidate of data) {
+    const id = candidate && typeof candidate === "object" ? (candidate as { id?: unknown }).id : undefined;
+    if (typeof id === "string" && /^[a-z0-9._:-]{1,160}$/i.test(id)) ids.add(id);
+  }
+  return [...ids].slice(0, 100).map((id) => ({ id, name: id, input: ["text"] }));
 }
 
 export function createModelHandlers(dataRoot?: string, options: ModelHandlersOptions = {}) {
   return {
-    "models.list": (_params: unknown): ModelProvider[] => MODEL_FIXTURE,
+    "models.list": (): ModelProvider[] => dataRoot ? readRuntimeModelProviders(dataRoot) : [],
     "models.addProvider": (params: unknown): ModelProvider => {
       const { providerConfig } = params as { providerConfig?: Omit<ModelProvider, "models"> };
       if (!providerConfig?.id || !providerConfig.name || !providerConfig.providerType) {
         throw { code: "BAD_REQUEST", message: "模型提供方配置无效" };
       }
-      // 仅返回受控描述；不持久化 baseUrl，不触发网络访问。
       return { ...providerConfig, models: [] };
     },
-    "models.probe": (_params: unknown): import("../../contract/types").ModelInfo[] => {
-      throw { code: "BAD_REQUEST", message: "模型探测需要受控的提供方接入，当前版本未启用" };
+    "models.probe": async (params: unknown): Promise<ModelInfo[]> => {
+      const { provider } = (params ?? {}) as { provider?: unknown };
+      if (!dataRoot || !isProviderId(provider)) {
+        throw { code: "BAD_REQUEST", message: "请选择可用的模型供应商" };
+      }
+      const connection = readRuntimeProviderConnection(dataRoot, provider);
+      if (!connection || connection.api !== "openai-completions") {
+        throw { code: "BAD_REQUEST", message: "当前供应商不支持模型发现" };
+      }
+      const apiKey = await options.credentialService?.get(`modelProvider:${provider}`);
+      if (!apiKey) throw { code: "BAD_REQUEST", message: "请先保存该供应商的 API Key" };
+      const response = await fetchProvider(options.fetchImpl ?? fetch, modelsEndpoint(connection.baseUrl), {
+        headers: { Accept: "application/json", Authorization: `Bearer ${apiKey}` },
+      });
+      if (!response.ok) throw modelProbeError(response.status);
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } catch {
+        throw { code: "BAD_REQUEST", message: "模型服务返回无效目录，请检查供应商配置" };
+      }
+      const models = modelsFromProbePayload(payload);
+      if (models.length === 0) throw { code: "BAD_REQUEST", message: "未发现可用聊天模型，请检查供应商权限" };
+      writeRuntimeProviderModels(dataRoot, provider, models);
+      return models;
     },
-    "modelsConfig.get": (_params: unknown): ModelConfig => {
+    "modelsConfig.get": (): ModelConfig => {
       const cfg = dataRoot ? readModelConfig(dataRoot) : null;
       return cfg ? { provider: cfg.provider, model: cfg.model, managed: cfg.managed } : { provider: "", model: "" };
     },
-    "modelsConfig.test": (_params: unknown): { ok: boolean; latencyMs: number; error?: string } => ({
-      ok: false,
-      latencyMs: 0,
-      error: "模型连通性测试需要受控的提供方接入，当前版本未启用",
-    }),
+    "modelsConfig.test": async (params: unknown): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
+      const startedAt = Date.now();
+      const { provider, model, apiKey: temporaryApiKey } = params as { provider?: string; model?: string; apiKey?: string };
+      const providerId = provider?.trim() ?? "";
+      const modelId = model?.trim() ?? "";
+      const providers = dataRoot ? readRuntimeModelProviders(dataRoot) : [];
+      if (!providerId || !modelId) return { ok: false, latencyMs: Date.now() - startedAt, error: "请先选择供应商和模型" };
+      if (!findModel(providers, providerId, modelId)) {
+        return { ok: false, latencyMs: Date.now() - startedAt, error: "请先获取该供应商的模型目录" };
+      }
+      const connection = dataRoot ? readRuntimeProviderConnection(dataRoot, providerId) : null;
+      if (!connection || connection.api !== "openai-completions") {
+        return { ok: false, latencyMs: Date.now() - startedAt, error: "当前供应商不支持连接测试" };
+      }
+      const apiKey = temporaryApiKey?.trim() || await options.credentialService?.get(`modelProvider:${providerId}`);
+      if (!apiKey) return { ok: false, latencyMs: Date.now() - startedAt, error: "请先保存该供应商的 API Key" };
+      try {
+        const response = await fetchProvider(options.fetchImpl ?? fetch, chatEndpoint(connection.baseUrl), {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({ model: modelId, messages: [{ role: "user", content: "连接测试" }], max_tokens: 1, stream: false }),
+        });
+        if (!response.ok) {
+          const error = modelProbeError(response.status);
+          return { ok: false, latencyMs: Date.now() - startedAt, error: error.message };
+        }
+        return { ok: true, latencyMs: Date.now() - startedAt };
+      } catch (error) {
+        const message = error && typeof error === "object" && "message" in error ? (error as { message?: unknown }).message : undefined;
+        return { ok: false, latencyMs: Date.now() - startedAt, error: typeof message === "string" ? message : "模型服务连接失败，请检查网络和配置后重试" };
+      }
+    },
     "modelsConfig.set": (params: unknown): ModelConfig | Promise<ModelConfig> => {
       const { provider, model } = params as { provider: string; model: string };
-      if (!provider?.trim() || !model?.trim()) {
-        throw { code: "BAD_REQUEST", message: "请选择可用 AI 模型" };
-      }
+      if (!provider?.trim() || !model?.trim()) throw { code: "BAD_REQUEST", message: "请选择可用 AI 模型" };
       const next = { provider: provider.trim(), model: model.trim() };
       if (!options.onModelConfigChange) {
         if (dataRoot) writeModelConfig(dataRoot, next);

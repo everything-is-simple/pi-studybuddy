@@ -28,7 +28,6 @@ export interface SettingsView {
   ttsEngine: "sapi" | "edge-tts";
   ttsRate: number;
   ttsVoice: "默认音色" | "女声" | "男声";
-  backupDirectoryName: string;
   backupFrequency: "manual" | "daily" | "weekly";
   experimentalFeatures: boolean;
   debugLogging: boolean;
@@ -54,7 +53,6 @@ const DEFAULT_SETTINGS_VIEW: SettingsView = {
   ttsEngine: "sapi",
   ttsRate: 1,
   ttsVoice: "默认音色",
-  backupDirectoryName: "备份目录",
   backupFrequency: "weekly",
   experimentalFeatures: false,
   debugLogging: false,
@@ -93,7 +91,6 @@ function hasUnsafeDisplayContent(value: string): boolean {
 /** 将 RPC 返回的展示文本收束为不含路径、密钥、UUID 或堆栈的信息。 */
 export function safeDisplay(value: unknown, fallback = "未提供"): string {
   if (typeof value !== "string") return fallback;
-  // 必须先在原始文本上识别多行 stack；归一化换行后再检测会丢失其结构特征。
   if (!value.trim() || hasUnsafeDisplayContent(value)) return "已隐藏敏感信息";
   const normalized = value.replace(/[\r\n\t]+/g, " ").trim().slice(0, 120);
   if (!normalized || hasUnsafeDisplayContent(normalized)) return "已隐藏敏感信息";
@@ -109,34 +106,13 @@ function isSafeProviderId(value: unknown): value is string {
   return typeof value === "string" && /^[a-z0-9._-]{1,160}$/i.test(value);
 }
 
+
 function clampNumber(value: unknown, fallback: number, minimum: number, maximum: number): number {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.min(maximum, Math.max(minimum, value))
     : fallback;
 }
 
-/**
- * 备份目录只允许单一相对目录名：拒绝路径分隔符、盘符、父目录及 URL。
- * 不接受完整路径，避免把本机路径或远端地址写入业务设置。
- */
-export function safeDirectoryName(value: unknown): string {
-  if (!isSafeOpaqueValue(value)) return DEFAULT_SETTINGS_VIEW.backupDirectoryName;
-  const normalized = value.trim();
-  const looksLikeUrl = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(normalized);
-  if (
-    !normalized ||
-    normalized === "." ||
-    normalized === ".." ||
-    normalized.includes("..") ||
-    normalized.includes("/") ||
-    normalized.includes("\\") ||
-    normalized.includes(":") ||
-    looksLikeUrl
-  ) {
-    return DEFAULT_SETTINGS_VIEW.backupDirectoryName;
-  }
-  return safeDisplay(normalized, DEFAULT_SETTINGS_VIEW.backupDirectoryName);
-}
 
 /** 保存前收束受控数值，避免宽松 settings.update 将非法输入持久化。 */
 export function normaliseSettingsUpdate(draft: SettingsView): SettingsView {
@@ -145,7 +121,6 @@ export function normaliseSettingsUpdate(draft: SettingsView): SettingsView {
     dailyGoalMinutes: Math.round(clampNumber(draft.dailyGoalMinutes, DEFAULT_SETTINGS_VIEW.dailyGoalMinutes, 10, 720)),
     ttsRate: clampNumber(draft.ttsRate, DEFAULT_SETTINGS_VIEW.ttsRate, 0.5, 2),
     availableTime: isSafeOpaqueValue(draft.availableTime) ? safeDisplay(draft.availableTime, "") : "",
-    backupDirectoryName: safeDirectoryName(draft.backupDirectoryName),
   };
 }
 
@@ -159,7 +134,6 @@ function settingsViewFrom(value: AppSettings): SettingsView {
     ttsEngine,
     ttsRate: clampNumber(value.ttsRate, DEFAULT_SETTINGS_VIEW.ttsRate, 0.5, 2),
     ttsVoice,
-    backupDirectoryName: safeDirectoryName(value.backupDirectoryName),
     backupFrequency,
     experimentalFeatures: value.experimentalFeatures === true,
     debugLogging: value.debugLogging === true,
@@ -170,7 +144,8 @@ function sanitizeProviders(value: ModelProvider[]): SafeModelProvider[] {
   return value.flatMap((provider) => {
     if (!isSafeProviderId(provider.id)) return [];
     const models = provider.models.flatMap((model) => {
-      if (!isSafeOpaqueValue(model.id)) return [];
+      if (!isSafeOpaqueValue(model.id) || model.modality === "image" || model.modality === "video") return [];
+      if (model.input && !model.input.includes("text")) return [];
       return [{ id: model.id, name: safeDisplay(model.name, "可用模型") }];
     });
     return [{ id: provider.id, name: safeDisplay(provider.name, "模型供应商"), models }];
@@ -204,8 +179,6 @@ export function sanitizeToolchainStatuses(value: unknown): ToolchainStatus[] {
     ];
   });
 }
-
-/** 读取设置页所需的真实 RPC 数据；刻意不调用 credentials.get。 */
 export async function loadSettingsPageData(rpc: TypedRpcClient): Promise<SettingsPageData> {
   const [settings, simpleMode, providers, modelConfig, modelKeys, parentContactKeys, toolchains] = await Promise.all([
     rpc.call("settings.get", {}),
@@ -222,10 +195,7 @@ export async function loadSettingsPageData(rpc: TypedRpcClient): Promise<Setting
     simpleMode,
     providers: sanitizeProviders(providers),
     modelConfig: sanitizeModelConfig(modelConfig),
-    configuredCredentialKeys: configuredCredentialKeysFrom([...
-      modelKeys,
-      ...parentContactKeys,
-    ]),
+    configuredCredentialKeys: configuredCredentialKeysFrom([...modelKeys, ...parentContactKeys]),
     toolchains: sanitizeToolchainStatuses(toolchains),
   };
 }
@@ -282,7 +252,6 @@ export async function saveSettingsDraft(rpc: TypedRpcClient, draft: SettingsView
     ttsEngine: update.ttsEngine,
     ttsRate: update.ttsRate,
     ttsVoice: update.ttsVoice,
-    backupDirectoryName: update.backupDirectoryName,
     backupFrequency: update.backupFrequency,
     experimentalFeatures: update.experimentalFeatures,
     debugLogging: update.debugLogging,
@@ -299,6 +268,27 @@ export async function saveModelConfiguration(rpc: TypedRpcClient, provider: stri
   return rpc.call("modelsConfig.set", { provider, model });
 }
 
+/** 请求当前供应商目录；凭据仅由 agent-host 从 credential-vault 读取。 */
+export async function probeProviderModels(rpc: TypedRpcClient, provider: string): Promise<SafeModelInfo[]> {
+  if (!isSafeProviderId(provider)) throw new Error("不支持的模型供应商");
+  const models = await rpc.call("models.probe", { provider });
+  return models.flatMap((model) => {
+    if (!isSafeOpaqueValue(model.id) || model.modality === "image" || model.modality === "video") return [];
+    if (model.input && !model.input.includes("text")) return [];
+    return [{ id: model.id, name: safeDisplay(model.name, "可用模型") }];
+  });
+}
+
+/** 模型凭据由供应商 ID 分隔；标签必须显示当前选择，避免误以为不同供应商共用同一 Key。 */
+export function providerCredentialLabel(provider?: SafeModelProvider): string {
+  return provider ? `${provider.name} API Key` : "当前供应商 API Key";
+}
+
+/** 写入凭据保管库不等于远端服务已连通；远端验证由模型测试或实际投递单独报告。 */
+export function credentialStatusLabel(configured: boolean): string {
+  return configured ? "已保存，未验证服务可用性" : "未保存";
+}
+
 /** 只接受 credentialKeyFor 生成的受控键名删除凭据。 */
 export async function deleteCredential(rpc: TypedRpcClient, key: string): Promise<void> {
   if (!/^(?:modelProvider:[a-z0-9._-]{1,160}|parentContact:(?:email|feishu))$/i.test(key)) {
@@ -307,15 +297,17 @@ export async function deleteCredential(rpc: TypedRpcClient, key: string): Promis
   await rpc.call("credentials.delete", { key });
 }
 
-/** 手动重扫保持工具链路径在 sanitizeToolchainStatuses 前不进入组件状态。 */
-export async function rescanToolchains(rpc: TypedRpcClient): Promise<ToolchainStatus[]> {
-  return sanitizeToolchainStatuses(await rpc.call("toolchains.rescan", {}));
+/** 目录只能由 main 原生选择器返回；安排迁移后路径不得进入 renderer 状态。 */
+export async function scheduleSelectedDataRootMigration(
+  bridge: Pick<import("../../contract/desktop").PiBridge, "selectDirectory" | "scheduleDataRootMigration"> | undefined,
+): Promise<boolean> {
+  if (!bridge) throw new Error("本机目录选择器暂不可用");
+  const targetRoot = await bridge.selectDirectory();
+  if (!targetRoot) return false;
+  await bridge.scheduleDataRootMigration(targetRoot);
+  return true;
 }
 
-/** 安装一个既有 capability；展示层仍会在进入 state 时脱敏。 */
-export async function installToolchain(rpc: TypedRpcClient, capabilityId: string): Promise<ToolchainStatus | undefined> {
-  return sanitizeToolchainStatuses([await rpc.call("toolchains.install", { capabilityId })])[0];
-}
 
 /** 密钥仅在局部变量中短暂传递；读取 DOM 后立刻清空，成功或失败均不回显。 */
 export function consumeCredentialInput(input: Pick<HTMLInputElement, "value"> | null): string {
@@ -398,8 +390,8 @@ function CredentialControl({
     <div style={{ padding: "10px 0", borderTop: "1px solid var(--border, #e0e0e0)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 7 }}>
         <strong style={{ color: "var(--text, #222)", fontSize: 13 }}>{label}</strong>
-        <span aria-label={`${label}配置状态`} style={{ color: configured ? "#137333" : "var(--text-muted, #666)", fontSize: 12 }}>
-          {configured ? "已配置" : "未配置"}
+        <span aria-label={`${label}凭据状态`} style={{ color: configured ? "#137333" : "var(--text-muted, #666)", fontSize: 12 }}>
+          {credentialStatusLabel(configured)}
         </span>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
@@ -429,15 +421,12 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
   const modelSecretRef = React.useRef<HTMLInputElement>(null);
   const emailSecretRef = React.useRef<HTMLInputElement>(null);
   const feishuSecretRef = React.useRef<HTMLInputElement>(null);
-  // 收到 stream 后保留最新快照，避免初始 list 的旧结果覆盖它。
-  const latestToolchainUpdateRef = React.useRef<ToolchainStatus[] | null>(null);
 
   const refresh = React.useCallback(async () => {
     if (!rpc) return;
     try {
       const data = await loadSettingsPageData(rpc);
-      const toolchains = preferredToolchainStatuses(data.toolchains, latestToolchainUpdateRef.current);
-      setPageData({ ...data, toolchains });
+      setPageData(data);
       setDraft(data.settings);
       setModelConfig(data.modelConfig);
       setSimpleMode(data.simpleMode);
@@ -451,16 +440,7 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
     void refresh();
   }, [refresh]);
 
-  React.useEffect(() => {
-    if (!rpc) return;
-    return subscribeToToolchainChanges(rpc, (toolchains) => {
-      latestToolchainUpdateRef.current = toolchains;
-      setPageData((previous) => (previous ? { ...previous, toolchains } : previous));
-    });
-  }, [rpc]);
-
   const providers = pageData?.providers ?? [];
-  const toolchains = toolchainOrder(pageData?.toolchains ?? []);
   const selectedProvider = providers.find((provider) => provider.id === modelConfig.provider) ?? providers[0];
   const selectedProviderId = selectedProvider?.id ?? "";
   const selectedModelId = selectedProvider?.models.some((model) => model.id === modelConfig.model)
@@ -477,8 +457,9 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
     try {
       await action();
       setNotice(successMessage);
-    } catch {
-      setNotice("操作未完成，请检查本机配置后重试。");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setNotice(safeDisplay(message, "操作未完成，请检查本机配置后重试。"));
     } finally {
       setBusy(false);
     }
@@ -486,10 +467,6 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
 
   function handleDraftSave(): void {
     if (!rpc) return;
-    if (!safeDirectoryName(draft.backupDirectoryName) || safeDirectoryName(draft.backupDirectoryName) !== draft.backupDirectoryName.trim()) {
-      setNotice("备份目录只能填写目录名称，不能填写完整路径。");
-      return;
-    }
     const update = normaliseSettingsUpdate(draft);
     void withBusy(async () => {
       const updated = await saveSettingsDraft(rpc, update);
@@ -513,6 +490,28 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
       const updated = await saveModelConfiguration(rpc, selectedProviderId, selectedModelId);
       setModelConfig(sanitizeModelConfig(updated));
     }, "默认模型已保存。");
+  }
+  function handleModelTest(): void {
+    if (!rpc || !selectedProviderId || !selectedModelId) return;
+    void withBusy(async () => {
+      const result = await rpc.call("modelsConfig.test", { provider: selectedProviderId, model: selectedModelId });
+      if (!result.ok) throw new Error(result.error ?? "模型配置不可用");
+    }, "模型连接正常。");
+  }
+
+  function handleModelProbe(): void {
+    if (!rpc || !selectedProviderId) return;
+    void withBusy(async () => {
+      const models = await probeProviderModels(rpc, selectedProviderId);
+      const model = models[0]?.id ?? "";
+      setPageData((previous) => previous
+        ? {
+            ...previous,
+            providers: previous.providers.map((provider) => provider.id === selectedProviderId ? { ...provider, models } : provider),
+          }
+        : previous);
+      setModelConfig({ provider: selectedProviderId, model });
+    }, "模型目录已更新。请选择默认模型后测试连接。");
   }
 
   function handleCredential(kind: CredentialKind, inputRef: React.RefObject<HTMLInputElement | null>): void {
@@ -554,25 +553,13 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
     }, "密钥已移除。");
   }
 
-  function handleRescan(): void {
-    if (!rpc) return;
+  function handleDataRootMigration(): void {
     void withBusy(async () => {
-      const toolchains = await rescanToolchains(rpc);
-      setPageData((previous) => previous ? { ...previous, toolchains } : previous);
-    }, "工具链已重新扫描。");
+      const scheduled = await scheduleSelectedDataRootMigration(globalThis.window?.piBridge);
+      if (!scheduled) throw new Error("未选择数据根目录");
+    }, "数据根迁移已安排。请关闭并重新打开应用后继续使用。");
   }
 
-  function handleInstall(capabilityId: string): void {
-    if (!rpc) return;
-    void withBusy(async () => {
-      const installed = await installToolchain(rpc, capabilityId);
-      setPageData((previous) => {
-        if (!previous) return previous;
-        const toolchains = previous.toolchains.map((current) => current.capabilityId === capabilityId ? installed ?? current : current);
-        return { ...previous, toolchains };
-      });
-    }, "已请求安装支持组件，完成后会自动更新状态。");
-  }
 
   return (
     <div style={{ flex: 1, overflow: "auto", padding: 20, background: "var(--bg-panel, #f5f5f5)", color: "var(--text, #222)" }}>
@@ -621,10 +608,6 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
 
           <h3 style={{ margin: "10px 0", fontSize: 14 }}>备份</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-            <Field label="默认目录名称">
-              <input type="text" aria-describedby="backup-directory-help" value={draft.backupDirectoryName} disabled={!rpc || busy} onChange={(event) => setDraft({ ...draft, backupDirectoryName: event.target.value })} style={inputStyle} />
-              <small id="backup-directory-help" style={{ color: "var(--text-muted, #666)" }}>仅保存目录名称，不显示或保存完整路径。</small>
-            </Field>
             <Field label="调度频率">
               <select value={draft.backupFrequency} disabled={!rpc || busy} onChange={(event) => setDraft({ ...draft, backupFrequency: event.target.value === "manual" || event.target.value === "daily" ? event.target.value : "weekly" })} style={inputStyle}>
                 <option value="manual">手动</option>
@@ -633,6 +616,7 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
               </select>
             </Field>
           </div>
+          <p style={{ margin: "0 0 10px", color: "var(--text-muted, #666)", fontSize: 12 }}>备份目标目录在执行备份时通过系统目录选择器指定，不会写入或显示本机绝对路径。</p>
           <button type="button" onClick={handleDraftSave} disabled={!rpc || busy} style={buttonStyle}>保存通用设置</button>
         </Section>
 
@@ -648,16 +632,21 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
               </select>
             </Field>
             <Field label="默认模型">
-              <select value={selectedModelId} disabled={!rpc || busy || !selectedProvider} onChange={(event) => setModelConfig({ provider: selectedProviderId, model: event.target.value })} style={inputStyle}>
-                {selectedProvider?.models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+              <select value={selectedModelId} disabled={!rpc || busy || !selectedProvider || selectedProvider.models.length === 0} onChange={(event) => setModelConfig({ provider: selectedProviderId, model: event.target.value })} style={inputStyle}>
+                {selectedProvider?.models.length ? selectedProvider.models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>) : <option value="">请先获取模型目录</option>}
               </select>
             </Field>
           </div>
-          <button type="button" onClick={handleModelSave} disabled={!rpc || busy || !selectedProviderId || !selectedModelId} style={buttonStyle}>保存默认模型</button>
+          {selectedProvider && selectedProvider.models.length === 0 ? <p style={{ margin: "0 0 10px", color: "var(--text-muted, #666)", fontSize: 12 }}>该中转供应商尚未发现可用聊天模型。先保存它的 API Key，再获取模型目录。</p> : <p style={{ margin: "0 0 10px", color: "var(--text-muted, #666)", fontSize: 12 }}>DeepSeek、Agnes 等内置供应商的目录已随应用提供；中转供应商可用“获取模型目录”刷新其账户可见模型。</p>}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" onClick={handleModelProbe} disabled={!rpc || busy || !selectedProviderId || !configured(credentialKeyFor("model", selectedProviderId))} style={buttonStyle}>获取模型目录</button>
+            <button type="button" onClick={handleModelSave} disabled={!rpc || busy || !selectedProviderId || !selectedModelId || !configured(credentialKeyFor("model", selectedProviderId))} style={buttonStyle}>保存默认模型</button>
+            <button type="button" onClick={handleModelTest} disabled={!rpc || busy || !selectedProviderId || !selectedModelId || !configured(credentialKeyFor("model", selectedProviderId))} style={buttonStyle}>测试当前选中模型</button>
+          </div>
 
           <h3 style={{ margin: "18px 0 6px", fontSize: 14 }}>密钥管理</h3>
           <p style={{ margin: "0 0 8px", color: "var(--text-muted, #666)", fontSize: 12 }}>密钥仅写入本机 credential-vault；页面只显示配置状态，不会读取或回显内容。</p>
-          <CredentialControl label="AI API Key" configured={selectedProviderId ? configured(credentialKeyFor("model", selectedProviderId)) : false} inputRef={modelSecretRef} onSave={() => handleCredential("model", modelSecretRef)} onDelete={() => handleCredentialDelete("model")} disabled={!rpc || busy || !selectedProviderId} />
+          <CredentialControl label={providerCredentialLabel(selectedProvider)} configured={selectedProviderId ? configured(credentialKeyFor("model", selectedProviderId)) : false} inputRef={modelSecretRef} onSave={() => handleCredential("model", modelSecretRef)} onDelete={() => handleCredentialDelete("model")} disabled={!rpc || busy || !selectedProviderId} />
           <CredentialControl label="家长邮箱" configured={configured(credentialKeyFor("email"))} inputRef={emailSecretRef} onSave={() => handleCredential("email", emailSecretRef)} onDelete={() => handleCredentialDelete("email")} disabled={!rpc || busy} />
           <CredentialControl label="飞书渠道" configured={configured(credentialKeyFor("feishu"))} inputRef={feishuSecretRef} onSave={() => handleCredential("feishu", feishuSecretRef)} onDelete={() => handleCredentialDelete("feishu")} disabled={!rpc || busy} />
 
@@ -667,34 +656,13 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
           </div>
           <div style={{ marginTop: 10, padding: 12, borderRadius: 6, background: "var(--bg-panel, #f5f5f5)", fontSize: 13 }}>
             <strong>数据根</strong>
-            <p style={{ margin: "5px 0 0", color: "var(--text-muted, #666)" }}>本机业务数据根已物理隔离。为保护隐私，页面不展示路径；当前契约也未公开磁盘占用数据。</p>
+            <p style={{ margin: "5px 0 8px", color: "var(--text-muted, #666)" }}>本机业务数据根已物理隔离。迁移会先复制并校验数据；完成后需重启应用生效。为保护隐私，页面不展示路径。</p>
+            <button type="button" onClick={handleDataRootMigration} disabled={busy} style={buttonStyle}>选择新数据根并安排重启</button>
           </div>
         </Section>
 
         <Section title="开发者">
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8 }}>
-            <div>
-              <h3 style={{ margin: 0, fontSize: 14 }}>工具链健康检查</h3>
-              <p style={{ margin: "5px 0 0", color: "var(--text-muted, #666)", fontSize: 12 }}>来自本机真实扫描；路径只以“本机可用”形式展示。</p>
-            </div>
-            <button type="button" onClick={handleRescan} disabled={!rpc || busy} style={buttonStyle}>重新扫描</button>
-          </div>
-          <div style={{ borderTop: "1px solid var(--border, #e0e0e0)" }}>
-            {toolchains.length === 0 ? <p style={{ color: "var(--text-muted, #666)", fontSize: 13 }}>尚未发现可展示的本机工具链。</p> : toolchains.map((toolchain) => (
-              <div key={toolchain.capabilityId} style={{ display: "grid", gridTemplateColumns: "minmax(130px, 1fr) minmax(100px, 0.7fr) minmax(100px, 0.7fr) auto", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid var(--border, #e0e0e0)", fontSize: 13 }}>
-                <strong>{toolchain.name}</strong>
-                <span>{toolchain.version ?? "版本未验证"}</span>
-                <span style={{ color: toolchain.health === "healthy" ? "#137333" : toolchain.health === "unverified" ? "#7a5200" : "#8a3b00" }}>{healthLabel(toolchain.health)} · {toolchain.health === "healthy" ? "本机可用" : "需要检查"}</span>
-                {toolchain.health === "unsupported" ? <button type="button" onClick={() => handleInstall(toolchain.capabilityId)} disabled={!rpc || busy} style={buttonStyle}>安装支持组件</button> : <span />}
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 10, padding: 12, borderRadius: 6, background: "var(--bg-panel, #f5f5f5)", fontSize: 12, color: "var(--text-muted, #666)" }}>
-            <strong style={{ color: "var(--text, #222)" }}>业务桥状态</strong>
-            <p style={{ margin: "5px 0 0" }}>WPS Office 与 whisper.cpp 的详细状态由各自的转换/采集流程受控检查；当前公开工具链扫描未提供它们的独立健康值，因此不会以假数据冒充扫描结果。</p>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12, marginTop: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
               <input type="checkbox" checked={draft.experimentalFeatures} disabled={!rpc || busy} onChange={(event) => setDraft({ ...draft, experimentalFeatures: event.target.checked })} />
               实验性功能
@@ -708,6 +676,13 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
               简洁模式
             </label>
           </div>
+          <h3 style={{ margin: "16px 0 8px", fontSize: 14 }}>本机工具检查</h3>
+          <p style={{ margin: "0 0 8px", color: "var(--text-muted, #666)", fontSize: 12 }}>仅供诊断资料转换、课堂采集等功能依赖；模型、邮箱、飞书和备份不依赖这些工具。当前应用不携带下载源，缺失项不能在此自动安装。</p>
+          {pageData?.toolchains.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            {toolchainOrder(pageData.toolchains).map((status) => <div key={status.capabilityId} style={{ padding: 8, border: "1px solid var(--border, #e0e0e0)", borderRadius: 6, fontSize: 12 }}>
+              <strong>{status.name}</strong><br />{healthLabel(status.health)}{status.version ? ` · ${status.version}` : ""}
+            </div>)}
+          </div> : <p style={{ margin: 0, color: "var(--text-muted, #666)", fontSize: 12 }}>暂未获得本机工具检查结果。</p>}
         </Section>
       </div>
     </div>

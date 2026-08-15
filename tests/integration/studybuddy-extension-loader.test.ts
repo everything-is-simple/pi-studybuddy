@@ -150,17 +150,42 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
     expect(session.session.model?.id).toBe("deepseek-chat");
   }, 30_000);
 
-  it("既有 provider catalog 升级时补入缺失 provider 且不覆盖已有 provider", () => {
+  it("既有 provider catalog 升级时保留连接配置并补齐默认和自定义模型", () => {
     const catalog = path.join(DATA_ROOT, "config", "pi-models.json");
     mkdirSync(path.dirname(catalog), { recursive: true });
-    writeFileSync(catalog, JSON.stringify({ providers: { agnes: { name: "用户 Agnes", baseUrl: "https://example.invalid/v1", api: "openai-completions", models: [] } } }), "utf8");
+    writeFileSync(catalog, JSON.stringify({
+      providers: {
+        agnes: {
+          name: "用户 Agnes",
+          baseUrl: "https://example.invalid/v1",
+          api: "openai-completions",
+          models: [{ id: "agnes-custom", name: "用户模型" }],
+        },
+        deepseek: {
+          name: "用户 DeepSeek",
+          baseUrl: "https://example.invalid/deepseek",
+          api: "openai-completions",
+          models: [],
+        },
+      },
+    }), "utf8");
 
     ensureRuntimeProviderConfig(DATA_ROOT);
 
     const providers = JSON.parse(readFileSync(catalog, "utf8")).providers;
     expect(providers.agnes.name).toBe("用户 Agnes");
-    expect(providers.deepseek.models.map((model: { id: string }) => model.id)).toContain("deepseek-chat");
-    expect(providers.volcengine.models.map((model: { id: string }) => model.id)).toContain("doubao-seed-2-1-turbo-260628");
+    expect(providers.agnes.baseUrl).toBe("https://example.invalid/v1");
+    expect(providers.agnes.models.map((model: { id: string }) => model.id)).toEqual(expect.arrayContaining([
+      "agnes-2.5-flash",
+      "agnes-custom",
+    ]));
+    expect(providers.deepseek.name).toBe("用户 DeepSeek");
+    expect(providers.deepseek.baseUrl).toBe("https://example.invalid/deepseek");
+    expect(providers.deepseek.models.map((model: { id: string }) => model.id)).toEqual(expect.arrayContaining([
+      "deepseek-chat",
+      "deepseek-reasoner",
+    ]));
+    expect(providers.volcengine.models.map((model: { id: string }) => model.id)).toContain("deepseek-v4-flash-ga-260731");
     expect(providers.yunwu.models.map((model: { id: string }) => model.id)).toContain("gpt-5.6-terra");
 
     writeFileSync(catalog, JSON.stringify({ providers: {} }), "utf8");

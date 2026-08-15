@@ -409,14 +409,18 @@ describe("T-M4-016 ReportTab RPC 接线", () => {
     host = document.createElement("div"); document.body.append(host); root = createRoot(host);
     await act(async () => root?.render(React.createElement(ReportTab, { rpc, semesterId: "sem-1" })));
     await flush();
+    const channelSelect = host!.querySelector('select[aria-label="投递渠道"]') as HTMLSelectElement;
+    channelSelect.value = "local_export";
+    channelSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    await flush();
 
     await act(async () => button(host!, "选择导出目录").click());
     await flush();
     expect(showDialog).toHaveBeenCalledWith({ type: "open", title: "选择报告导出目录", directory: true });
-    expect(host.textContent).toContain("已选择导出目录");
+    expect(host.textContent).toContain("已选择目录");
     expect(host.textContent).not.toContain("H:\\pi-studybuddy-tmp");
 
-    await act(async () => button(host!, "保存本地导出").click());
+    await act(async () => button(host!, "保存目标").click());
     await flush();
     expect(calls).toContainEqual({
       method: "reportTargets.create",
@@ -428,5 +432,40 @@ describe("T-M4-016 ReportTab RPC 接线", () => {
       },
     });
     expect(host.textContent).toContain("本地导出已配置");
+  });
+  it("S6-RED-10 投递目标管理：启用/停用和删除调用受控 RPC，不泄露凭据", async () => {
+    const calls: Array<{ method: string; params: unknown }> = [];
+    const smtpTarget: ParentReportTarget = {
+      ...exportTarget,
+      id: "target-smtp",
+      targetName: "家长邮箱",
+      channelType: "smtp",
+      channelConfigJson: JSON.stringify({ alias: "qq-mail" }),
+      credentialKey: "parentContact:email",
+    };
+    const rpc = createMockRpcClient({
+      "reports.list": () => [],
+      "reportTargets.list": () => [smtpTarget],
+      "reportTargets.update": (params: unknown) => {
+        calls.push({ method: "reportTargets.update", params });
+        return { ...smtpTarget, enabled: (params as { enabled: number }).enabled };
+      },
+      "reportTargets.delete": (params: unknown) => {
+        calls.push({ method: "reportTargets.delete", params });
+      },
+    });
+    Object.assign(window, { confirm: vi.fn(() => true) });
+    host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+    await act(async () => root?.render(React.createElement(ReportTab, { rpc, semesterId: "sem-1" })));
+    await flush();
+
+    expect(host.textContent).toContain("家长邮箱");
+    expect(host.textContent).not.toContain("parentContact:email");
+    await act(async () => button(host!, "停用").click());
+    await flush();
+    await act(async () => button(host!, "删除").click());
+    await flush();
+    expect(calls).toContainEqual({ method: "reportTargets.update", params: { id: "target-smtp", enabled: 0 } });
+    expect(calls).toContainEqual({ method: "reportTargets.delete", params: { id: "target-smtp" } });
   });
 });

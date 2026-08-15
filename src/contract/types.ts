@@ -684,8 +684,7 @@ export interface ParentReportTarget {
 /* ---- §3.11 备份恢复（05-ERD §2.3/§2.4 对齐） ---- */
 
 /** 备份类型（05-ERD §2.3 CHECK 约束） */
-export type BackupType = "manual" | "scheduled" | "pre_archive" | "post_archive";
-
+export type BackupType = "manual" | "scheduled" | "pre_archive" | "post_archive" | "semester";
 /** 备份状态（05-ERD §2.3 CHECK 约束，状态机 in_progress→completed/failed） */
 export type BackupStatus = "in_progress" | "completed" | "failed";
 

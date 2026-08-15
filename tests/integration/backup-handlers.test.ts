@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { rmSync, mkdirSync, writeFileSync } from "node:fs";
+import { rmSync, mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { createGlobalDb } from "../../src/data/global";
@@ -17,16 +17,17 @@ import { BackupContext, createBackupHandlers, type BackupProgressEvent } from ".
  *   - backup_schedules CRUD 全链路
  *   - 跨库读写（global.db backup_records + semester.db 数据导出）
  *
- * 数据隔离（AGENTS.md §5.3）：仅写 H:\pi-studybuddy-tmp\runs\T-M2-005\integration。
+ * 数据隔离（AGENTS.md §5.3）：仅写 H:\\pi-studybuddy-tmp\\runs\\T-M5-010\\semester-backup。
  */
 
-const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M2-005\\integration";
+const ISOLATION_DIR = "H:\\pi-studybuddy-tmp\\runs\\T-M5-010\\semester-backup";
 
 describe("T-M2-005 backup handler 集成测试", () => {
   let ctx: BackupContext;
   let handlers: ReturnType<typeof createBackupHandlers>;
   let semesterId: string;
   let courseId: string;
+  let storageKey: string;
   let zipPath: string;
   const progressEvents: BackupProgressEvent[] = [];
 
@@ -57,7 +58,7 @@ describe("T-M2-005 backup handler 集成测试", () => {
       .run({ id: courseId, semId: semesterId, now });
 
     const materialId = randomUUID();
-    const storageKey = `material-${materialId}.pdf`;
+    storageKey = `semester/${semesterId}/storage/material-${materialId}.pdf`;
     semDb
       .prepare(
         `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at)
@@ -65,9 +66,9 @@ describe("T-M2-005 backup handler 集成测试", () => {
       )
       .run({ id: materialId, courseId, storageKey, now });
 
-    const storageDir = path.join(ISOLATION_DIR, "storage");
-    mkdirSync(storageDir, { recursive: true });
-    writeFileSync(path.join(storageDir, storageKey), Buffer.from("integration test content"));
+    const storagePath = path.join(ISOLATION_DIR, storageKey);
+    mkdirSync(path.dirname(storagePath), { recursive: true });
+    writeFileSync(storagePath, Buffer.from("integration test content"));
 
     semDb.close();
     globalDb.close();
@@ -136,6 +137,60 @@ describe("T-M2-005 backup handler 集成测试", () => {
     expect(restoreResult.tablesImported).toContain("course_instances");
     expect(restoreResult.tablesImported).toContain("materials");
     expect(restoreResult.filesRestored).toBe(1);
+    const restoredMaterial = ctx.semesterDb(targetSemId)
+      .prepare("SELECT storage_key FROM materials WHERE course_instance_id = @courseId")
+      .get({ courseId }) as { storage_key: string };
+    expect(restoredMaterial.storage_key).toBe(`semester/${targetSemId}/storage/${storageKey.split("/storage/")[1]}`);
+    expect(readFileSync(path.join(ISOLATION_DIR, restoredMaterial.storage_key), "utf8")).toBe("integration test content");
+  });
+
+  it("INT-01B backup.allCourses 生成单一完整学期资产包并可恢复", async () => {
+    const semDb = ctx.semesterDb(semesterId);
+    const secondCourseId = randomUUID();
+    const ts = new Date().toISOString();
+    semDb.prepare(
+      `INSERT INTO course_instances (id, semester_id, course_name, subject, status, created_at, updated_at)
+       VALUES (@id, @semesterId, '第二课程', '数学', 'active', @ts, @ts)`,
+    ).run({ id: secondCourseId, semesterId, ts });
+    semDb.prepare(
+      `INSERT INTO parent_reports (report_key, semester_id, report_type, period_start, period_end, content_json, content_hash, rule_generated, generated_at, created_at)
+       VALUES ('semester-report', @semesterId, 'weekly', '2027-01-01', '2027-01-07', '{}', 'hash', 1, @ts, @ts)`,
+    ).run({ semesterId, ts });
+    const globalDb = ctx.globalDb;
+    globalDb.prepare(
+      `INSERT INTO parent_report_targets (id, semester_id, target_name, channel_type, channel_config_json, credential_key, enabled, created_at, updated_at)
+       VALUES ('target-semester', @semesterId, '测试目标', 'local_export', '{"dir":"exports"}', NULL, 1, @ts, @ts)`,
+    ).run({ semesterId, ts });
+    const exportDir = path.join(ISOLATION_DIR, "exports", semesterId);
+    mkdirSync(exportDir, { recursive: true });
+    writeFileSync(path.join(exportDir, "report.json"), "exported-report", "utf8");
+
+    const semesterBackupDir = path.join(ISOLATION_DIR, "semester-backups");
+    const record = (await call("backup.allCourses", { semesterId, targetPath: semesterBackupDir })) as import("../../src/contract/types").BackupRecord;
+    expect(record.backupType).toBe("semester");
+    expect(record.zipFilename).toContain("semester");
+
+    const targetSemId = randomUUID();
+    const globalData = createGlobalDb(ISOLATION_DIR);
+    globalData.db.prepare(
+      `INSERT INTO semesters (id, student_name, semester_label, start_date, end_date, timezone, status, db_relative_path, ready, created_at, updated_at)
+       VALUES (@id, '测试学生', '整学期恢复目标', '2027-02-01', '2027-06-30', 'Asia/Shanghai', 'active', @dbPath, 1, @now, @now)`,
+    ).run({ id: targetSemId, dbPath: `semester/${targetSemId}/sem.db`, now: ts });
+    globalData.db.close();
+    createSemesterDb(ISOLATION_DIR, targetSemId);
+
+    const restored = (await call("backup.restore", {
+      zipPath: path.join(semesterBackupDir, record.zipFilename),
+      targetSemesterId: targetSemId,
+      conflictResolution: "overwrite",
+    })) as import("../../src/contract/types").RestoreResult;
+    ctx.dispose();
+    ctx = new BackupContext(ISOLATION_DIR);
+    const restoredDb = ctx.semesterDb(targetSemId);
+    expect((restoredDb.prepare("SELECT COUNT(*) AS count FROM course_instances WHERE deleted_at IS NULL").get() as { count: number }).count).toBe(2);
+    expect((restoredDb.prepare("SELECT COUNT(*) AS count FROM parent_reports").get() as { count: number }).count).toBe(1);
+    expect((ctx.globalDb.prepare("SELECT COUNT(*) AS count FROM parent_report_targets WHERE semester_id = @id AND deleted_at IS NULL").get({ id: targetSemId }) as { count: number }).count).toBe(1);
+    expect(existsSync(path.join(ISOLATION_DIR, "exports", targetSemId, "report.json"))).toBe(true);
   });
 
   it("INT-02 Streams['backup.progress'] 推送进度事件", () => {

@@ -59,6 +59,9 @@ const IMPORT_ORDER = [
   "mock_exam_attempts",
   "mock_exam_answers",
   "mock_exam_module_analyses",
+  // S6
+  "parent_reports",
+  "report_deliveries",
 ];
 
 /** 恢复参数 */
@@ -116,6 +119,10 @@ export function restoreCourse(ctx: BackupContext, options: RestoreOptions): Rest
     }
 
     // 4. 冲突检查 + 处理
+    if (manifest.backup_type === "semester") {
+      return restoreSemester(ctx, tempDir, manifest, targetSemesterId, conflictResolution);
+    }
+
     const semDb = ctx.semesterDb(targetSemesterId);
     const existingCourse = semDb
       .prepare("SELECT id FROM course_instances WHERE course_name = @name AND deleted_at IS NULL")
@@ -159,13 +166,13 @@ export function restoreCourse(ctx: BackupContext, options: RestoreOptions): Rest
 
           for (const line of lines) {
             const row = JSON.parse(line) as Record<string, unknown>;
-            // course_instances 表：始终写入目标学期 + 目标课程 id（统一映射）
             if (table === "course_instances") {
               row.id = restoredCourseId;
               row.semester_id = targetSemesterId;
             }
-            // 子表：当生成新课程 id 时，把原 course_instance_id 重映射到新 id，
-            // 防止子表记录成为孤儿（05-ERD §8.2 恢复流程，E2E-08 捕获）
+            if (table === "materials" && typeof row.storage_key === "string") {
+              row.storage_key = mapStorageKey(row.storage_key, manifest.semester_id, targetSemesterId);
+            }
             if (
               table !== "course_instances" &&
               row.course_instance_id === manifest.course_instance_id &&
@@ -182,21 +189,17 @@ export function restoreCourse(ctx: BackupContext, options: RestoreOptions): Rest
       }
     }
 
-    // 6. 复制 storage/ 文件
     const storageSrcDir = path.join(tempDir, "storage");
     if (existsSync(storageSrcDir)) {
-      const storageDestDir = path.join(ctx.dataRootPath, "storage");
-      mkdirSync(storageDestDir, { recursive: true });
-      for (const file of readdirSync(storageSrcDir)) {
-        const srcPath = path.join(storageSrcDir, file);
-        const destPath = path.join(storageDestDir, file);
-        // 路径逃逸防护
-        const resolved = path.resolve(destPath);
-        const destResolved = path.resolve(storageDestDir);
-        if (!resolved.startsWith(destResolved + path.sep) && resolved !== destResolved) {
-          throw badRequest(MSG.PATH_TRAVERSAL_DETECTED);
-        }
-        copyFileSync(srcPath, destPath);
+      for (const archiveFile of collectFiles(storageSrcDir)) {
+        const relative = path.relative(storageSrcDir, archiveFile).split(path.sep).join("/");
+        const sourceKey = relative.startsWith("semester/") ? relative : `storage/${relative}`;
+        const targetKey = mapStorageKey(sourceKey, manifest.semester_id, targetSemesterId);
+        const destination = path.resolve(ctx.dataRootPath, targetKey);
+        const root = path.resolve(ctx.dataRootPath) + path.sep;
+        if (!destination.startsWith(root)) throw badRequest(MSG.PATH_TRAVERSAL_DETECTED);
+        mkdirSync(path.dirname(destination), { recursive: true });
+        copyFileSync(archiveFile, destination);
         filesRestored++;
       }
     }
@@ -227,7 +230,133 @@ export function restoreCourse(ctx: BackupContext, options: RestoreOptions): Rest
   }
 }
 
+function restoreSemester(
+  ctx: BackupContext,
+  tempDir: string,
+  manifest: BackupManifest,
+  targetSemesterId: string,
+  conflictResolution: "overwrite" | "create_new" | "none",
+): RestoreResult {
+  if (conflictResolution !== "overwrite") {
+    throw badRequest("恢复整学期备份前请确认覆盖目标学期");
+  }
+  const db = ctx.semesterDb(targetSemesterId);
+  const dataDir = path.join(tempDir, "data");
+  const importedTables: string[] = [];
+  let filesRestored = 0;
+  db.exec("PRAGMA foreign_keys = OFF");
+  try {
+    db.exec("BEGIN IMMEDIATE");
+    for (const table of [...IMPORT_ORDER].reverse()) db.exec(`DELETE FROM ${table}`);
+    for (const table of IMPORT_ORDER) {
+      const jsonlPath = path.join(dataDir, `${table}.jsonl`);
+      if (!existsSync(jsonlPath)) continue;
+      const lines = readFileSync(jsonlPath, "utf8").trim().split("\n").filter(Boolean);
+      for (const line of lines) {
+        const row = JSON.parse(line) as Record<string, unknown>;
+        if ("semester_id" in row) row.semester_id = targetSemesterId;
+        if (table === "materials" && typeof row.storage_key === "string") {
+          row.storage_key = mapStorageKey(row.storage_key, manifest.semester_id, targetSemesterId);
+        }
+        insertRow(db, table, row);
+      }
+      importedTables.push(table);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* no active transaction */ }
+    throw error;
+  } finally {
+    db.exec("PRAGMA foreign_keys = ON");
+  }
+
+  const storageSrcDir = path.join(tempDir, "storage");
+  if (existsSync(storageSrcDir)) {
+    for (const archiveFile of collectFiles(storageSrcDir)) {
+      const relative = path.relative(storageSrcDir, archiveFile).split(path.sep).join("/");
+      const sourceKey = relative.startsWith("semester/") ? relative : `storage/${relative}`;
+      const targetKey = mapStorageKey(sourceKey, manifest.semester_id, targetSemesterId);
+      const destination = path.resolve(ctx.dataRootPath, targetKey);
+      const root = path.resolve(ctx.dataRootPath) + path.sep;
+      if (!destination.startsWith(root)) throw badRequest(MSG.PATH_TRAVERSAL_DETECTED);
+      mkdirSync(path.dirname(destination), { recursive: true });
+      copyFileSync(archiveFile, destination);
+      filesRestored++;
+    }
+  }
+
+  restoreSemesterTargets(ctx, tempDir, targetSemesterId);
+  restoreSemesterExports(ctx.dataRootPath, tempDir, targetSemesterId);
+  const integrity = db.prepare("PRAGMA integrity_check").all() as Array<{ integrity_check: string }>;
+  if (integrity[0]?.integrity_check !== "ok") throw internalError(MSG.INTEGRITY_CHECK_FAILED);
+  return {
+    success: true,
+    restoredCourseId: "",
+    conflictResolved: "overwrite",
+    tablesImported: importedTables,
+    filesRestored,
+    integrityCheck: "ok",
+    schemaVersion: manifest.schema_version,
+  };
+}
+
+function restoreSemesterTargets(ctx: BackupContext, tempDir: string, targetSemesterId: string): void {
+  const jsonlPath = path.join(tempDir, "global", "parent_report_targets.jsonl");
+  if (!existsSync(jsonlPath)) return;
+  const db = ctx.globalDb;
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.prepare("DELETE FROM parent_report_targets WHERE semester_id = @semesterId").run({ semesterId: targetSemesterId });
+    for (const line of readFileSync(jsonlPath, "utf8").split("\n").filter(Boolean)) {
+      const row = JSON.parse(line) as Record<string, unknown>;
+      row.semester_id = targetSemesterId;
+      insertRow(db, "parent_report_targets", row);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* no active transaction */ }
+    throw error;
+  }
+}
+
+function restoreSemesterExports(dataRoot: string, tempDir: string, semesterId: string): void {
+  const sourceRoot = path.join(tempDir, "exports");
+  if (!existsSync(sourceRoot)) return;
+  const destinationRoot = path.join(dataRoot, "exports", semesterId);
+  copyDirectorySafely(sourceRoot, destinationRoot);
+}
+
+function copyDirectorySafely(sourceRoot: string, destinationRoot: string): void {
+  mkdirSync(destinationRoot, { recursive: true });
+  for (const item of readdirSync(sourceRoot)) {
+    const source = path.join(sourceRoot, item);
+    const destination = path.join(destinationRoot, item);
+    const resolved = path.resolve(destination);
+    const root = path.resolve(destinationRoot);
+    if (!resolved.startsWith(root + path.sep) && resolved !== root) throw badRequest(MSG.PATH_TRAVERSAL_DETECTED);
+    if (statSync(source).isDirectory()) copyDirectorySafely(source, destination);
+    else copyFileSync(source, destination);
+  }
+}
+
 /** 动态 INSERT 一行到指定表 */
+function collectFiles(root: string): string[] {
+  const files: string[] = [];
+  for (const item of readdirSync(root)) {
+    const fullPath = path.join(root, item);
+    if (statSync(fullPath).isDirectory()) files.push(...collectFiles(fullPath));
+    else files.push(fullPath);
+  }
+  return files;
+}
+
+function mapStorageKey(storageKey: string, sourceSemesterId: string, targetSemesterId: string): string {
+  const sourcePrefix = `semester/${sourceSemesterId}/`;
+  if (storageKey.startsWith(sourcePrefix)) return `semester/${targetSemesterId}/${storageKey.slice(sourcePrefix.length)}`;
+  return storageKey;
+}
+
+ /** 动态 INSERT 一行到指定表 */
 function insertRow(
   db: import("../../../data/sqlite").DatabaseSync,
   table: string,

@@ -199,7 +199,7 @@ describe("T-M4-022 真实 Electron 生产运行时", () => {
     expect(probeResult.result?.preloadBridgeReady).toBe(true);
     expect(probeResult.result?.preloadBridgeMethods).toEqual([
       "closeWindow", "connectHost", "getWindowState", "maximizeWindow", "minimizeWindow",
-      "queryToolchains", "selectDirectory", "showDialog",
+      "queryToolchains", "scheduleDataRootMigration", "selectDirectory", "showDialog",
     ]);
   });
 

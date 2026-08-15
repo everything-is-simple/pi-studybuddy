@@ -3,6 +3,7 @@ import { rmSync, mkdirSync } from "node:fs";
 import { createGlobalDb } from "../../src/data/global";
 import { S1Context, createS1Handlers } from "../../src/agent-host/handlers/s1";
 import { S6Context } from "../../src/agent-host/handlers/s6/context";
+import { createS6Handlers } from "../../src/agent-host/handlers/s6";
 import { createS6Tools, S6_TOOL_NAMES, S6_TOOL_COUNT } from "../../src/agent/tools/s6/tools";
 import { assertNoSensitiveLeak } from "../../src/agent-host/handlers/s6/leak-detector";
 import { generateRuleReport } from "../../src/agent-host/handlers/s6/report-generator";
@@ -147,6 +148,12 @@ describe("T-M2-002 S6 registerTool 工具单件测试", () => {
   describe("studybuddy_deliver_parent_report", () => {
     it("DLV-01 execute 成功（local_export）→ 返回投递状态 sent", async () => {
       const tool = tools.find((t) => t.name === "studybuddy_deliver_parent_report")!;
+      createS6Handlers(s6Ctx)["reportTargets.create"]({
+        semesterId,
+        targetName: "本地导出",
+        channelType: "local_export",
+        channelConfigJson: JSON.stringify({ dir: `${ISOLATION_DIR}/reports` }),
+      });
       const result = await tool.execute("call-3", {
         reportKey,
         channel: "local_export",

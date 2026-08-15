@@ -29,6 +29,7 @@ describe("T-M2-005 zip-packer 单件测试", () => {
   let ctx: BackupContext;
   let semesterId: string;
   let courseId: string;
+  let storageKey: string;
   const courseName = "高等数学";
   const semesterLabel = "2026 秋";
 
@@ -75,7 +76,7 @@ describe("T-M2-005 zip-packer 单件测试", () => {
 
     // 5. 插入 material + storage 文件
     const materialId = randomUUID();
-    const storageKey = `material-${materialId}.pdf`;
+    storageKey = `semester/${semesterId}/storage/material-${materialId}.pdf`;
     semDb
       .prepare(
         `INSERT INTO materials (id, course_instance_id, file_name, file_type, file_size_bytes, mime_type, storage_key, source_type, status, permission_confirmed, uploaded_at, created_at, updated_at)
@@ -83,10 +84,9 @@ describe("T-M2-005 zip-packer 单件测试", () => {
       )
       .run({ id: materialId, courseId, fileName: "lecture1.pdf", storageKey, now });
 
-    // 创建 storage 文件
-    const storageDir = path.join(ISOLATION_DIR, "storage");
-    mkdirSync(storageDir, { recursive: true });
-    writeFileSync(path.join(storageDir, storageKey), Buffer.from("fake pdf content"));
+    const storagePath = path.join(ISOLATION_DIR, storageKey);
+    mkdirSync(path.dirname(storagePath), { recursive: true });
+    writeFileSync(storagePath, Buffer.from("fake pdf content"));
 
     // 6. 插入 knowledge_module（直接关联表）
     semDb
@@ -106,7 +106,6 @@ describe("T-M2-005 zip-packer 单件测试", () => {
 
     semDb.close();
     globalDb.close();
-
     ctx = new BackupContext(ISOLATION_DIR);
   });
 
@@ -182,7 +181,7 @@ describe("T-M2-005 zip-packer 单件测试", () => {
     const entries = unpackZip(zipBuf);
 
     // storage/ 下应有 material-*.pdf
-    const storageFiles = entries.filter((e) => e.filename.startsWith("storage/"));
+    const storageFiles = entries.filter((e) => e.filename === `storage/${storageKey}`);
     expect(storageFiles.length).toBe(1);
     expect(storageFiles[0].data.toString("utf8")).toBe("fake pdf content");
   });
@@ -207,14 +206,19 @@ describe("T-M2-005 zip-packer 单件测试", () => {
   it("PACK-06 zip 文件大小 > 0", () => {
     const targetPath = path.join(ISOLATION_DIR, "backups", "06");
     const result = packCourse(ctx, courseId, targetPath, "manual");
-
     expect(result.fileSizeBytes).toBeGreaterThan(0);
+    expect(existsSync(result.zipPath)).toBe(true);
   });
+  it("PACK-07 rejects storage_key escaping the data root", () => {
+    const semDbPath = path.join(ISOLATION_DIR, "semester", semesterId, "sem.db");
+    const semDb = new DatabaseSync(semDbPath);
+    semDb.prepare("UPDATE materials SET storage_key = @storageKey WHERE course_instance_id = @courseId").run({
+      storageKey: "semester/../..\u002foutside-secret.txt",
+      courseId,
+    });
+    semDb.close();
 
-  it("PACK-07 backup_type 传递到 manifest", () => {
-    const targetPath = path.join(ISOLATION_DIR, "backups", "07");
-    const result = packCourse(ctx, courseId, targetPath, "scheduled");
-
-    expect(result.manifest.backup_type).toBe("scheduled");
+    expect(() => packCourse(ctx, courseId, path.join(ISOLATION_DIR, "backups", "07"), "manual"))
+      .toThrow("备份文件包含不安全的路径");
   });
 });

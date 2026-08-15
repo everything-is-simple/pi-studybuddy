@@ -12,6 +12,7 @@ import { contextBridge, ipcRenderer } from "electron";
 const IPC_CHANNELS = {
   CONNECT_HOST: "desktop:connect-host",
   SELECT_DIRECTORY: "desktop:select-directory",
+  MIGRATE_DATA_ROOT: "desktop:migrate-data-root",
   SHOW_DIALOG: "desktop:show-dialog",
   QUERY_TOOLCHAINS: "desktop:query-toolchains",
   GET_WINDOW_STATE: "desktop:get-window-state",
@@ -68,6 +69,9 @@ const bridge: PiBridge = {
   },
   selectDirectory() {
     return ipcRenderer.invoke(IPC_CHANNELS.SELECT_DIRECTORY) as Promise<string | null>;
+  },
+  scheduleDataRootMigration(targetRoot: string) {
+    return ipcRenderer.invoke(IPC_CHANNELS.MIGRATE_DATA_ROOT, targetRoot) as Promise<void>;
   },
   showDialog(options: DialogOptions) {
     return ipcRenderer.invoke(IPC_CHANNELS.SHOW_DIALOG, options) as Promise<DialogResult>;

@@ -18,18 +18,18 @@ import {
   loadSettingsPageData,
   normaliseSettingsUpdate,
   preferredToolchainStatuses,
-  safeDirectoryName,
   safeDisplay,
   saveCredential,
   saveModelConfiguration,
   saveSettingsDraft,
   setSimpleModePreference,
   deleteCredential,
-  rescanToolchains,
-  installToolchain,
-  subscribeToToolchainChanges,
-} from "../../src/renderer/components/SettingsPage";
-
+    probeProviderModels,
+    providerCredentialLabel,
+    credentialStatusLabel,
+    scheduleSelectedDataRootMigration,
+    subscribeToToolchainChanges,
+  } from "../../src/renderer/components/SettingsPage";
 describe("SettingsPage（09-UI §10 + §11）", () => {
   it("渲染通用、安全、开发者三组，且密钥输入框均为 password", () => {
     const html = renderToStaticMarkup(React.createElement(SettingsPage));
@@ -42,9 +42,15 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
     expect(html).toContain("密钥管理");
     expect(html).toContain("日志脱敏");
     expect(html).toContain("开发者");
-    expect(html).toContain("工具链健康检查");
-    expect(html).toContain("实验性功能");
-    expect(html).toContain("调试日志");
+    expect(html).toContain("本机工具检查");
+    expect(html).toContain("缺失项不能在此自动安装");
+    expect(html).toContain("获取模型目录");
+    expect(html).toContain("测试当前选中模型");
+    expect(html).toContain("备份目标目录在执行备份时通过系统目录选择器指定");
+    expect(html).toContain("未保存");
+    expect(html).not.toContain("工具链健康检查");
+    expect(html).not.toContain("备份目录名称");
+
     expect((html.match(/type="password"/g) ?? [])).toHaveLength(3);
     expect(html).toContain("本机业务数据根已物理隔离");
   });
@@ -74,7 +80,8 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       "models.list": () => {
         calls.push("models.list");
         return [
-          { id: "deepseek", name: "DeepSeek", providerType: "openai-compatible", models: [{ id: "v4", name: "V4" }] },
+          { id: "deepseek", name: "DeepSeek", providerType: "openai-compatible", models: [{ id: "v4", name: "V4" }, { id: "image", name: "Image", modality: "image" }] },
+          { id: "xiaojigpt", name: "小鸡 GPT", providerType: "openai-compatible", models: [] },
           { id: "bad/provider", name: "Invalid", providerType: "openai-compatible", models: [] },
         ];
       },
@@ -101,11 +108,14 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       "modelsConfig.get",
       "credentials.listKeys:modelProvider:",
       "credentials.listKeys:parentContact:",
-      "toolchains.list",
     ]));
+    expect(calls).toContain("toolchains.list");
     expect(calls).not.toContain("credentials.get");
     expect(data.configuredCredentialKeys).toEqual(new Set(["modelProvider:deepseek", "parentContact:email"]));
-    expect(data.providers).toEqual([{ id: "deepseek", name: "DeepSeek", models: [{ id: "v4", name: "V4" }] }]);
+    expect(data.providers).toEqual([
+      { id: "deepseek", name: "DeepSeek", models: [{ id: "v4", name: "V4" }] },
+      { id: "xiaojigpt", name: "小鸡 GPT", models: [] },
+    ]);
     expect(data.toolchains).toEqual([{ capabilityId: "js.node", name: "Node.js", health: "healthy", version: "v24.14.0" }]);
   });
 
@@ -119,14 +129,13 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
     expect(safeDisplay("/opt/private/tool")).toBe("已隐藏敏感信息");
   });
 
-  it("保存前规范化每日目标和 TTS 语速，避免把非法值写入 RPC", () => {
+  it("保存前规范化每日目标和 TTS 语速，且不再携带备份目录字段", () => {
     const update = normaliseSettingsUpdate({
       dailyGoalMinutes: Number.NaN,
       availableTime: "19:00–21:00",
       ttsEngine: "sapi",
       ttsRate: 9,
       ttsVoice: "默认音色",
-      backupDirectoryName: "backups",
       backupFrequency: "weekly",
       experimentalFeatures: false,
       debugLogging: false,
@@ -134,14 +143,9 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
 
     expect(update.dailyGoalMinutes).toBe(60);
     expect(update.ttsRate).toBe(2);
+    expect(update).not.toHaveProperty("backupDirectoryName");
   });
 
-  it("备份目录只接受单一相对目录名，拒绝路径、父目录与 URL", () => {
-    expect(safeDirectoryName("备份目录")).toBe("备份目录");
-    expect(safeDirectoryName("C:\\private\\backup")).toBe("备份目录");
-    expect(safeDirectoryName("..\\backup")).toBe("备份目录");
-    expect(safeDirectoryName("https://example.invalid/backup")).toBe("备份目录");
-  });
 
   it("读取凭据输入后立即清空 DOM 值，失败路径也不会保留秘密", () => {
     const input = { value: "temporary-secret" };
@@ -214,7 +218,30 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
     expect(unsubscribed).toBe(true);
   });
 
-  it("各项设置动作精确映射到既有 RPC 参数", async () => {
+  it("获取模型目录只发送 provider 标识，并过滤非文本模型", async () => {
+    const calls: Array<{ method: string; params: unknown }> = [];
+    const rpc = createMockRpcClient({
+      "models.probe": (params: unknown) => {
+        calls.push({ method: "models.probe", params });
+        return [
+          { id: "relay-chat", name: "Relay Chat", input: ["text"] },
+          { id: "relay-image", name: "Relay Image", modality: "image" },
+        ];
+      },
+    });
+
+    await expect(probeProviderModels(rpc, "xiaojigpt")).resolves.toEqual([{ id: "relay-chat", name: "Relay Chat" }]);
+    expect(calls).toEqual([{ method: "models.probe", params: { provider: "xiaojigpt" } }]);
+  });
+
+  it("模型密钥标签明确绑定当前供应商，凭据状态不声称服务已连通", () => {
+    expect(providerCredentialLabel()).toBe("当前供应商 API Key");
+    expect(providerCredentialLabel({ id: "deepseek", name: "DeepSeek 直连（文本）", models: [] })).toBe("DeepSeek 直连（文本） API Key");
+    expect(credentialStatusLabel(false)).toBe("未保存");
+    expect(credentialStatusLabel(true)).toBe("已保存，未验证服务可用性");
+  });
+
+  it("各项设置动作精确映射到既有 RPC 参数，且不触发工具安装 RPC", async () => {
     const calls: Array<{ method: string; params: unknown }> = [];
     const rpc = createMockRpcClient({
       "settings.update": (params: unknown) => {
@@ -227,14 +254,6 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
         return params;
       },
       "credentials.delete": (params: unknown) => calls.push({ method: "credentials.delete", params }),
-      "toolchains.rescan": (params: unknown) => {
-        calls.push({ method: "toolchains.rescan", params });
-        return [{ capabilityId: "js.node", name: "Node.js", health: "healthy" }];
-      },
-      "toolchains.install": (params: unknown) => {
-        calls.push({ method: "toolchains.install", params });
-        return { capabilityId: "python.uv", name: "uv", health: "unverified" };
-      },
     });
 
     await saveSettingsDraft(rpc, {
@@ -243,7 +262,6 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       ttsEngine: "edge-tts",
       ttsRate: 0.1,
       ttsVoice: "女声",
-      backupDirectoryName: "backups",
       backupFrequency: "daily",
       experimentalFeatures: true,
       debugLogging: true,
@@ -251,8 +269,6 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
     await setSimpleModePreference(rpc, true);
     await saveModelConfiguration(rpc, "deepseek", "v4");
     await deleteCredential(rpc, "parentContact:feishu");
-    expect(await rescanToolchains(rpc)).toEqual([{ capabilityId: "js.node", name: "Node.js", health: "healthy" }]);
-    expect(await installToolchain(rpc, "python.uv")).toEqual({ capabilityId: "python.uv", name: "uv", health: "unverified" });
 
     expect(calls).toEqual([
       { method: "settings.update", params: {
@@ -261,7 +277,6 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
         ttsEngine: "edge-tts",
         ttsRate: 0.5,
         ttsVoice: "女声",
-        backupDirectoryName: "backups",
         backupFrequency: "daily",
         experimentalFeatures: true,
         debugLogging: true,
@@ -269,9 +284,25 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       { method: "settings.setSimpleMode", params: { enabled: true } },
       { method: "modelsConfig.set", params: { provider: "deepseek", model: "v4" } },
       { method: "credentials.delete", params: { key: "parentContact:feishu" } },
-      { method: "toolchains.rescan", params: {} },
-      { method: "toolchains.install", params: { capabilityId: "python.uv" } },
     ]);
+    expect(calls.map((call) => call.method)).not.toContain("toolchains.install");
+  });
+
+  it("数据根迁移仅使用原生目录桥，并且不将路径写入页面状态", async () => {
+    const calls: string[] = [];
+    const bridge = {
+      selectDirectory: async () => {
+        calls.push("select");
+        return "H:\\pi-studybuddy-tmp\\runs\\T-M5-010\\new-root";
+      },
+      scheduleDataRootMigration: async (target: string) => {
+        calls.push(`schedule:${target}`);
+      },
+    };
+
+    await expect(scheduleSelectedDataRootMigration(bridge)).resolves.toBe(true);
+    await expect(scheduleSelectedDataRootMigration({ ...bridge, selectDirectory: async () => null })).resolves.toBe(false);
+    expect(calls).toEqual(["select", "schedule:H:\\pi-studybuddy-tmp\\runs\\T-M5-010\\new-root"]);
   });
 
   it("凭据保存和移除后重读 key 状态，不读取密钥明文", async () => {

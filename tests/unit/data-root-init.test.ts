@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
-import { initializeDataRoot } from "../../src/main/data-root-init";
+import { initializeDataRoot, prepareDataRootMigration, resolveStartupDataRoot } from "../../src/main/data-root-init";
 import { DatabaseSync } from "../../src/data/sqlite";
 import { applyPragmas, assertIntegrity } from "../../src/data/db";
 
@@ -87,5 +87,43 @@ describe("T-M4-001 业务数据根初始化", () => {
       expect(tableNames).toContain(t);
     }
     db.close();
+  });
+});
+describe("T-M5-010 数据根迁移启动协议", () => {
+  const root = "H:\\pi-studybuddy-tmp\\runs\\T-M5-010\\data-root-protocol";
+  const current = path.join(root, "current");
+  const target = path.join(root, "target");
+  const registry = path.join(root, "registry", "data-root.json");
+
+  beforeAll(() => {
+    safeRmSync(root);
+    initializeDataRoot(current);
+    mkdirSync(path.join(current, "config"), { recursive: true });
+  });
+
+  afterAll(() => safeRmSync(root));
+
+  it("MIG-01 复制受管资产并在下一次启动切换到目标根", () => {
+    prepareDataRootMigration({ currentRoot: current, targetRoot: target, registryPath: registry });
+    expect(existsSync(path.join(target, "global.db"))).toBe(true);
+    const resolved = resolveStartupDataRoot({ defaultRoot: current, registryPath: registry });
+    expect(resolved).toMatchObject({ dataRoot: target, source: "scheduled", recovered: false });
+    expect(resolveStartupDataRoot({ defaultRoot: current, registryPath: registry }).dataRoot).toBe(target);
+  });
+
+  it("MIG-02 目标根损坏时回退旧根并清除待切换状态", () => {
+    const badTarget = path.join(root, "bad-target");
+    const badRegistry = path.join(root, "registry", "bad.json");
+    prepareDataRootMigration({ currentRoot: current, targetRoot: badTarget, registryPath: badRegistry });
+    rmSync(path.join(badTarget, "global.db"), { force: true });
+    const resolved = resolveStartupDataRoot({ defaultRoot: current, registryPath: badRegistry });
+    expect(resolved).toMatchObject({ dataRoot: current, source: "recovered", recovered: true });
+  });
+
+  it("MIG-03 环境根优先于持久化切换", () => {
+    const envRoot = path.join(root, "environment");
+    initializeDataRoot(envRoot);
+    const resolved = resolveStartupDataRoot({ defaultRoot: current, registryPath: registry, environmentRoot: envRoot });
+    expect(resolved).toMatchObject({ dataRoot: envRoot, source: "environment", recovered: false });
   });
 });

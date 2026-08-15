@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS backup_records (
   semester_id TEXT NOT NULL REFERENCES semesters(id),
   course_instance_id TEXT NOT NULL,
   backup_type TEXT NOT NULL
-    CHECK (backup_type IN ('manual', 'scheduled', 'pre_archive', 'post_archive')),
+    CHECK (backup_type IN ('manual', 'scheduled', 'pre_archive', 'post_archive', 'semester')),
   target_path TEXT NOT NULL,
   zip_filename TEXT NOT NULL,
   content_hash TEXT NOT NULL,

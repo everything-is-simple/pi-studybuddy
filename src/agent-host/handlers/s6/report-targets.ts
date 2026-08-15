@@ -26,6 +26,36 @@ function validateChannelType(c: unknown): asserts c is ReportChannel {
   }
 }
 
+function parseChannelConfig(raw: string, channelType: ReportChannel): Record<string, unknown> {
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    throw badRequest("channelConfigJson 不是合法 JSON");
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw badRequest("channelConfigJson 必须是 JSON 对象");
+  const config = value as Record<string, unknown>;
+  const forbidden = channelType === "smtp"
+    ? ["to", "from", "host", "port", "password", "credentialValue", "endpoint", "url", "webhookUrl"]
+    : channelType === "feishu_webhook"
+      ? ["url", "webhookUrl", "endpoint", "credentialValue", "secret", "token"]
+      : ["password", "credentialValue", "secret", "token"];
+  if (Object.keys(config).some((key) => forbidden.includes(key))) throw badRequest("渠道配置不得包含收件地址、端点或密钥");
+  if (channelType !== "local_export" && Object.keys(config).some((key) => /path|dir/i.test(key))) {
+    throw badRequest("远程渠道配置不得包含本地路径");
+  }
+  if (channelType === "local_export" && config.dir !== undefined && typeof config.dir !== "string") {
+    throw badRequest("本地导出目录无效");
+  }
+  return config;
+}
+
+function normalizeStoredConfig(channelType: ReportChannel, config: Record<string, unknown>): string {
+  return JSON.stringify(channelType === "local_export" && typeof config.dir === "string"
+    ? { alias: "本地导出目录", dir: config.dir }
+    : config);
+}
+
 /** 列表查询（不含已软删） */
 export function handleReportTargetsList(
   ctx: S6Context,
@@ -63,12 +93,7 @@ export function handleReportTargetsCreate(
     assertSemesterExists(ctx, p.semesterId);
     assertSemesterWritable(ctx, p.semesterId);
 
-    // 验证 channelConfigJson 是合法 JSON
-    try {
-      JSON.parse(p.channelConfigJson);
-    } catch {
-      throw badRequest("channelConfigJson 不是合法 JSON");
-    }
+    const channelConfig = parseChannelConfig(p.channelConfigJson, p.channelType);
 
     const id = randomUUID();
     const ts = now();
@@ -83,7 +108,7 @@ export function handleReportTargetsCreate(
         sid: p.semesterId,
         tn: p.targetName,
         ct: p.channelType,
-        cj: p.channelConfigJson,
+        cj: normalizeStoredConfig(p.channelType, channelConfig),
         ck: p.credentialKey ?? null,
         ts,
       });
@@ -121,19 +146,18 @@ export function handleReportTargetsUpdate(
       values.ct = p.channelType as string;
     }
     if (p.channelConfigJson !== undefined) {
-      try {
-        JSON.parse(p.channelConfigJson as string);
-      } catch {
-        throw badRequest("channelConfigJson 不是合法 JSON");
-      }
+      const channelType = (p.channelType ?? existing.channel_type) as ReportChannel;
+      validateChannelType(channelType);
+      const channelConfig = parseChannelConfig(p.channelConfigJson as string, channelType);
       updates.push("channel_config_json = @cj");
-      values.cj = p.channelConfigJson as string;
+      values.cj = normalizeStoredConfig(channelType, channelConfig);
     }
     if (p.credentialKey !== undefined) {
       updates.push("credential_key = @ck");
       values.ck = (p.credentialKey as string) ?? null;
     }
     if (p.enabled !== undefined) {
+      if (p.enabled !== 0 && p.enabled !== 1) throw badRequest("enabled 必须为 0 或 1");
       updates.push("enabled = @en");
       values.en = p.enabled as number;
     }

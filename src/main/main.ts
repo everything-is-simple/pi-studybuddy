@@ -9,16 +9,22 @@ import { registerAppProtocol } from "./protocol";
 import { createWindow } from "./window";
 import { registerConnectHostIpc } from "./ipc";
 import { resolveDataRoot } from "../agent-host/allowed-roots";
-import { initializeDataRoot } from "./data-root-init";
+import { initializeDataRoot, resolveStartupDataRoot } from "./data-root-init";
+import path from "node:path";
 
 /** Electron 单实例锁：防止多实例并发写同一数据根（AGENTS.md §1.1 单写进程） */
 void app.requestSingleInstanceLock?.();
 
 app.whenReady().then(() => {
-  // T-M4-001 业务数据根初始化（03-Arch §4.3 + 05-ERD §2）
-  // 首次启动建 global.db + 子目录；二次启动幂等（schema IF NOT EXISTS + mkdir recursive）
-  const dataRoot = resolveDataRoot();
-  initializeDataRoot(dataRoot);
+  // Environment override remains test-only and takes precedence over every persisted migration.
+  const defaultRoot = resolveDataRoot();
+  const rootResolution = resolveStartupDataRoot({
+    defaultRoot,
+    registryPath: path.join(app.getPath("userData"), "data-root.json"),
+    environmentRoot: process.env.PI_STUDYBUDDY_DATA_ROOT,
+  });
+  process.env.PI_STUDYBUDDY_DATA_ROOT = rootResolution.dataRoot;
+  initializeDataRoot(rootResolution.dataRoot);
 
   registerAppProtocol();
   registerConnectHostIpc();

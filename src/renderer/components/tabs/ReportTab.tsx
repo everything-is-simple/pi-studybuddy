@@ -238,9 +238,12 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
   const [selectedReportKey, setSelectedReportKey] = React.useState<string | undefined>();
   const [listToken, setListToken] = React.useState(0);
   const [deliveryToken, setDeliveryToken] = React.useState(0);
-  const [targetToken, setTargetToken] = React.useState(0);
   const [actionError, setActionError] = React.useState<string | undefined>();
+  const [targetToken, setTargetToken] = React.useState(0);
   const [targetNotice, setTargetNotice] = React.useState<string | undefined>();
+  const [targetChannel, setTargetChannel] = React.useState<ReportChannel>("smtp");
+  const [targetName, setTargetName] = React.useState("");
+  const [targetAlias, setTargetAlias] = React.useState("");
   const [exportDirectorySelected, setExportDirectorySelected] = React.useState(false);
   const [frozen, setFrozen] = React.useState(false);
   const frozenReportKeysRef = React.useRef<Set<string>>(new Set());
@@ -429,6 +432,43 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
       });
   }
 
+  function createReportTarget(): void {
+    if (!effectiveSemesterId || isReadOnly || createTargetInFlightRef.current) return;
+    const name = targetName.trim();
+    const alias = targetAlias.trim();
+    if (targetChannel === "local_export") {
+      createLocalExportTarget();
+      return;
+    }
+    if (!name || !alias || (targetChannel !== "smtp" && targetChannel !== "feishu_webhook")) {
+      setActionError("请填写目标名称和安全别名。");
+      return;
+    }
+    createTargetInFlightRef.current = true;
+    const contextVersion = contextVersionRef.current;
+    setActionError(undefined);
+    const credentialKey = targetChannel === "smtp" ? "parentContact:email" : "parentContact:feishu";
+    void rpc.call("reportTargets.create", {
+      semesterId: effectiveSemesterId,
+      targetName: name,
+      channelType: targetChannel,
+      channelConfigJson: JSON.stringify({ alias }),
+      credentialKey,
+    })
+      .then(() => {
+        createTargetInFlightRef.current = false;
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setTargetName("");
+        setTargetAlias("");
+        setTargetNotice(`${channelLabel(targetChannel)}目标已保存；密钥仍保存在本机凭据保管库。`);
+        setTargetToken((token) => token + 1);
+      })
+      .catch(() => {
+        createTargetInFlightRef.current = false;
+        if (mountedRef.current && contextVersion === contextVersionRef.current) setActionError("目标保存失败，请检查配置后重试。");
+      });
+  }
+
   function createLocalExportTarget(): void {
     if (!effectiveSemesterId || isReadOnly || !exportDirectoryRef.current || createTargetInFlightRef.current) return;
     createTargetInFlightRef.current = true;
@@ -451,6 +491,42 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
       .catch(() => {
         createTargetInFlightRef.current = false;
         if (mountedRef.current && contextVersion === contextVersionRef.current) setActionError(reportErrorText("createTarget"));
+      });
+  }
+  function updateReportTarget(target: ParentReportTarget, enabled: number): void {
+    if (isReadOnly || createTargetInFlightRef.current) return;
+    createTargetInFlightRef.current = true;
+    const contextVersion = contextVersionRef.current;
+    setActionError(undefined);
+    void rpc.call("reportTargets.update", { id: target.id, enabled })
+      .then(() => {
+        createTargetInFlightRef.current = false;
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setTargetNotice(`${target.targetName}已${enabled ? "启用" : "停用"}`);
+        setTargetToken((token) => token + 1);
+      })
+      .catch(() => {
+        createTargetInFlightRef.current = false;
+        if (mountedRef.current && contextVersion === contextVersionRef.current) setActionError("目标状态更新失败，请重试。");
+      });
+  }
+
+  function deleteReportTarget(target: ParentReportTarget): void {
+    if (isReadOnly || createTargetInFlightRef.current) return;
+    if (!globalThis.window?.confirm?.(`删除目标“${target.targetName}”？`)) return;
+    createTargetInFlightRef.current = true;
+    const contextVersion = contextVersionRef.current;
+    setActionError(undefined);
+    void rpc.call("reportTargets.delete", { id: target.id })
+      .then(() => {
+        createTargetInFlightRef.current = false;
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setTargetNotice(`${target.targetName}已删除`);
+        setTargetToken((token) => token + 1);
+      })
+      .catch(() => {
+        createTargetInFlightRef.current = false;
+        if (mountedRef.current && contextVersion === contextVersionRef.current) setActionError("目标删除失败，请重试。");
       });
   }
 
@@ -622,18 +698,35 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
       </div>
 
       <div style={PANEL_STYLE}>
-        <strong style={{ fontSize: 14 }}>本地投递设置</strong>
-        {targetsResource.data.some((target) => target.channelType === "local_export" && target.enabled === 1) ? (
-          <p role="status" style={{ margin: "8px 0 0", fontSize: 13, color: "#2e7d32" }}>本地导出已配置</p>
-        ) : (
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 8 }}>
+        <strong style={{ fontSize: 14 }}>投递目标设置</strong>
+        <p style={{ margin: "6px 0", color: "var(--text-muted, #666)", fontSize: 12 }}>邮件和飞书只保存安全别名；真实地址和密钥由本机凭据保管库管理。</p>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <select aria-label="投递渠道" value={targetChannel} disabled={isReadOnly} onChange={(event) => setTargetChannel(event.currentTarget.value as ReportChannel)} style={{ padding: "4px 8px", fontSize: 12 }}>
+            <option value="smtp">邮件</option>
+            <option value="feishu_webhook">飞书</option>
+            <option value="local_export">本地导出</option>
+          </select>
+          {targetChannel !== "local_export" && <>
+            <input aria-label="目标名称" value={targetName} disabled={isReadOnly} placeholder="目标名称" onChange={(event) => setTargetName(event.currentTarget.value)} style={{ padding: "4px 8px", fontSize: 12, width: 150 }} />
+            <input aria-label="安全别名" value={targetAlias} disabled={isReadOnly} placeholder="安全别名" onChange={(event) => setTargetAlias(event.currentTarget.value)} style={{ padding: "4px 8px", fontSize: 12, width: 150 }} />
+          </>}
+          {targetChannel === "local_export" && <>
             <button type="button" disabled={isReadOnly} onClick={selectExportDirectory} style={{ padding: "4px 12px", fontSize: 12 }}>选择导出目录</button>
-            {exportDirectorySelected && <span role="status" style={{ fontSize: 12, color: "#2e7d32" }}>已选择导出目录</span>}
-            <button type="button" disabled={isReadOnly || !exportDirectorySelected} onClick={createLocalExportTarget} style={{ padding: "4px 12px", fontSize: 12 }}>保存本地导出</button>
-          </div>
-        )}
-        {targetNotice && <p role="status" style={{ margin: "8px 0 0", fontSize: 13, color: "#2e7d32" }}>{targetNotice}</p>}
+            {exportDirectorySelected && <span role="status" style={{ fontSize: 12, color: "#2e7d32" }}>已选择目录</span>}
+          </>}
+          <button type="button" disabled={isReadOnly || (targetChannel === "local_export" ? !exportDirectorySelected : !targetName.trim() || !targetAlias.trim())} onClick={createReportTarget} style={{ padding: "4px 12px", fontSize: 12 }}>保存目标</button>
+        </div>
+        {targetsResource.data.length > 0 && <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
+          {targetsResource.data.map((target) => (
+            <div key={target.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+              <span style={{ flex: 1 }}>{target.targetName} · {channelLabel(target.channelType)} · {target.enabled ? "已启用" : "已停用"}</span>
+              <button type="button" disabled={isReadOnly} onClick={() => updateReportTarget(target, target.enabled ? 0 : 1)} style={{ padding: "2px 8px", fontSize: 11 }}>{target.enabled ? "停用" : "启用"}</button>
+              <button type="button" disabled={isReadOnly} onClick={() => deleteReportTarget(target)} style={{ padding: "2px 8px", fontSize: 11 }}>删除</button>
+            </div>
+          ))}
+        </div>}
       </div>
+      {targetNotice && <p role="status" style={{ margin: "8px 0", fontSize: 13, color: "#2e7d32" }}>{targetNotice}</p>}
       {/* 报告列表 */}
       <h3 style={{ fontSize: 14, margin: "0 0 8px 0" }}>报告历史</h3>
       {reportsResource.status === "empty" && <EmptyState message="暂无报告，请生成家长报告" />}
@@ -663,9 +756,9 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
     </TabContainer>
   );
 }
-
 export function ReportTab({ reports, selectedReport, rpc, semesterId, academicContext, onSpeakText }: Props): React.JSX.Element {
   if (rpc) return <RuntimeReportTab rpc={rpc} semesterId={semesterId} academicContext={academicContext} onSpeakText={onSpeakText} />;
+
 
   // ---- 静态渲染（无 rpc，兼容旧 props）----
   if (selectedReport) {

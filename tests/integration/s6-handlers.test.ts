@@ -157,6 +157,25 @@ describe("T-M2-002 S6 家长报告 handler 集成测试", () => {
       const list = call("reportTargets.list", { semesterId }) as ParentReportTarget[];
       expect(list.some((t) => t.id === targetId)).toBe(false);
     });
+
+    it("RT-05 拒绝目标配置中的地址、端点和密钥，列表不回显本地目录", () => {
+      expect(() => call("reportTargets.create", {
+        semesterId,
+        targetName: "越权邮件目标",
+        channelType: "smtp",
+        channelConfigJson: JSON.stringify({ alias: "家长邮箱", to: "parent@example.test" }),
+        credentialKey: "parentContact:email",
+      })).toThrow();
+
+      const localTarget = call("reportTargets.create", {
+        semesterId,
+        targetName: "安全导出",
+        channelType: "local_export",
+        channelConfigJson: JSON.stringify({ dir: "H:/pi-studybuddy-tmp/runs/T-M5-010/safe-export" }),
+      }) as ParentReportTarget;
+      expect(localTarget.channelConfigJson).not.toContain("H:/");
+      expect(localTarget.channelConfigJson).toContain("本地导出目录");
+    });
   });
 
   describe("reports.generate", () => {
@@ -264,8 +283,23 @@ describe("T-M2-002 S6 家长报告 handler 集成测试", () => {
     });
   });
 
+  it("DLV-00 未配置投递目标时保留失败记录并给出可见错误码", () => {
+    const delivery = call("deliveries.deliver", {
+      reportKey,
+      channel: "print",
+    }) as ReportDelivery;
+    expect(delivery.status).toBe("failed");
+    expect(delivery.errorCode).toBe("DELIVERY_TARGET_NOT_CONFIGURED");
+  });
+
   describe("deliveries.deliver", () => {
     it("DLV-01 local_export 成功 → status=sent", () => {
+      call("reportTargets.create", {
+        semesterId,
+        targetName: "临时本地导出",
+        channelType: "local_export",
+        channelConfigJson: JSON.stringify({ dir: "H:/pi-studybuddy-tmp/runs/T-M5-010/reports" }),
+      });
       const delivery = call("deliveries.deliver", {
         reportKey,
         channel: "local_export",
@@ -287,14 +321,20 @@ describe("T-M2-002 S6 家长报告 handler 集成测试", () => {
     });
 
     it("DLV-03 smtp mock 失败 → status=failed（渠道独立隔离）", () => {
-      // 用失败 smtp 渠道的 ctx
+      call("reportTargets.create", {
+        semesterId,
+        targetName: "临时邮件目标",
+        channelType: "smtp",
+        channelConfigJson: JSON.stringify({ alias: "测试邮箱" }),
+        credentialKey: "parentContact:email",
+      });
       const failCtx = new S6Context(ISOLATION_DIR, {
         reportPolisher: createMockReportPolisher(),
         deliveryChannels: {
           ...createMockDeliveryChannels(),
           smtp: createFailingDeliveryChannel(),
         },
-        credentialGetter: () => "mock",
+        credentialGetter: () => JSON.stringify({ host: "smtp.qq.test", port: 465, from: "sender@example.test", to: "parent@example.test", password: "mock" }),
       });
       const failHandlers = createS6Handlers(failCtx);
       const delivery = (failHandlers["deliveries.deliver"] as (p: unknown) => unknown)({
@@ -305,25 +345,23 @@ describe("T-M2-002 S6 家长报告 handler 集成测试", () => {
       failCtx.dispose();
     });
 
-    it("DLV-04 credential-vault 解密失败 → INTERNAL_ERROR", () => {
-      // 建一个 credential_key=parentContact:fail_decrypt 的 target
-      const target = call("reportTargets.create", {
+    it("DLV-04 凭据不可用时保留失败记录", () => {
+      const report = call("reports.generate", {
+        semesterId,
+        reportType: "daily",
+        periodStart: "2026-10-08",
+        periodEnd: "2026-10-08",
+      }) as ParentReport;
+      call("reportTargets.create", {
         semesterId,
         targetName: "解密失败测试",
-        channelType: "smtp",
-        channelConfigJson: JSON.stringify({ to_alias: "fail_decrypt_target" }),
+        channelType: "feishu_webhook",
+        channelConfigJson: JSON.stringify({ webhookAlias: "family" }),
         credentialKey: "parentContact:fail_decrypt",
-      }) as ParentReportTarget;
-
-      try {
-        call("deliveries.deliver", { reportKey, channel: "smtp" });
-        // 注意：deliver 按 channel 去重，若已投递 smtp 会先 BAD_REQUEST
-        // 此用例验证 credentialGetter 抛错时的 INTERNAL_ERROR 路径
-      } catch (e) {
-        // smtp 已在 DLV-03 投递（failed），此处可能 BAD_REQUEST 或 INTERNAL_ERROR
-        // 两种都接受，关键是渠道隔离不崩
-        expect(isRpcError(e)).toBe(true);
-      }
+      });
+      const delivery = call("deliveries.deliver", { reportKey: report.reportKey, channel: "feishu_webhook" }) as ReportDelivery;
+      expect(delivery.status).toBe("failed");
+      expect(delivery.errorCode).toBe("DELIVERY_CREDENTIAL_UNAVAILABLE");
     });
   });
 
@@ -354,6 +392,40 @@ describe("T-M2-002 S6 家长报告 handler 集成测试", () => {
       }) as ReportDelivery;
       expect(retried.retryCount).toBeGreaterThanOrEqual(1);
     });
+    it("RTY-03 retry 复用已保存目标配置（不丢失收件地址别名）", () => {
+      const seen: Array<Record<string, unknown>> = [];
+      const captureChannel = {
+        deliver(_report: unknown, config: Record<string, unknown>) {
+          seen.push(config);
+          return { success: false, errorCode: "CONTROLLED_FAILURE" };
+        },
+      };
+      const target = call("reportTargets.create", {
+        semesterId,
+        targetName: "QQ 收件箱",
+        channelType: "smtp",
+        channelConfigJson: JSON.stringify({ alias: "家长邮箱" }),
+        credentialKey: "parentContact:email",
+      }) as ParentReportTarget;
+      const retryReport = call("reports.generate", {
+        semesterId,
+        reportType: "daily",
+        periodStart: "2026-10-09",
+        periodEnd: "2026-10-09",
+      }) as ParentReport;
+      expect(target.channelConfigJson).not.toContain("parent@example.test");
+      const retryCtx = new S6Context(ISOLATION_DIR, {
+        deliveryChannels: { ...createMockDeliveryChannels(), smtp: captureChannel },
+        credentialGetter: () => JSON.stringify({ host: "smtp.qq.test", port: 465, from: "sender@example.test", to: "parent@example.test", password: "vault-secret" }),
+      });
+      const retryHandlers = createS6Handlers(retryCtx);
+      const first = (retryHandlers["deliveries.deliver"] as (p: unknown) => unknown)({ reportKey: retryReport.reportKey, channel: "smtp" }) as ReportDelivery;
+      expect(first.status).toBe("failed");
+      (retryHandlers["deliveries.retry"] as (p: unknown) => unknown)({ reportKey: retryReport.reportKey, channel: "smtp" });
+      expect(seen).toHaveLength(2);
+      expect(seen[1]).toMatchObject({ to: "parent@example.test", host: "smtp.qq.test", port: 465, credentialValue: "vault-secret" });
+      retryCtx.dispose();
+    });
 
     it("RTY-02 达上限 retained_locally", () => {
       // 用一个总是失败的渠道 + maxRetries=3，连续 retry 3 次后应 retained_locally
@@ -368,6 +440,12 @@ describe("T-M2-002 S6 家长报告 handler 集成测试", () => {
         credentialGetter: () => "mock",
       });
       const failHandlers = createS6Handlers(failCtx);
+      call("reportTargets.create", {
+        semesterId,
+        targetName: "打印目标",
+        channelType: "print",
+        channelConfigJson: JSON.stringify({ printerAlias: "default" }),
+      });
 
       // 用新 reportKey 建 print 渠道投递（避免与前面冲突）
       const report = (failHandlers["reports.generate"] as (p: unknown) => unknown)({

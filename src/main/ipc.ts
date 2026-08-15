@@ -5,13 +5,14 @@
  * main 创建 MessageChannelMain，host 端经 parentPort 转交 agent-host，
  * renderer 端经 sender.postMessage + transferList 接收 renderer 端口。
  */
-import { BrowserWindow, dialog, ipcMain, MessageChannelMain, utilityProcess, type MessagePortMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, MessageChannelMain, utilityProcess, type MessagePortMain } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import { resolveDataRoot } from "../agent-host/allowed-roots";
 import { stageMaterialImport } from "../shared/material-import";
 import { IPC_CHANNELS } from "../shared/constants";
 import { createHostManager, type AgentHostHandle } from "./host-manager";
+import { prepareDataRootMigration } from "./data-root-init";
 import { CredentialVault } from "./credential-vault";
 import type { AnyMessagePort } from "../contract/rpc";
 import type { DialogOptions, DialogResult, ToolchainStatus } from "../contract/types";
@@ -180,6 +181,16 @@ export function registerConnectHostIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SELECT_DIRECTORY, async (): Promise<string | null> => {
     const result = await dialog.showOpenDialog({ properties: ["openDirectory"] });
     return result.canceled ? null : (result.filePaths[0] ?? null);
+  });
+  ipcMain.handle(IPC_CHANNELS.MIGRATE_DATA_ROOT, (_event, targetRoot: unknown): void => {
+    if (typeof targetRoot !== "string" || !path.isAbsolute(targetRoot)) {
+      throw new Error("数据根迁移目录无效");
+    }
+    prepareDataRootMigration({
+      currentRoot: resolveDataRoot(),
+      targetRoot,
+      registryPath: path.join(app.getPath("userData"), "data-root.json"),
+    });
   });
   ipcMain.handle(IPC_CHANNELS.SHOW_DIALOG, async (_event, options: DialogOptions): Promise<DialogResult> =>
     showDesktopDialog(options),

@@ -32,6 +32,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { createStudyBuddyExtension } from "../agent/studybuddy-extension";
 import { modelNotConfiguredError } from "./model-errors";
+import type { ModelProvider } from "../contract/types";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -66,10 +67,13 @@ export interface StudyBuddySessionOptions {
  */
 const RUNTIME_MODEL_ID_ALIASES: Readonly<Record<string, Readonly<Record<string, string>>>> = {
   deepseek: {
+    "DeepSeek Flash": "deepseek-chat",
+    "DeepSeek Pro": "deepseek-reasoner",
     "DeepSeek V4 Flash": "deepseek-chat",
     "DeepSeek V4 Pro": "deepseek-reasoner",
   },
 };
+
 
 /**
  * 自定义 OpenAI 兼容 provider 的运行时定义（pi-ai ModelConfig 文件）。
@@ -99,8 +103,8 @@ const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
       baseUrl: "https://api.deepseek.com/v1",
       api: "openai-completions",
       models: [
-        { id: "deepseek-chat", name: "DeepSeek Chat", input: ["text"], contextWindow: 131072, maxTokens: 8192 },
-        { id: "deepseek-reasoner", name: "DeepSeek Reasoner", input: ["text"], reasoning: true, contextWindow: 131072, maxTokens: 8192 },
+        { id: "deepseek-chat", name: "DeepSeek Flash", input: ["text"], contextWindow: 131072, maxTokens: 8192 },
+        { id: "deepseek-reasoner", name: "DeepSeek Pro", input: ["text"], reasoning: true, contextWindow: 131072, maxTokens: 8192 },
       ],
     },
     volcengine: {
@@ -147,11 +151,29 @@ const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
   },
 };
 
+/** 将升级新增的模型补入已配置 provider，保留用户连接参数和同 ID 自定义定义。 */
+function mergeRuntimeProvider(
+  defaults: (typeof DEFAULT_RUNTIME_PROVIDERS.providers)[keyof typeof DEFAULT_RUNTIME_PROVIDERS.providers],
+  existing: unknown,
+): Record<string, unknown> {
+  if (!existing || typeof existing !== "object" || Array.isArray(existing)) return { ...defaults };
+  const current = existing as Record<string, unknown>;
+  const currentModels = Array.isArray(current.models) ? current.models : [];
+  const modelsById = new Map<string, unknown>();
+  for (const model of defaults.models) modelsById.set(model.id, model);
+  for (const model of currentModels) {
+    if (!model || typeof model !== "object" || Array.isArray(model)) continue;
+    const id = (model as { id?: unknown }).id;
+    if (typeof id === "string" && id.trim()) modelsById.set(id, model);
+  }
+  return { ...defaults, ...current, models: [...modelsById.values()] };
+}
+
 /**
  * 确保业务数据根的 provider catalog 包含项目默认项。
  *
- * 已存在文件按 provider id 合并：用户已配置 provider 的 baseUrl/api/模型定义保持不变，
- * 缺失 provider 才补入默认定义。这样升级新增 provider 时可见，同时不会改写用户的中转地址。
+ * 已存在 provider 保持其名称、地址和 API 形态；升级新增的默认模型按 ID 合并，
+ * 所以旧安装的空模型数组不会把设置页和运行时目录清空。
  */
 export function ensureRuntimeProviderConfig(dataRoot: string): string {
   const dir = path.join(dataRoot, "config");
@@ -161,20 +183,126 @@ export function ensureRuntimeProviderConfig(dataRoot: string): string {
     try {
       existing = JSON.parse(fs.readFileSync(file, "utf8")) as { providers?: Record<string, unknown> };
     } catch {
-      // 损坏的非敏感 catalog 不作为运行时配置使用，安全地以默认值重建。
       existing = {};
     }
   }
   const currentProviders = existing.providers && typeof existing.providers === "object" ? existing.providers : {};
-  const mergedProviders = { ...DEFAULT_RUNTIME_PROVIDERS.providers, ...currentProviders };
-  const hasAllDefaults = Object.keys(DEFAULT_RUNTIME_PROVIDERS.providers).every((id) => Object.prototype.hasOwnProperty.call(currentProviders, id));
-  if (!fs.existsSync(file) || !hasAllDefaults) {
+  const mergedDefaults = Object.fromEntries(
+    Object.entries(DEFAULT_RUNTIME_PROVIDERS.providers).map(([id, defaults]) => [
+      id,
+      mergeRuntimeProvider(defaults, currentProviders[id]),
+    ]),
+  );
+  const mergedProviders = { ...mergedDefaults, ...currentProviders };
+  for (const id of Object.keys(mergedDefaults)) mergedProviders[id] = mergedDefaults[id];
+  const next = { ...existing, providers: mergedProviders };
+  if (!fs.existsSync(file) || JSON.stringify(existing) !== JSON.stringify(next)) {
     fs.mkdirSync(dir, { recursive: true });
     const tmp = `${file}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify({ ...existing, providers: mergedProviders }, null, 2), "utf8");
+    fs.writeFileSync(tmp, JSON.stringify(next, null, 2), "utf8");
     fs.renameSync(tmp, file);
   }
   return file;
+}
+
+/**
+ * 将 pi runtime catalog 转为设置页可用的非敏感模型目录。
+ * 读取与 createStudyBuddySession 使用同一份 pi-models.json，避免 UI fixture
+ * 与实际运行时 provider/model ID 分叉；baseUrl 等连接细节永不返回 renderer。
+ */
+export function readRuntimeModelProviders(dataRoot: string): ModelProvider[] {
+  const file = ensureRuntimeProviderConfig(dataRoot);
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, "utf8")) as {
+      providers?: Record<string, {
+        name?: unknown;
+        models?: Array<{ id?: unknown; name?: unknown; input?: unknown; modality?: unknown; contextWindow?: unknown }>;
+      }>;
+    };
+    return Object.entries(raw.providers ?? {}).flatMap(([id, provider]) => {
+      if (!/^[a-z0-9._-]{1,160}$/i.test(id) || !provider || typeof provider !== "object") return [];
+      const models = (provider.models ?? []).flatMap((model) => {
+        if (typeof model.id !== "string" || !model.id.trim()) return [];
+        const input = Array.isArray(model.input)
+          ? model.input.filter((item): item is "text" | "image" => item === "text" || item === "image")
+          : undefined;
+        const modality: "chat" | "image" | "video" | undefined = model.modality === "image" || model.modality === "video" || model.modality === "chat"
+          ? model.modality
+          : undefined;
+        return [{
+          id: model.id,
+          name: typeof model.name === "string" && model.name.trim() ? model.name : model.id,
+          ...(input && input.length > 0 ? { input } : {}),
+          ...(modality ? { modality } : {}),
+          ...(typeof model.contextWindow === "number" ? { contextWindow: model.contextWindow } : {}),
+        }];
+      });
+      return [{
+        id,
+        name: typeof provider.name === "string" && provider.name.trim() ? provider.name : id,
+        providerType: "openai-compatible",
+        models,
+      }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+export interface RuntimeProviderConnection {
+  baseUrl: string;
+  api: string;
+}
+
+function isRuntimeProviderId(value: unknown): value is string {
+  return typeof value === "string" && /^[a-z0-9._-]{1,160}$/i.test(value);
+}
+
+function readRuntimeProviderCatalog(dataRoot: string): { providers: Record<string, Record<string, unknown>> } {
+  const file = ensureRuntimeProviderConfig(dataRoot);
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { providers?: unknown };
+    if (parsed.providers && typeof parsed.providers === "object" && !Array.isArray(parsed.providers)) {
+      return { providers: parsed.providers as Record<string, Record<string, unknown>> };
+    }
+  } catch {
+    // Callers surface a fixed recoverable message; configuration contents stay private.
+  }
+  return { providers: {} };
+}
+
+/** Returns only the stored OpenAI-compatible endpoint metadata; never returns a credential. */
+export function readRuntimeProviderConnection(dataRoot: string, providerId: string): RuntimeProviderConnection | null {
+  if (!isRuntimeProviderId(providerId)) return null;
+  const provider = readRuntimeProviderCatalog(dataRoot).providers[providerId];
+  if (!provider || typeof provider.baseUrl !== "string" || typeof provider.api !== "string") return null;
+  try {
+    const url = new URL(provider.baseUrl);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return { baseUrl: url.toString(), api: provider.api };
+  } catch {
+    return null;
+  }
+}
+
+/** Persist models discovered from a user-requested provider probe without storing secrets. */
+export function writeRuntimeProviderModels(dataRoot: string, providerId: string, models: ModelProvider["models"]): void {
+  if (!isRuntimeProviderId(providerId) || models.length === 0) {
+    throw new Error("模型目录无效");
+  }
+  const file = ensureRuntimeProviderConfig(dataRoot);
+  const catalog = readRuntimeProviderCatalog(dataRoot);
+  const provider = catalog.providers[providerId];
+  if (!provider) throw new Error("模型供应商不存在");
+  const next = {
+    providers: {
+      ...catalog.providers,
+      [providerId]: { ...provider, models },
+    },
+  };
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(next, null, 2), "utf8");
+  fs.renameSync(tmp, file);
 }
 
 function resolveRuntimeModelId(provider: string, configuredModel: string): string {

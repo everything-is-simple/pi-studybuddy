@@ -15,6 +15,8 @@ export interface PiBridge {
   connectHost(): Promise<AnyMessagePort>;
   /** 目录选择（dialog.showOpenDialog，记录 recentCwds） */
   selectDirectory(): Promise<string | null>;
+  /** 复制并校验业务数据根，安排下一次应用启动切换；不返回磁盘路径。 */
+  scheduleDataRootMigration(targetRoot: string): Promise<void>;
   /** 通用对话框（open/save/message） */
   showDialog(options: DialogOptions): Promise<DialogResult>;
   /** 查询工具链发现结果 */

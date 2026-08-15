@@ -114,8 +114,8 @@ export function createS6Tools(ctx: S6Context): ToolDefinition[] {
           retry?: boolean;
         };
         const result = retry
-          ? handlers["deliveries.retry"]({ reportKey, channel })
-          : handlers["deliveries.deliver"]({ reportKey, channel });
+          ? await handlers["deliveries.retry"]({ reportKey, channel })
+          : await handlers["deliveries.deliver"]({ reportKey, channel });
         const delivery = result as {
           reportKey: string;
           channel: string;

@@ -7,8 +7,8 @@
  *
  * 数据隔离：PI_STUDYBUDDY_DATA_ROOT 指向 H:\pi-studybuddy-tmp\runs\T-M3-005\。
  */
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { rmSync, mkdirSync } from "node:fs";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { readFileSync, rmSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { createModelHandlers } from "../../src/agent-host/handlers/models";
 import type { ModelProvider } from "../../src/contract/types";
@@ -107,5 +107,66 @@ describe("modelsConfig.* + models.list fixture（06-API §3.13 + §9.5 + 裁决 
     expect(agnes?.models.map((m) => m.id)).toContain("agnes-2.5-pro");
     expect(agnes?.models.map((m) => m.id)).toContain("agnes-image-2.1-flash");
     expect(agnes?.models.map((m) => m.id)).toContain("agnes-video-v2.0");
+  });
+
+  it("models.probe 使用已保存的 key 读取空目录供应商并持久化发现的文本模型", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      data: [{ id: "relay-chat" }, { id: "relay-reasoner" }, { id: "relay-chat" }, { id: "" }],
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    const handlers = createModelHandlers(ISOLATION_DIR, {
+      credentialService: { get: async (key) => key === "modelProvider:xiaojigpt" ? "temporary-secret" : null },
+      fetchImpl,
+    });
+
+    await expect(handlers["models.probe"]({ provider: "xiaojigpt" })).resolves.toEqual([
+      { id: "relay-chat", name: "relay-chat", input: ["text"] },
+      { id: "relay-reasoner", name: "relay-reasoner", input: ["text"] },
+    ]);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.ckff.tech/v1/models",
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer temporary-secret" }) }),
+    );
+
+    const providers = handlers["models.list"]({}) as ModelProvider[];
+    expect(providers.find((provider) => provider.id === "xiaojigpt")?.models.map((model) => model.id)).toEqual(["relay-chat", "relay-reasoner"]);
+    expect(readFileSync(path.join(ISOLATION_DIR, "config", "pi-models.json"), "utf8")).not.toContain("temporary-secret");
+  });
+
+  it("models.probe 认证失败不覆盖已有模型目录，且不回显端点或密钥", async () => {
+    const initial = createModelHandlers(ISOLATION_DIR);
+    const before = initial["models.list"]({}) as ModelProvider[];
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response("denied", { status: 401 }));
+    const handlers = createModelHandlers(ISOLATION_DIR, {
+      credentialService: { get: async () => "temporary-secret" },
+      fetchImpl,
+    });
+
+    await expect(handlers["models.probe"]({ provider: "xiaojigpt" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "API Key 验证失败，请检查后重试",
+    });
+    expect(handlers["models.list"]({})).toEqual(before);
+  });
+
+  it("modelsConfig.test 使用选中模型发送最小连接请求，不发送学生数据", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      choices: [{ message: { role: "assistant", content: "ok" } }],
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    const handlers = createModelHandlers(ISOLATION_DIR, {
+      credentialService: { get: async () => "temporary-secret" },
+      fetchImpl,
+    });
+
+    const result = await handlers["modelsConfig.test"]({ provider: "deepseek", model: "deepseek-chat" });
+
+    expect(result.ok).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.deepseek.com/v1/chat/completions",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer temporary-secret" }),
+        body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: "连接测试" }], max_tokens: 1, stream: false }),
+      }),
+    );
   });
 });
