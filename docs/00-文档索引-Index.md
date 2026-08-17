@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.205
+**版本**：v0.1.206
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -28,12 +28,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ v0.1.205 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；T-M5-006 为唯一 in_progress，T-M5-011/007/008 pending；T-M5-005 的三条遗留原生 UAT并入 T-M5-008 最终干净机安装验收。 |
+| 00 | 本文档 | ✅ v0.1.206 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；T-M5-006 实现提交已推送任务分支但仍为唯一 in_progress，T-M5-011/007/008 pending；T-M5-005 的三条遗留原生 UAT并入 T-M5-008 最终干净机安装验收。 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.205 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006 in_progress，T-M5-011/007/008 pending；T-M5-006 已登记 SAPI 生产装配、OCR/whisper/WPS 缺失降级和可见运行能力状态 GREEN，剩余顺序为运行资产→配置与七类设置→发布前真实 Electron UAT→最终候选与干净机安装验收。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.206 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006 任务分支已推送但仍 in_progress，T-M5-011/007/008 pending；T-M5-006 已登记 SAPI 生产装配、OCR/whisper/WPS 缺失降级和可见运行能力状态 GREEN，剩余顺序为运行资产→配置与七类设置→发布前真实 Electron UAT→最终候选与干净机安装验收。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.9 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -236,6 +236,7 @@
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.206 | 2026-08-17 | 同步 T-M5-006 已发生 Git 事实：实现提交 `5911722`（`feat(m5): 装配受管运行依赖与离线降级`）已推送 `origin/agent/T-M5-006-runtime-dependencies` 并核验任务分支同位。任务仍为唯一 in_progress，未合并 master，双独立审查、实施记录和受控收尾仍待；不启动 T-M5-011/007/008，不读取/暂存安装器。 |
 | v0.1.205 | 2026-08-17 | 同步 T-M5-006 最终本地验证：Node24 `verify --stage=full --skip=e2e` 执行 8 项且真正跳过历史安装器 E2E；串行 unit/integration 139 files/1240 tests、无发行 Electron 33 files/141 tests 和当前 `win-unpacked` package smoke 双启动均通过。并发期 file-watch/package-smoke 抖动经无残留进程单独与串行复验通过，保留为环境证据；任务仍 in_progress，待双独立审查和受控收尾授权。 |
 | v0.1.204 | 2026-08-17 | 同步治理质量门 skip 标签修复：`verify --skip=e2e` 现保留数字并实际跳过历史安装器 E2E，已用仅 docs-governance 的 full-stage 命令复验；此前误触发 setup 的事实保留。T-M5-006 仍为唯一 in_progress，未启动后续任务或读取/暂存安装器。 |
 | v0.1.203 | 2026-08-17 | 同步 T-M5-006 发布态 agent-host 装配修复：utilityProcess 所需 `dist` 与生产依赖解包，发布态显式从 `app.asar.unpacked` 启动 host，package smoke 每次启动使用独立 Chromium profile；当前 `win-unpacked` 两次隔离启动的 `global.db`、`system.ping` 与代表性业务 RPC 通过。Node24 `pnpm test` 138 files/1239 tests，Settings Electron E2E 1/1、type-check/build、contract 128/128、安全 6/6、docs/diff 通过。任务仍 in_progress，双审查与受控收尾未完成，不启动 T-M5-011/007/008。 |
