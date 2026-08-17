@@ -50,7 +50,11 @@ function parseCredentialConfig(channel: ReportChannel, credentialValue: string |
   return { credentialValue };
 }
 
-function mergeCredentialConfig(channel: ReportChannel, config: Record<string, unknown>, credentialValue: string | undefined): Record<string, unknown> {
+/**
+ * 将 DPAPI 中短暂解密的渠道凭据合并到 host 内存配置；绝不写回 SQLite、JSON 或 DTO。
+ * SMTP 支持结构化 vault 内容，以便地址/端点与授权码同属 DPAPI 边界。
+ */
+export function mergeCredentialConfig(channel: ReportChannel, config: Record<string, unknown>, credentialValue: string | undefined): Record<string, unknown> {
   const credentialConfig = parseCredentialConfig(channel, credentialValue);
   return credentialConfig ? { ...config, ...credentialConfig } : config;
 }

@@ -212,9 +212,11 @@ describe("cross-cutting hooks 集成", () => {
     const filePath = path.join(ISOLATION_DIR, "config", "models.json");
     expect(existsSync(filePath)).toBe(true);
     const raw = JSON.parse(readFileSync(filePath, "utf8"));
-    expect(raw.provider).toBe("deepseek");
-    expect(raw.model).toBe("DeepSeek V4 Flash");
-    expect(raw.__studybuddy_managed).toBe(true);
+    expect(raw.schemaVersion).toBe(1);
+    expect(raw.updatedAt).toEqual(expect.any(String));
+    expect(raw.data.provider).toBe("deepseek");
+    expect(raw.data.model).toBe("DeepSeek V4 Flash");
+    expect(raw.data.managed).toBe(true);
   });
 
   it("turn_end 钩子 → assistant + tool 消息写入 L3 chunks/chunks_fts（T-M5-003：真实会话 id）", async () => {

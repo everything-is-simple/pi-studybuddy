@@ -433,6 +433,44 @@ describe("T-M4-016 ReportTab RPC 接线", () => {
     });
     expect(host.textContent).toContain("本地导出已配置");
   });
+  it("RT-00 渠道测试消息：显式调用 sendTestMessage，成功/失败均使用固定脱敏反馈", async () => {
+    const calls: Array<{ method: string; params: unknown }> = [];
+    const smtpTarget: ParentReportTarget = {
+      ...exportTarget,
+      id: "target-smtp-test",
+      targetName: "家长邮箱",
+      channelType: "smtp",
+      channelConfigJson: JSON.stringify({ alias: "mail-safe" }),
+      credentialKey: "parentContact:email",
+    };
+    let shouldFail = false;
+    const rpc = createMockRpcClient({
+      "reports.list": () => [],
+      "reportTargets.list": () => [smtpTarget],
+      "reportTargets.sendTestMessage": (params: unknown) => {
+        calls.push({ method: "reportTargets.sendTestMessage", params });
+        return shouldFail
+          ? Promise.reject(new Error("secret path C:\\\\private\\\\credentials.json stackFrame"))
+          : { channel: "smtp", status: "sent", message: "测试消息已发送。" };
+      },
+    });
+    host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+    await act(async () => root?.render(React.createElement(ReportTab, { rpc, semesterId: "sem-1" })));
+    await flush();
+
+    await act(async () => button(host!, "发送测试消息").click());
+    await flush();
+    expect(calls).toContainEqual({ method: "reportTargets.sendTestMessage", params: { targetId: "target-smtp-test" } });
+    expect(host.textContent).toContain("测试消息已发送。");
+    expect(host.textContent).not.toContain("credentials.json");
+
+    shouldFail = true;
+    await act(async () => button(host!, "发送测试消息").click());
+    await flush();
+    expect(host.textContent).toContain("测试消息发送失败，请检查配置后重试。");
+    expect(host.textContent).not.toContain("secret");
+    expect(host.textContent).not.toContain("Error:");
+  });
   it("S6-RED-10 投递目标管理：启用/停用和删除调用受控 RPC，不泄露凭据", async () => {
     const calls: Array<{ method: string; params: unknown }> = [];
     const smtpTarget: ParentReportTarget = {

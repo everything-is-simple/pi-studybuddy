@@ -92,8 +92,16 @@ function forkAgent(): AgentHostHandle {
         }
         child.postMessage({ type: "credential-result", id, ok: true, result });
       } catch (error) {
-        // 不回传底层错误详情（可能含路径/密钥信息）；agent-host 统一按固定错误处理。
-        child.postMessage({ type: "credential-result", id, ok: false, error: "凭证库操作失败" });
+        // 不回传底层错误详情（可能含路径/密钥信息）；只映射固定可恢复语义。
+        const code = error && typeof error === "object" && "code" in error ? (error as { code?: unknown }).code : undefined;
+        child.postMessage({
+          type: "credential-result",
+          id,
+          ok: false,
+          error: code === "CREDENTIAL_UNAVAILABLE"
+            ? "系统加密暂不可用，请解锁 Windows 后重试。"
+            : "凭证库操作失败，请检查配置后重试。",
+        });
       }
       return;
     }

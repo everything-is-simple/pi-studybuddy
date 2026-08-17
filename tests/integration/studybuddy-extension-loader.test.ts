@@ -172,7 +172,10 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
 
     ensureRuntimeProviderConfig(DATA_ROOT);
 
-    const providers = JSON.parse(readFileSync(catalog, "utf8")).providers;
+    const stored = JSON.parse(readFileSync(catalog, "utf8"));
+    expect(stored.schemaVersion).toBe(1);
+    expect(typeof stored.updatedAt).toBe("string");
+    const providers = stored.data.providers;
     expect(providers.agnes.name).toBe("用户 Agnes");
     expect(providers.agnes.baseUrl).toBe("https://example.invalid/v1");
     expect(providers.agnes.models.map((model: { id: string }) => model.id)).toEqual(expect.arrayContaining([
@@ -190,6 +193,7 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
 
     writeFileSync(catalog, JSON.stringify({ providers: {} }), "utf8");
     ensureRuntimeProviderConfig(DATA_ROOT);
+    expect(JSON.parse(readFileSync(catalog, "utf8"))).toMatchObject({ schemaVersion: 1, data: { providers: expect.any(Object) } });
   });
 
   it("agnes 自定义 OpenAI 兼容 provider（pi-models.json）可创建 session（不连网）", async () => {

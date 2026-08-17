@@ -9,8 +9,7 @@
  * 原子写：tmp 文件写入 + rename 覆盖（单写进程无并发，AGENTS.md §1.1）。
  * managed 标记：__studybuddy_managed = true 表明该文件由 pi-studybuddy 管理。
  */
-import path from "node:path";
-import fs from "node:fs";
+import { createVersionedConfigStore, type ConfigReadResult } from "./config-store";
 
 /** 模型配置（对齐 06-API §3.13 ModelConfig 契约 + 裁决 1 managed 标记） */
 export interface ModelConfig {
@@ -20,54 +19,42 @@ export interface ModelConfig {
   managed?: boolean;
 }
 
-/** 磁盘文件结构（含 managed 标记 + 更新时间戳） */
-interface ModelConfigFile {
+interface StoredModelConfig {
   provider: string;
   model: string;
-  __studybuddy_managed: boolean;
-  updatedAt: string;
+  managed: boolean;
 }
 
-/** 配置文件相对业务数据根的路径 */
-function configPath(dataRoot: string): string {
-  return path.join(dataRoot, "config", "models.json");
+function parseModelConfig(value: unknown): StoredModelConfig | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const source = value as Record<string, unknown>;
+  if (typeof source.provider !== "string" || typeof source.model !== "string") return null;
+  if (!/^[a-z0-9._-]{0,160}$/i.test(source.provider) || source.model.length > 160) return null;
+  return { provider: source.provider, model: source.model, managed: source.managed === true || source.__studybuddy_managed === true };
+}
+
+const modelConfigStore = createVersionedConfigStore<StoredModelConfig>({
+  asset: "models",
+  fileName: "models.json",
+  schemaVersion: 1,
+  defaultData: () => ({ provider: "", model: "", managed: true }),
+  parse: parseModelConfig,
+});
+
+export function readModelConfigWithStatus(dataRoot: string): ConfigReadResult<StoredModelConfig> {
+  return modelConfigStore.read(dataRoot);
 }
 
 /**
- * 读取默认模型配置。文件不存在或解析失败 → null（区别于"已配置"）。
+ * 读取默认模型配置。空 provider/model 仍表示尚未选择模型，保持既有调用语义。
  */
 export function readModelConfig(dataRoot: string): ModelConfig | null {
-  const file = configPath(dataRoot);
-  if (!fs.existsSync(file)) return null;
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Partial<ModelConfigFile>;
-    if (typeof raw.provider !== "string" || typeof raw.model !== "string") return null;
-    return {
-      provider: raw.provider,
-      model: raw.model,
-      managed: raw.__studybuddy_managed === true,
-    };
-  } catch {
-    // 解析失败视为未配置（不抛错，调用方按 null 处理）
-    return null;
-  }
+  const config = readModelConfigWithStatus(dataRoot).data;
+  if (!config.provider || !config.model) return null;
+  return { provider: config.provider, model: config.model, managed: config.managed };
 }
 
-/**
- * 原子写默认模型配置：tmp 文件 + rename 覆盖 + __studybuddy_managed 标记 + updatedAt。
- * 不落日志、不含 key/baseUrl（密钥边界由调用方保证）。
- */
+/** 原子写版本化默认模型配置；不落 key/baseUrl。 */
 export function writeModelConfig(dataRoot: string, config: ModelConfig): void {
-  const dir = path.join(dataRoot, "config");
-  fs.mkdirSync(dir, { recursive: true });
-  const file = configPath(dataRoot);
-  const tmp = `${file}.tmp`;
-  const payload: ModelConfigFile = {
-    provider: config.provider,
-    model: config.model,
-    __studybuddy_managed: true,
-    updatedAt: new Date().toISOString(),
-  };
-  fs.writeFileSync(tmp, JSON.stringify(payload, null, 2), "utf8");
-  fs.renameSync(tmp, file);
+  modelConfigStore.write(dataRoot, { provider: config.provider, model: config.model, managed: true });
 }

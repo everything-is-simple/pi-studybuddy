@@ -122,6 +122,45 @@ describe("T-M2-002 S6 家长报告 handler 集成测试", () => {
   });
 
   describe("reportTargets.*", () => {
+    it("RT-00 显式测试消息只发送固定脱敏正文，不生成报告或投递记录", async () => {
+      const target = call("reportTargets.create", {
+        semesterId,
+        targetName: "测试邮箱",
+        channelType: "smtp",
+        channelConfigJson: JSON.stringify({ alias: "家长邮箱" }),
+        credentialKey: "parentContact:email",
+      }) as ParentReportTarget;
+      const received: Array<{ reportKey: string; reportType: string; contentJson: string; config: Record<string, unknown> }> = [];
+      const testContext = new S6Context(ISOLATION_DIR, {
+        credentialGetter: () => JSON.stringify({ host: "smtp.example.test", port: 587, from: "sender@example.test", to: "recipient@example.test", password: "test-credential" }),
+        deliveryChannels: {
+          ...createMockDeliveryChannels(),
+          smtp: {
+            deliver: (report, config) => {
+              received.push({ reportKey: report.reportKey, reportType: report.reportType, contentJson: report.contentJson, config });
+              return { success: true };
+            },
+          },
+        },
+      });
+      const testHandlers = createS6Handlers(testContext);
+      try {
+        const result = await testHandlers["reportTargets.sendTestMessage"]({ targetId: target.id }) as { channel: string; status: string; message: string };
+        expect(result).toEqual({ channel: "smtp", status: "sent", message: "测试消息已发送。" });
+        expect(received).toHaveLength(1);
+        expect(received[0]).toMatchObject({ reportKey: "configuration-test", reportType: "configuration-test" });
+        expect(received[0].contentJson).toContain("配置验证消息");
+        expect(received[0].contentJson).not.toContain("S6测试课程");
+        expect(received[0].config).toMatchObject({ host: "smtp.example.test", port: 587, from: "sender@example.test", to: "recipient@example.test", credentialValue: "test-credential" });
+        expect(JSON.stringify(result)).not.toContain("test-credential");
+        expect(String(testContext.globalDb.prepare("SELECT channel_config_json FROM parent_report_targets WHERE id = @id").get({ id: target.id }).channel_config_json)).not.toContain("test-credential");
+        expect(String(testContext.globalDb.prepare("SELECT channel_config_json FROM parent_report_targets WHERE id = @id").get({ id: target.id }).channel_config_json)).not.toContain("example.test");
+        expect(testContext.semesterDb(semesterId).prepare("SELECT COUNT(*) AS count FROM parent_reports").get()).toMatchObject({ count: 0 });
+        expect(testContext.semesterDb(semesterId).prepare("SELECT COUNT(*) AS count FROM report_deliveries").get()).toMatchObject({ count: 0 });
+      } finally {
+        testContext.dispose();
+      }
+    });
     it("RT-01 create → 返回 ParentReportTarget（enabled=1，真实地址不入库）", () => {
       const target = call("reportTargets.create", {
         semesterId,

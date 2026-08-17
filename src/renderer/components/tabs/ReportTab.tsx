@@ -511,6 +511,23 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
       });
   }
 
+  function sendReportTargetTestMessage(target: ParentReportTarget): void {
+    if (isReadOnly || createTargetInFlightRef.current || (target.channelType !== "smtp" && target.channelType !== "feishu_webhook")) return;
+    createTargetInFlightRef.current = true;
+    const contextVersion = contextVersionRef.current;
+    setActionError(undefined);
+    void rpc.call("reportTargets.sendTestMessage", { targetId: target.id })
+      .then((result) => {
+        createTargetInFlightRef.current = false;
+        if (!mountedRef.current || contextVersion !== contextVersionRef.current) return;
+        setTargetNotice(result.status === "sent" ? "测试消息已发送。" : "测试消息发送失败，请检查配置后重试。");
+      })
+      .catch(() => {
+        createTargetInFlightRef.current = false;
+        if (mountedRef.current && contextVersion === contextVersionRef.current) setActionError("测试消息发送失败，请检查配置后重试。");
+      });
+  }
+
   function deleteReportTarget(target: ParentReportTarget): void {
     if (isReadOnly || createTargetInFlightRef.current) return;
     if (!globalThis.window?.confirm?.(`删除目标“${target.targetName}”？`)) return;
@@ -721,6 +738,7 @@ function RuntimeReportTab({ rpc, semesterId, academicContext, onSpeakText }: {
             <div key={target.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
               <span style={{ flex: 1 }}>{target.targetName} · {channelLabel(target.channelType)} · {target.enabled ? "已启用" : "已停用"}</span>
               <button type="button" disabled={isReadOnly} onClick={() => updateReportTarget(target, target.enabled ? 0 : 1)} style={{ padding: "2px 8px", fontSize: 11 }}>{target.enabled ? "停用" : "启用"}</button>
+              {(target.channelType === "smtp" || target.channelType === "feishu_webhook") && target.enabled === 1 ? <button type="button" disabled={isReadOnly} onClick={() => sendReportTargetTestMessage(target)} style={{ padding: "2px 8px", fontSize: 11 }}>发送测试消息</button> : null}
               <button type="button" disabled={isReadOnly} onClick={() => deleteReportTarget(target)} style={{ padding: "2px 8px", fontSize: 11 }}>删除</button>
             </div>
           ))}

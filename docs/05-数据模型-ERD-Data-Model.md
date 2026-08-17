@@ -1,6 +1,6 @@
 # 05 数据模型 ERD
 
-**版本**：v0.1.2
+**版本**：v0.1.3
 **日期**：2026-08-09
 **状态**：✅ 已审查批准（用户 2026-08-07 批准）
 **上游**：[02-PRD v0.1.4 §3](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §4](./03-架构设计-Architecture-Design.md)
@@ -20,16 +20,41 @@
 | **L3 会话库** | `%LOCALAPPDATA%\PiStudyBuddy\memory\l3\conversation.sqlite` | 会话检索（FTS5 bigram） | SQLite (node:sqlite, Node≥22.5) |
 | **L1 画像** | `%LOCALAPPDATA%\PiStudyBuddy\memory\l1\learner-profile.json` | 学习者画像（JSON + events.jsonl） | 文件 |
 | **L2 知识库索引** | `%LOCALAPPDATA%\PiStudyBuddy\memory\l2\wiki-index\` | BM25 + 知识图谱 | 文件 + 内存 |
-| **credential-vault** | `%LOCALAPPDATA%\PiStudyBuddy\config\credentials.json` | DPAPI 加密 JSON（值为 safeStorage 密文的 base64 表示） | 文件（尽力设置 0o600） |
+| **普通本机配置** | `%LOCALAPPDATA%\PiStudyBuddy\config\{settings,models,pi-models,skills,console}.json` | 非敏感版本化 JSON；每文件由配置存储管理 schemaVersion、updatedAt 与 payload | 文件（原子 temp + rename） |
+| **credential-vault** | `%LOCALAPPDATA%\PiStudyBuddy\config\credentials.json` | DPAPI 加密 JSON（值为 safeStorage 密文的 base64 表示）；不进入普通配置导出或 renderer | 文件（尽力设置 0o600） |
 | **pi 会话目录** | `~/.pi/agent/` | pi 自管（auth.json/models.json/settings.json） | pi 内核 |
 
-### 1.2 物理隔离原则（TRD §7 决策 3）
+### 1.2 本机配置资产（T-M5-011）
+
+`config/` 是正式 `DATA-CFG-*` 资产根，不是缓存或每次启动重置的 UI 临时文件。普通配置统一采用如下包络；旧版无包络 JSON 仅在读取时迁移，迁移成功后以原子写替换。读取失败不得静默丢弃：损坏原件先隔离，再生成可校验默认值，并向调用方返回固定、可恢复的中文错误语义。
+
+```json
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-17T00:00:00.000Z",
+  "data": {}
+}
+```
+
+| DATA-ID | 文件 | owner | 非敏感内容 | 不得包含 | 备份/卸载边界 |
+|---|---|---|---|---|---|
+| DATA-CFG-001 | `settings.json` | Settings | 通用、学习偏好、TTS、备份显示偏好、简洁模式 | 密钥、路径、瞬时 health | 纳入非敏感配置备份；卸载默认保留 |
+| DATA-CFG-002 | `models.json` | ModelConfig | 默认 provider/model 与 managed 标识 | key、base URL、health、请求正文 | 纳入非敏感配置备份；卸载默认保留 |
+| DATA-CFG-003 | `pi-models.json` | ModelCatalog | provider/model 的非敏感目录 | key、base URL、远端正文 | 纳入非敏感配置备份；卸载默认保留 |
+| DATA-CFG-004 | `skills.json` | Settings | 学习技能展示/偏好 | runtime manifest、路径、health | 纳入非敏感配置备份；卸载默认保留 |
+| DATA-CFG-005 | `console.json` | Settings | 关于/更新检查与控制台显示偏好 | 路径、health、凭证 | 纳入非敏感配置备份；卸载默认保留 |
+| DATA-CFG-006 | `credentials.json` | CredentialVault / main | DPAPI 密文和 vault version | 明文、日志、Renderer DTO、普通配置导出 | 随数据根保留；不解密导出；卸载默认保留 |
+| DATA-RUNTIME-001 | `runtime-resources/manifest.json` | T-M5-006 runtime resolver | 受管资源版本、大小、hash、许可 | 用户偏好、凭证、业务事实 | 随应用重装；不纳入用户配置或业务备份 |
+
+配置写入必须使用临时同目录文件和 `rename`，失败时保留上一个已提交版本；写失败、校验失败、迁移失败、损坏恢复与 DPAPI 不可用均须映射为脱敏、可恢复错误，不能把操作系统路径或错误栈交给 Renderer。运行能力 health 每次启动/重扫从运行时派生，不写入上述任何 `DATA-CFG-*` 文件。
+
+### 1.3 物理隔离原则（TRD §7 决策 3）
 
 - `~/.pi` 由 pi 自管，pi-studybuddy **不侵入**
 - `%LOCALAPPDATA%\PiStudyBuddy` 是业务数据根，pi-studybuddy **自管**
 - 单用户单机单写进程（WAL 模式）
 
-### 1.3 全局库与学期库关系
+### 1.4 全局库与学期库关系
 
 ```
 global.db
@@ -42,7 +67,7 @@ global.db
   semester/<semester-id>/storage/ (资料文件)
 ```
 
-### 1.4 主键与 ID 规范
+### 1.5 主键与 ID 规范
 
 - **主键**：所有表用 `id TEXT PRIMARY KEY`（UUID v4，应用层生成）
 - **外键**：`*_id TEXT` 引用父表 id；SQLite `PRAGMA foreign_keys = ON`
@@ -1232,6 +1257,7 @@ PRAGMA mmap_size = 268435456;          -- 256MB 内存映射
 ## 10. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.3 | 2026-08-17 | T-M5-011 配置资产裁决：新增 `DATA-CFG-*` 的版本化 JSON 包络、所有权、原子写、迁移、损坏恢复、备份/卸载与 DPAPI 边界；瞬时运行 health 明确为派生状态，不进入配置 SoT。原因：用户明确要求本机配置成为可恢复正式资产。影响：数据资产说明性扩展，不新增 SQLite 表。依据：用户任务指令 + AGENTS.md §2/§9/§11 + docs/13 §5/§8。 |
 | v0.1.2 | 2026-08-09 | 交叉审查修订：credential-vault 路径与实现统一为业务数据根 `config/credentials.json`，不再描述不存在的 `credential-vault/*.enc` 文件树。 |
 | v0.1.1 | 2026-08-07 | §4.3 L3 会话检索补"对话 Tab 承载"注——"💬 对话"标签页会话即 pi 会话，session_id 引用 pi 会话 id，对话内容经 turn_end 钩子增量索引到此表（02-PRD §3.11 + 03-Architecture §6.7 + 09-UI §4.2 贯通） |
 | v0.1.0 | 2026-08-07 | 初始草案：全局库 schema（semesters/parent_report_targets/backup_records/backup_schedules）；学期库 schema（S1-S7 全量表 30+）；三层记忆 schema（L1 JSON/L2 BM25+图谱/L3 FTS5 bigram）；ER 关系图（全局库 + 学期库核心关系 + 跨子系统数据流）；触发器（6 个 S4 关系一致性 + storage_key 路径逃逸防护 + mock_exam confirmed 校验 + 幂等归档）；索引汇总；备份 zip 内部结构 + 恢复流程；PRAGMA 配置。输入：02-PRD §3 数据契约 + 03-Architecture §4 数据层 + ai-studybuddy S1-S7 业务认知迁移 |

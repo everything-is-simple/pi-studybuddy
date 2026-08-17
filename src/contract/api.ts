@@ -8,9 +8,13 @@
  */
 import type {
   AppSettings,
+  ConfigAssetStatus,
+  ConfigSectionAsset,
+  ConfigSectionData,
   AssessmentAttempt,
   BackupRecord,
   BackupSchedule,
+  ChannelTestResult,
   CourseInstance,
   CramCard,
   CramPlanDay,
@@ -300,6 +304,10 @@ export interface Api {
   };
   "reportTargets.update": { params: { id: string; [k: string]: unknown }; result: ParentReportTarget };
   "reportTargets.delete": { params: { id: string }; result: void };
+  "reportTargets.sendTestMessage": {
+    params: { targetId: string };
+    result: ChannelTestResult;
+  };
 
   /* ---- §3.9 S7 课堂采集 ---- */
   "classCapture.transcribe": {
@@ -379,6 +387,9 @@ export interface Api {
   "settings.update": { params: { [k: string]: unknown }; result: AppSettings };
   "settings.getSimpleMode": { params: {}; result: boolean };
   "settings.setSimpleMode": { params: { enabled: boolean }; result: void };
+  "settings.getConfigStatus": { params: {}; result: ConfigAssetStatus[] };
+  "settings.getSection": { params: { asset: ConfigSectionAsset }; result: ConfigSectionData };
+  "settings.updateSection": { params: { asset: ConfigSectionAsset; data: ConfigSectionData }; result: ConfigSectionData };
 
   /* ---- §3.15 密钥管理 ---- */
   "credentials.set": { params: { key: string; value: string }; result: void };

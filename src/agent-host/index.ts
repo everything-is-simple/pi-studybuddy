@@ -141,7 +141,8 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   // process.parentPort 委托 main 主进程 DPAPI vault（credential-client）。
   // 不读取 ~/.pi 认证信息；没有可用配置或初始化失败时，agent.send 返回固定安全错误，
   // 不得静默产生 fixture 回复。测试夹具仅在 VITEST 显式注入。
-  const credentialService: CredentialService = createParentPortCredentialClient() ?? {
+  const parentPortCredentialService = createParentPortCredentialClient();
+  const credentialService: CredentialService = parentPortCredentialService ?? {
     // 无 parentPort（非 utilityProcess）时凭证服务不可用：生产由 main 委托，测试由调用方注入 mock。
     get: async () => null,
     set: async () => undefined,
@@ -191,10 +192,11 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
       ...(process.env.VITEST !== undefined ? { fixture: runMockFixture } : {}),
     }),
     // T-M4-002 S1-S7/TTS/Backup 业务 handler（断裂1修复，03-Arch §6.2）
-    ...createBusinessHandlers(dataRoot, server, process.env.VITEST === undefined ? (key) => credentialService.get(key) : undefined),
+    // 受控 Electron UAT/E2E 仍通过 main 的 DPAPI vault 读取隔离凭据；仅 delivery adapter 可被 VITEST mock。
+    ...createBusinessHandlers(dataRoot, server, parentPortCredentialService ? (key) => credentialService.get(key) : undefined),
     // T-M4-003 credentials.*/settings.* handler（断裂5修复，06-API §3.14/§3.15）
     ...createCredentialHandlers(credentialService),
-    ...createSettingsHandlers(dataRoot),
+    ...createSettingsHandlers(dataRoot, { credentialService }),
   });
 
   let attached = false;

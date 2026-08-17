@@ -29,27 +29,33 @@ import {
     credentialStatusLabel,
     scheduleSelectedDataRootMigration,
     sanitizeToolchainStatuses,
+    saveConfigSection,
+    serializeSmtpCredential,
     subscribeToToolchainChanges,
   } from "../../src/renderer/components/SettingsPage";
 describe("SettingsPage（09-UI §10 + §11）", () => {
-  it("渲染通用、安全、开发者三组，且密钥输入框均为 password", () => {
+  it("渲染七类设置控制台，且密钥输入框均为 password", () => {
     const html = renderToStaticMarkup(React.createElement(SettingsPage));
 
     expect(html).toContain("通用");
     expect(html).toContain("学习偏好");
     expect(html).toContain("TTS");
     expect(html).toContain("备份");
-    expect(html).toContain("安全");
+    expect(html).toContain("模型");
+    expect(html).toContain("学习技能");
+    expect(html).toContain("运行能力");
+    expect(html).toContain("家长渠道");
+    expect(html).toContain("数据与备份");
+    expect(html).toContain("关于与更新");
     expect(html).toContain("密钥管理");
     expect(html).toContain("日志脱敏");
-    expect(html).toContain("开发者");
-    expect(html).toContain("本机工具检查");
-    expect(html).toContain("缺失项不能在此自动安装");
+    expect(html).toContain("配置资产状态");
     expect(html).toContain("获取模型目录");
     expect(html).toContain("测试当前选中模型");
     expect(html).toContain("备份目标目录在执行备份时通过系统目录选择器指定");
     expect(html).toContain("未保存");
     expect(html).not.toContain("工具链健康检查");
+    expect(html).not.toContain("开发者");
     expect(html).not.toContain("备份目录名称");
 
     expect((html.match(/type="password"/g) ?? [])).toHaveLength(3);
@@ -106,6 +112,14 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
           recovery: "安装并授权 WPS/Office 后手动测试旧格式转换",
         }];
       },
+      "settings.getConfigStatus": () => {
+        calls.push("settings.getConfigStatus");
+        return [{ asset: "settings", state: "ready", message: "配置可用。", recoverable: true }];
+      },
+      "settings.getSection": (params: unknown) => {
+        calls.push(`settings.getSection:${(params as { asset: string }).asset}`);
+        return (params as { asset: string }).asset === "skills" ? { showUnavailableSkills: true } : { checkUpdatesOnStart: true };
+      },
     });
 
     const data = await loadSettingsPageData(rpc);
@@ -117,6 +131,9 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       "modelsConfig.get",
       "credentials.listKeys:modelProvider:",
       "credentials.listKeys:parentContact:",
+      "settings.getConfigStatus",
+      "settings.getSection:skills",
+      "settings.getSection:console",
     ]));
     expect(calls).toContain("toolchains.list");
     expect(calls).not.toContain("credentials.get");
@@ -338,6 +355,23 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
     expect(calls).toEqual(["select", "schedule:H:\\pi-studybuddy-tmp\\runs\\T-M5-010\\new-root"]);
   });
 
+  it("SMTP 连接信息与授权码只能整体序列化给 DPAPI vault", () => {
+    const payload = serializeSmtpCredential({
+      host: "smtp.example.test",
+      port: "587",
+      from: "sender@example.test",
+      to: "recipient@example.test",
+    }, "temporary-secret");
+    expect(JSON.parse(payload)).toEqual({
+      host: "smtp.example.test",
+      port: 587,
+      from: "sender@example.test",
+      to: "recipient@example.test",
+      password: "temporary-secret",
+    });
+    expect(() => serializeSmtpCredential({ host: "", port: "0", from: "", to: "" }, "")).toThrow("请完整填写邮件服务器、端口、发件人、收件人和授权码。");
+  });
+
   it("凭据保存和移除后重读 key 状态，不读取密钥明文", async () => {
     const calls: Array<{ method: string; params: unknown }> = [];
     const rpc = createMockRpcClient({
@@ -365,6 +399,23 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       { method: "credentials.listKeys", params: { prefix: "parentContact:" } },
     ]);
     expect(calls.map((call) => call.method)).not.toContain("credentials.get");
+  });
+
+  it("技能与关于分区只写受限非敏感布尔偏好", async () => {
+    const calls: Array<{ method: string; params: unknown }> = [];
+    const rpc = createMockRpcClient({
+      "settings.updateSection": (params: unknown) => {
+        calls.push({ method: "settings.updateSection", params });
+        return (params as { data: unknown }).data;
+      },
+    });
+
+    await expect(saveConfigSection(rpc, "skills", { showUnavailableSkills: false })).resolves.toEqual({ showUnavailableSkills: false });
+    await expect(saveConfigSection(rpc, "console", { checkUpdatesOnStart: false })).resolves.toEqual({ checkUpdatesOnStart: false });
+    expect(calls).toEqual([
+      { method: "settings.updateSection", params: { asset: "skills", data: { showUnavailableSkills: false } } },
+      { method: "settings.updateSection", params: { asset: "console", data: { checkUpdatesOnStart: false } } },
+    ]);
   });
 
   it("Ctrl+, 是设置快捷键，其他组合不会误触发", () => {

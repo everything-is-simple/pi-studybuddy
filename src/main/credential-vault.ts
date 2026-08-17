@@ -33,10 +33,21 @@ interface VaultFile {
 /** 键名严格校验（03-Arch §4.5 + 01-TRD §9.2）：仅 modelProvider:xxx / parentContact:xxx */
 const KEY_PATTERN = /^(modelProvider|parentContact):[a-z0-9._-]{1,160}$/i;
 
+export class CredentialVaultError extends Error {
+  constructor(
+    readonly code: "CREDENTIAL_UNAVAILABLE" | "CREDENTIAL_INVALID",
+    message: string,
+    readonly recoverable = true,
+  ) {
+    super(message);
+    this.name = "CredentialVaultError";
+  }
+}
+
 function validateKey(key: string): string {
   const trimmed = key.trim();
   if (!KEY_PATTERN.test(trimmed)) {
-    throw new Error("非法凭证键名：仅接受 modelProvider:xxx / parentContact:xxx");
+    throw new CredentialVaultError("CREDENTIAL_INVALID", "凭据标识无效，请重新配置后重试。", false);
   }
   return trimmed;
 }
@@ -50,20 +61,21 @@ export class CredentialVault {
   /** 加密能力不可用则拒绝读写（安全降级，不落明文） */
   private assertAvailable(): void {
     if (!this.crypto.isEncryptionAvailable()) {
-      throw new Error("系统加密不可用，无法安全存储凭证");
+      throw new CredentialVaultError("CREDENTIAL_UNAVAILABLE", "系统加密暂不可用，请解锁 Windows 后重试。");
     }
   }
 
   private read(): VaultFile {
     try {
       const parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8")) as Partial<VaultFile>;
-      if (parsed.version !== 1 || !parsed.entries || typeof parsed.entries !== "object") {
-        throw new Error("凭证库文件格式无效");
+      if (parsed.version !== 1 || !parsed.entries || typeof parsed.entries !== "object" || Array.isArray(parsed.entries)) {
+        throw new CredentialVaultError("CREDENTIAL_INVALID", "凭据保管库不可用，请重新保存凭据后重试。");
       }
       return { version: 1, entries: parsed.entries };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return { version: 1, entries: {} };
-      throw error;
+      if (error instanceof CredentialVaultError) throw error;
+      throw new CredentialVaultError("CREDENTIAL_INVALID", "凭据保管库不可用，请重新保存凭据后重试。");
     }
   }
 
@@ -99,6 +111,7 @@ export class CredentialVault {
 
   /** credentials.delete */
   delete(key: string): void {
+    this.assertAvailable();
     const data = this.read();
     delete data.entries[validateKey(key)];
     this.write(data);
@@ -106,6 +119,7 @@ export class CredentialVault {
 
   /** credentials.listKeys：仅返回键名，不返回值 */
   listKeys(prefix?: string): string[] {
+    this.assertAvailable();
     const keys = Object.keys(this.read().entries);
     if (prefix) return keys.filter((k) => k.startsWith(prefix));
     return keys;

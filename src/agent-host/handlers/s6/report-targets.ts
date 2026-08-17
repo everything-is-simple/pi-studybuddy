@@ -12,7 +12,9 @@ import type { S6Context } from "./context";
 import { assertSemesterExists, assertSemesterWritable } from "./lookup";
 import { mapTarget } from "./dto";
 import { badRequest, notFound } from "./errors";
-import type { ParentReportTarget, ReportChannel } from "../../../contract/types";
+import type { ChannelTestResult, ParentReportTarget, ReportChannel } from "../../../contract/types";
+import type { DeliverableReport } from "./delivery-channels";
+import { mergeCredentialConfig } from "./deliveries";
 
 function now(): string {
   return new Date().toISOString();
@@ -174,6 +176,62 @@ export function handleReportTargetsUpdate(
       .prepare("SELECT * FROM parent_report_targets WHERE id = @id")
       .get({ id: p.id }) as Record<string, unknown>;
     return mapTarget(row);
+  };
+}
+
+/**
+ * 用户显式渠道验证：只允许 SMTP/飞书已启用目标，发送固定脱敏消息。
+ * 不生成或读取真实学习报告，不写 report_deliveries，不持久化 health。
+ */
+export function handleReportTargetsSendTestMessage(
+  ctx: S6Context,
+): (params: unknown) => ChannelTestResult | Promise<ChannelTestResult> {
+  return (params: unknown): ChannelTestResult | Promise<ChannelTestResult> => {
+    const { targetId } = params as { targetId?: unknown };
+    if (typeof targetId !== "string" || !targetId) throw badRequest("请选择需要验证的投递目标");
+    const target = ctx.globalDb
+      .prepare("SELECT * FROM parent_report_targets WHERE id = @id AND enabled = 1 AND deleted_at IS NULL")
+      .get({ id: targetId }) as Record<string, unknown> | undefined;
+    if (!target) throw notFound("未找到可用的投递目标");
+    const channel = target.channel_type as ReportChannel;
+    if (channel !== "smtp" && channel !== "feishu_webhook") {
+      throw badRequest("当前目标不支持发送测试消息");
+    }
+    assertSemesterWritable(ctx, target.semester_id as string);
+
+    const send = (credentialValue?: string): ChannelTestResult | Promise<ChannelTestResult> => {
+      let config: Record<string, unknown>;
+      try {
+        const parsed = JSON.parse(target.channel_config_json as string);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("invalid");
+        config = mergeCredentialConfig(channel, parsed as Record<string, unknown>, credentialValue);
+      } catch {
+        return { channel, status: "failed", message: "渠道配置无效，请检查后重试。" };
+      }
+      if (!credentialValue) return { channel, status: "failed", message: "请先保存该渠道的凭据后重试。" };
+      const testMessage: DeliverableReport = {
+        reportKey: "configuration-test",
+        reportType: "configuration-test",
+        contentHash: "not-persisted",
+        contentJson: JSON.stringify({ type: "configuration-test", message: "这是一条配置验证消息，不包含学习资料或学习报告。" }),
+      };
+      const result = ctx.deliveryChannels[channel].deliver(testMessage, config);
+      const map = (value: { success: boolean }): ChannelTestResult => value.success
+        ? { channel, status: "sent", message: "测试消息已发送。" }
+        : { channel, status: "failed", message: "测试消息发送失败，请检查配置后重试。" };
+      return result instanceof Promise ? result.then(map).catch(() => map({ success: false })) : map(result);
+    };
+
+    const credentialKey = target.credential_key as string | undefined;
+    if (!credentialKey) return send(undefined);
+    if (ctx.credentialGetterAsync) {
+      return ctx.credentialGetterAsync(credentialKey).then((value) => send(value ?? undefined)).catch(() => send(undefined));
+    }
+    try {
+      return send(ctx.credentialGetter(credentialKey));
+    } catch {
+      return send(undefined);
+    }
   };
 }
 

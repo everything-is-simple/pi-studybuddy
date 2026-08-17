@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.206
+**版本**：v0.1.208
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -28,12 +28,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ v0.1.206 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；T-M5-006 实现提交已推送任务分支但仍为唯一 in_progress，T-M5-011/007/008 pending；T-M5-005 的三条遗留原生 UAT并入 T-M5-008 最终干净机安装验收。 |
+| 00 | 本文档 | ✅ v0.1.207 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；用户已批准 T-M5-011 为唯一 in_progress，T-M5-006 等待独立审查与收尾而 blocked，T-M5-007/008 pending；T-M5-005 的三条遗留原生 UAT并入 T-M5-008 最终干净机安装验收。 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.206 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006 任务分支已推送但仍 in_progress，T-M5-011/007/008 pending；T-M5-006 已登记 SAPI 生产装配、OCR/whisper/WPS 缺失降级和可见运行能力状态 GREEN，剩余顺序为运行资产→配置与七类设置→发布前真实 Electron UAT→最终候选与干净机安装验收。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.207 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006 等待独立审查与收尾而 blocked，T-M5-011 为唯一 in_progress，T-M5-007/008 pending；T-M5-006 已登记 SAPI 生产装配、OCR/whisper/WPS 缺失降级和可见运行能力状态 GREEN，当前进入配置与七类设置，随后才是发布前真实 Electron UAT与最终候选/干净机安装验收。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.9 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -127,7 +127,7 @@
 - [x] `docs/traceability/` 六项基线资产已完成，供 T-M5-005~008 依任务范围消费。
 - [x] 13-测试与运维-Testing-and-Operations.md v0.1.3 ✅ 已审查批准：T-M5-009 已完成受控 Git 收口，六项追溯基线资产由 T-M5-005 按范围消费；本文的 ACT/ERR/DATA、真实测试、真机 UAT 与发布运维门禁保持不变。
 - [x] 2026-08-15 T-M5-010 已完成 Git 收口：功能 `ef9eece` 已推送任务分支并 ff-only 合并 master；Node24 master `verify --stage=full` 通过（133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。本治理登记提交随后推送并核验 `master=origin/master`，任务登记 done。T-M5-005 继续 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。
-- [x] 2026-08-17 本机配置与剩余测试顺序已重规划：学习事实留 SQLite，非敏感本机配置使用 `<dataRoot>/config/` 版本化 JSON，凭证只进 DPAPI，关系型配置留 `global.db`，瞬时能力 health 由运行时派生。`04-Todo` v0.1.201 的剩余顺序为 T-M5-006→T-M5-011→T-M5-007→T-M5-008；T-M5-005 三条遗留 UAT并入 T-M5-008。当前仍只有 T-M5-006 in_progress，不启动后续任务；T-M5-006 已登记 SAPI 生产装配、OCR/whisper/WPS 缺失降级、可见运行能力状态和 Node24 全量自动化 GREEN；真机 UAT、双审查和收尾仍待。
+- [x] 2026-08-17 本机配置与剩余测试顺序已重规划：学习事实留 SQLite，非敏感本机配置使用 `<dataRoot>/config/` 版本化 JSON，凭证只进 DPAPI，关系型配置留 `global.db`，瞬时能力 health 由运行时派生。用户现明确批准 T-M5-011 开工：它是唯一 in_progress，负责配置资产与七类设置；T-M5-006 的自动化、真机 UAT和任务分支提交事实保留，但独立审查和受控收尾未完成而暂为 blocked，不代表 done。T-M5-007/008 仍不启动，T-M5-005 三条遗留 UAT继续并入 T-M5-008。
 - [x] 04-Todo v0.1.155 ✅ 已审查批准：T-M4-026 Git 收口完成（网络恢复后推送成功并核验 `master=origin/master=869de2f`；功能 `10d50eb` + 治理 `c3d2db3` + 中间事实 `869de2f`；Node24 master 完整 `verify --stage=full` 复验通过，任务登记 done，M4 26/0/26，合计 62/0/62）；不启动后续任务。
 - [x] 04-Todo v0.1.150 ✅ 已审查批准：T-M4-021 Git 收口完成（功能 `82738f9` + 治理登记提交已快进进入 master，Node24 master 完整 `verify --stage=full` 复验通过，origin/master 已推送并核验，任务登记 done）；**M4 全部 25 任务完成，v0.1 里程碑收官**。
 - [x] 04-Todo v0.1.149 ✅ 已审查批准：T-M4-021 本地实施与验收证据同步完成（收官验收 E2E 通过：x64 setup SHA-256 540AF6C7... + 隔离安装 + 两次启动 CDP 全链 + 业务 RPC；§6.6 M4 退出门槛 8 项全勾选；全量 118/1130 + 真实 Electron E2E 29/137 + verify full 通过）；任务保持 in_progress，Git 收口待用户单独授权。
@@ -236,6 +236,8 @@
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.208 | 2026-08-17 | T-M5-011 阶段性验收事实同步：配置资产与七类设置实现、定向与完整 Node24 非安装器质量门、专属真实 Electron E2E及部分原生 UAT已完成；`pnpm test` 142 files/1254 tests，contract 132/132，安全 6/6，`verify --stage=full --skip=e2e` 通过。原生 UAT当前仅完整覆盖通用设置、SMTP/目标回读与固定脱敏测试消息；其余逐类设置回读、配置异常恢复、双审查和用户收尾仍待完成，任务保持唯一 in_progress。跨任务 T-M5-004/T-M5-006 E2E失败不纳入本任务、不修复；不读取或处理安装器，不执行 Git 收口。 |
+| v0.1.207 | 2026-08-17 | 用户明确批准 T-M5-011「本机配置资产与设置能力控制台闭环」开工：建立唯一计划、隔离分支和运行根，任务由 pending→唯一 in_progress。T-M5-006 的 `5911722` 已推送事实保留，但因独立审查和受控收尾未完成改为 blocked 等待；不宣告完成、不合并 master、不读取/暂存安装器。依据：用户明确指令 + AGENTS.md §2/§4.4/§4.5/§5/§7/§8/§11。 |
 | v0.1.206 | 2026-08-17 | 同步 T-M5-006 已发生 Git 事实：实现提交 `5911722`（`feat(m5): 装配受管运行依赖与离线降级`）已推送 `origin/agent/T-M5-006-runtime-dependencies` 并核验任务分支同位。任务仍为唯一 in_progress，未合并 master，双独立审查、实施记录和受控收尾仍待；不启动 T-M5-011/007/008，不读取/暂存安装器。 |
 | v0.1.205 | 2026-08-17 | 同步 T-M5-006 最终本地验证：Node24 `verify --stage=full --skip=e2e` 执行 8 项且真正跳过历史安装器 E2E；串行 unit/integration 139 files/1240 tests、无发行 Electron 33 files/141 tests 和当前 `win-unpacked` package smoke 双启动均通过。并发期 file-watch/package-smoke 抖动经无残留进程单独与串行复验通过，保留为环境证据；任务仍 in_progress，待双独立审查和受控收尾授权。 |
 | v0.1.204 | 2026-08-17 | 同步治理质量门 skip 标签修复：`verify --skip=e2e` 现保留数字并实际跳过历史安装器 E2E，已用仅 docs-governance 的 full-stage 命令复验；此前误触发 setup 的事实保留。T-M5-006 仍为唯一 in_progress，未启动后续任务或读取/暂存安装器。 |

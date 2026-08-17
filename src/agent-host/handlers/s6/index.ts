@@ -21,6 +21,7 @@ import {
   handleReportTargetsCreate,
   handleReportTargetsUpdate,
   handleReportTargetsDelete,
+  handleReportTargetsSendTestMessage,
 } from "./report-targets";
 
 export type S6Handlers = {
@@ -35,6 +36,7 @@ export type S6Handlers = {
   "reportTargets.create": (params: unknown) => unknown;
   "reportTargets.update": (params: unknown) => unknown;
   "reportTargets.delete": (params: unknown) => void;
+  "reportTargets.sendTestMessage": (params: unknown) => unknown;
 };
 
 export function createS6Handlers(ctx: S6Context): S6Handlers {
@@ -50,6 +52,7 @@ export function createS6Handlers(ctx: S6Context): S6Handlers {
     "reportTargets.create": handleReportTargetsCreate(ctx),
     "reportTargets.update": handleReportTargetsUpdate(ctx),
     "reportTargets.delete": handleReportTargetsDelete(ctx),
+    "reportTargets.sendTestMessage": handleReportTargetsSendTestMessage(ctx),
   };
 }
 

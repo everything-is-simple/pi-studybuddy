@@ -8,7 +8,7 @@
  * 数据隔离：PI_STUDYBUDDY_DATA_ROOT 指向 H:\pi-studybuddy-tmp\runs\T-M3-005\。
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { rmSync, mkdirSync, existsSync, readFileSync } from "node:fs";
+import { rmSync, mkdirSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { readModelConfig, writeModelConfig, type ModelConfig } from "../../src/agent/model-config";
 
@@ -38,14 +38,13 @@ describe("model-config（T-M3-005 模型配置持久化承载层）", () => {
     expect(cfg).toBeNull();
   });
 
-  it("writeModelConfig 原子写 + __studybuddy_managed 标记 + updatedAt", () => {
+  it("writeModelConfig 原子写版本包络 + managed 标记 + updatedAt", () => {
     writeModelConfig(ISOLATION_DIR, { provider: "deepseek", model: "DeepSeek V4 Flash" });
     const filePath = path.join(ISOLATION_DIR, "config", "models.json");
     expect(existsSync(filePath)).toBe(true);
     const raw = JSON.parse(readFileSync(filePath, "utf8"));
-    expect(raw.provider).toBe("deepseek");
-    expect(raw.model).toBe("DeepSeek V4 Flash");
-    expect(raw.__studybuddy_managed).toBe(true);
+    expect(raw.schemaVersion).toBe(1);
+    expect(raw.data).toEqual({ provider: "deepseek", model: "DeepSeek V4 Flash", managed: true });
     expect(typeof raw.updatedAt).toBe("string");
   });
 
@@ -54,6 +53,14 @@ describe("model-config（T-M3-005 模型配置持久化承载层）", () => {
     const cfg = readModelConfig(ISOLATION_DIR) as ModelConfig;
     expect(cfg.provider).toBe("agnes");
     expect(cfg.model).toBe("agnes-2.5-pro");
+  });
+
+  it("旧版顶层模型配置读入后迁移为版本包络", () => {
+    const filePath = path.join(ISOLATION_DIR, "config", "models.json");
+    writeFileSync(filePath, JSON.stringify({ provider: "agnes", model: "agnes-2.5-pro", __studybuddy_managed: true }), "utf8");
+
+    expect(readModelConfig(ISOLATION_DIR)).toMatchObject({ provider: "agnes", model: "agnes-2.5-pro", managed: true });
+    expect(JSON.parse(readFileSync(filePath, "utf8"))).toMatchObject({ schemaVersion: 1, data: { provider: "agnes", model: "agnes-2.5-pro", managed: true } });
   });
 
   it("config 文件不含 apiKey/baseUrl（02-PRD §5.2 密钥边界）", () => {

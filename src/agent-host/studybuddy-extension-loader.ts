@@ -88,6 +88,28 @@ const RUNTIME_MODEL_ID_ALIASES: Readonly<Record<string, Readonly<Record<string, 
  * auth 从 RuntimeCredentials override——即 setRuntimeApiKey 注入的内存 key——解析）。
  */
 const RUNTIME_PROVIDERS_FILE_NAME = "pi-models.json";
+const RUNTIME_PROVIDERS_SCHEMA_VERSION = 1;
+
+type RuntimeProviderCatalog = { providers?: Record<string, unknown> };
+
+function readRuntimeCatalogEnvelope(value: unknown): { catalog: RuntimeProviderCatalog; migrated: boolean } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return { catalog: {}, migrated: true };
+  const source = value as Record<string, unknown>;
+  if (source.schemaVersion === RUNTIME_PROVIDERS_SCHEMA_VERSION && source.data && typeof source.data === "object" && !Array.isArray(source.data)) {
+    return { catalog: source.data as RuntimeProviderCatalog, migrated: false };
+  }
+  return { catalog: source as RuntimeProviderCatalog, migrated: true };
+}
+
+function writeRuntimeCatalog(file: string, catalog: RuntimeProviderCatalog): void {
+  const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(temporary, JSON.stringify({
+    schemaVersion: RUNTIME_PROVIDERS_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    data: catalog,
+  }, null, 2), "utf8");
+  fs.renameSync(temporary, file);
+}
 
 const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
   providers: Record<string, {
@@ -181,12 +203,16 @@ function mergeRuntimeProvider(
 export function ensureRuntimeProviderConfig(dataRoot: string): string {
   const dir = path.join(dataRoot, "config");
   const file = path.join(dir, RUNTIME_PROVIDERS_FILE_NAME);
-  let existing: { providers?: Record<string, unknown> } = {};
+  let existing: RuntimeProviderCatalog = {};
+  let requiresMigration = !fs.existsSync(file);
   if (fs.existsSync(file)) {
     try {
-      existing = JSON.parse(fs.readFileSync(file, "utf8")) as { providers?: Record<string, unknown> };
+      const parsed = readRuntimeCatalogEnvelope(JSON.parse(fs.readFileSync(file, "utf8")) as unknown);
+      existing = parsed.catalog;
+      requiresMigration = parsed.migrated;
     } catch {
       existing = {};
+      requiresMigration = true;
     }
   }
   const currentProviders = existing.providers && typeof existing.providers === "object" ? existing.providers : {};
@@ -198,12 +224,10 @@ export function ensureRuntimeProviderConfig(dataRoot: string): string {
   );
   const mergedProviders = { ...mergedDefaults, ...currentProviders };
   for (const id of Object.keys(mergedDefaults)) mergedProviders[id] = mergedDefaults[id];
-  const next = { ...existing, providers: mergedProviders };
-  if (!fs.existsSync(file) || JSON.stringify(existing) !== JSON.stringify(next)) {
+  const next: RuntimeProviderCatalog = { ...existing, providers: mergedProviders };
+  if (requiresMigration || JSON.stringify(existing) !== JSON.stringify(next)) {
     fs.mkdirSync(dir, { recursive: true });
-    const tmp = `${file}.tmp`;
-    fs.writeFileSync(tmp, JSON.stringify(next, null, 2), "utf8");
-    fs.renameSync(tmp, file);
+    writeRuntimeCatalog(file, next);
   }
   return file;
 }
@@ -216,7 +240,7 @@ export function ensureRuntimeProviderConfig(dataRoot: string): string {
 export function readRuntimeModelProviders(dataRoot: string): ModelProvider[] {
   const file = ensureRuntimeProviderConfig(dataRoot);
   try {
-    const raw = JSON.parse(fs.readFileSync(file, "utf8")) as {
+    const raw = readRuntimeCatalogEnvelope(JSON.parse(fs.readFileSync(file, "utf8")) as unknown).catalog as {
       providers?: Record<string, {
         name?: unknown;
         models?: Array<{ id?: unknown; name?: unknown; input?: unknown; modality?: unknown; contextWindow?: unknown }>;
@@ -252,6 +276,22 @@ export function readRuntimeModelProviders(dataRoot: string): ModelProvider[] {
   }
 }
 
+/**
+ * pi ModelRuntime 目前只接受顶层 `providers` 的原生 catalog，不能读取本项目的
+ * versioned envelope。将正式 config 中已校验的 host-only catalog 原子物化到临时文件；
+ * 该文件不含凭证，Renderer 永不读取，且不构成本机配置 SoT。
+ */
+function materializePiRuntimeCatalog(dataRoot: string): string {
+  const catalog = readRuntimeProviderCatalog(dataRoot);
+  const directory = path.join(dataRoot, "tmp", "model-runtime");
+  const file = path.join(directory, "pi-models.runtime.json");
+  fs.mkdirSync(directory, { recursive: true });
+  const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(temporary, JSON.stringify(catalog), "utf8");
+  fs.renameSync(temporary, file);
+  return file;
+}
+
 export interface RuntimeProviderConnection {
   baseUrl: string;
   api: string;
@@ -264,7 +304,7 @@ function isRuntimeProviderId(value: unknown): value is string {
 function readRuntimeProviderCatalog(dataRoot: string): { providers: Record<string, Record<string, unknown>> } {
   const file = ensureRuntimeProviderConfig(dataRoot);
   try {
-    const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { providers?: unknown };
+    const parsed = readRuntimeCatalogEnvelope(JSON.parse(fs.readFileSync(file, "utf8")) as unknown).catalog;
     if (parsed.providers && typeof parsed.providers === "object" && !Array.isArray(parsed.providers)) {
       return { providers: parsed.providers as Record<string, Record<string, unknown>> };
     }
@@ -303,9 +343,7 @@ export function writeRuntimeProviderModels(dataRoot: string, providerId: string,
       [providerId]: { ...provider, models },
     },
   };
-  const tmp = `${file}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(next, null, 2), "utf8");
-  fs.renameSync(tmp, file);
+  writeRuntimeCatalog(file, next);
 }
 
 function resolveRuntimeModelId(provider: string, configuredModel: string): string {
@@ -378,7 +416,8 @@ export async function createStudyBuddySession(
 
   // 2. 模型运行时不使用 ~/.pi 的磁盘 models/auth；凭证只以内存 runtime key 注入。
   //    自定义 OpenAI 兼容 provider（agnes 等）通过业务数据根 config/pi-models.json 注册。
-  const runtimeModelsPath = ensureRuntimeProviderConfig(dataRoot);
+  ensureRuntimeProviderConfig(dataRoot);
+  const runtimeModelsPath = materializePiRuntimeCatalog(dataRoot);
   const modelRuntime = await ModelRuntime.create({ modelsPath: runtimeModelsPath, allowModelNetwork: false });
   const provider = modelConfig.provider.trim();
   const runtimeModelId = resolveRuntimeModelId(provider, modelConfig.model);

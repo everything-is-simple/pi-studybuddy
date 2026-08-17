@@ -23,9 +23,12 @@
 | DATA-BIZ-010 | 错题学习状态 | 学期 SQLite `sem.db` | S4 | 可回退/重做；需审计 | 敏感 | 同学期恢复 | 定向 handler + UAT | 部分证据 |
 | DATA-BIZ-011 | 模拟考/题目 | 学期 SQLite `sem.db` | S5 | 生成、作答、提交、结果 | 敏感 | 与考试/模块恢复 | 空课程与正常课程测试 | 已证实 |
 | DATA-BIZ-012 | 模拟考模块分析 | 学期 SQLite `sem.db` | S5 | 依赖已有模块；未知模块不得写假引用 | 敏感 | 结果恢复 | GEN-05 + UAT | 已证实 |
-| DATA-CFG-001 | 模型配置 | `<dataRoot>/config/models.json` | 设置/模型运行时 | 用户配置；由 modelsConfig 管理 | 不含密钥；不进 Git/DOM | 备份策略待明确 | 业务根隔离 + contract | 部分证据 |
-| DATA-CFG-002 | 凭证 | `<dataRoot>/config/credentials.json` + Windows DPAPI | credential-vault | 安全资产；不可明文导出 | 永不记录 key/base URL | 卸载/备份保留策略待明确 | 只用受控本机 vault | 部分证据 |
-| DATA-CFG-003 | 用户偏好/设置 | `<dataRoot>/config/` | Settings | 保存反馈已见；实际修改值重启回读未完成 | 脱敏 | 升级兼容性待明确 | 隔离根 + UI | 部分证据 |
+| DATA-CFG-001 | 默认模型配置 | `<dataRoot>/config/models.json` | ModelConfig | 非敏感默认 provider/model；版本化 JSON，原子写、迁移、损坏恢复后重启回读 | 不含 key/base URL/health/请求正文；不进 Git/DOM | 纳入非敏感配置备份；卸载默认保留 | 隔离根 + contract + automated Electron E2E；原生逐类回读待补 | 自动化已证实；原生 UAT待补 |
+| DATA-CFG-002 | 非敏感模型目录 | `<dataRoot>/config/pi-models.json` | ModelCatalog | provider/model 目录；版本化 JSON，原子写、迁移、损坏恢复后重启回读 | 不含 key/base URL/远端正文 | 纳入非敏感配置备份；卸载默认保留 | 隔离根 + contract + unit/integration；原生回读待补 | 自动化已证实；原生 UAT待补 |
+| DATA-CFG-003 | 通用偏好 | `<dataRoot>/config/settings.json` | Settings | 用户偏好；版本化 JSON，原子写、迁移、损坏恢复后重启回读 | 不含密钥、路径、瞬时 health | 纳入非敏感配置备份；卸载默认保留 | 隔离根 + 专属 Electron E2E + 原生 UAT | 已证实：保存→重启回读 |
+| DATA-CFG-004 | 学习技能/控制台偏好 | `<dataRoot>/config/skills.json` + `console.json` | Settings console | 非敏感展示/偏好；版本化 JSON，原子写、迁移、损坏恢复后重启回读 | 不含 runtime manifest、路径、health、凭证 | 纳入非敏感配置备份；卸载默认保留 | 隔离根 + 专属 Electron E2E；原生逐类回读待补 | 自动化已证实；原生 UAT待补 |
+| DATA-CFG-005 | 凭证 | `<dataRoot>/config/credentials.json` + Windows DPAPI | CredentialVault / Electron main | 安全资产；仅密文，不可明文导出；DPAPI 不可用时拒绝保存 | 永不记录或返回 key/base URL；Renderer 只读状态 | 数据根保留；不解密导出；卸载默认保留 | 只用受控本机 vault + 原生 UAT | 部分证据：SMTP 保存、重启后测试消息和无回显通过；DPAPI 不可用 UAT待补 |
+| DATA-RUNTIME-001 | 受管运行资源/派生 health | 应用 `runtime-resources/` 与运行时 resolver | T-M5-006 | manifest 是随包资源 SoT；health 每次启动/重扫派生，不属于 config | 不显示路径、原始诊断或凭证 | 随应用重装；不进用户配置/业务备份 | manifest + package smoke + Electron E2E | 部分证据 |
 | DATA-FILE-001 | 资料正式文件 | semester 下受限 `storageKey` | S2/file handler | 与资料元数据绑定；路径白名单 | 原文敏感；日志只记 opaque key | 备份/恢复需校验 | 文件选择 UI + isolated root | 部分证据 |
 | DATA-FILE-002 | 导入 capability 暂存 | `<dataRoot>/imports/materials/<token>` | main/preload/host | 一次性消费；失败清理 | token 不进 DOM/日志 | 不应作为备份事实 | 受控文件 E2E | 部分证据 |
 | DATA-FILE-003 | 导出/备份包 | `<dataRoot>/exports/` 或用户选择目录 | backup | 可导出、校验、恢复；失败不得覆盖原数据 | 包内容敏感 | 本轮真实恢复/回读未覆盖 | 备份/恢复专项 UAT | 未覆盖 |
@@ -48,5 +51,5 @@
 ## 3. 仍待核验
 
 - `storage/` 根级目录与 semester 正式资料落点的最终职责不能靠目录存在推断。
-- DPAPI 凭证的升级、卸载、备份保留策略需由 T-M5-005/008 的发布证据补齐。
+- T-M5-011 已定义普通配置与 DPAPI 凭证的备份/卸载边界；最终安装、升级和卸载的真实目标机证据仍由 T-M5-008 补齐。
 - DATA-FILE-003、DATA-MEM-* 的真实恢复回读尚未形成真机 UAT 证据。

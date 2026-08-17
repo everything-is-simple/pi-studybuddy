@@ -23,6 +23,9 @@
 | ERR-FILE-001 | 文件选择取消、MIME/大小/路径白名单失败 | preload/main + handler | 文件不可用，请选择受支持的文件后重试 | 重新选择；清理 capability 暂存 | ACT-S2-001 | 部分证据 |
 | ERR-DEPENDENCY-001 | WPS/OCR/whisper/edge-tts/外部 AI 不可用或未随包 | dependency | OCR/whisper 未配置时显示固定中文恢复指引；WPS 未配置时旧 Office 转换失败；edge-tts 未配置时回退 SAPI | 设置页显示经脱敏的原因/恢复；不得伪称转换/转写成功；真实外部二进制和真机 UAT未覆盖 | ACT-S2-002/ACT-S7-001/ACT-TTS-001 | 部分证据：T-M5-006 production 降级单测 + 真实 Electron 设置页 E2E；发布仍阻塞 |
 | ERR-SQLITE-001 | SQLite 初始化、锁、FK/CHECK/事务失败 | data | 数据保存失败，请稍后重试；如持续请重启应用 | 回滚事务、关闭连接、保留诊断摘要 | 相关写入 ACT | 部分证据 |
+| ERR-CONFIG-001 | 普通配置校验、迁移或原子写失败 | config/handler | 配置未保存，请检查本机存储后重试 | 保留上一个已提交文件；可重试；不显示路径/栈 | ACT-SETTINGS-001 | T-M5-011 RED、unit/integration、Node24 verify 通过；逐类原生异常 UAT待补 |
+| ERR-CONFIG-002 | 普通配置 JSON 损坏 | config/handler + renderer | 配置已恢复为默认值，请重新确认并保存设置 | 隔离损坏原件、重建默认值、显示恢复状态；不静默吞掉 | ACT-SETTINGS-001 | T-M5-011 unit/integration；原生可见恢复 UAT待补 |
+| ERR-CREDENTIAL-001 | Windows DPAPI 不可用或 vault 格式损坏 | main/credential-vault | 系统加密暂不可用，请解锁 Windows 后重试 | 拒绝明文写入；可重试；只显示安全状态 | ACT-SETTINGS-001 | T-M5-011 unit/handler/renderer 与真实 DPAPI 保存脱敏 UAT；不可用环境原生 UAT待补 |
 | ERR-FILE-DATA-001 | 文件写入成功但数据库写入失败，或反向失败 | data/file | 数据未完整保存，请重试；不要继续使用半成品 | 补偿/清理孤儿文件，记录资产状态 | ACT-S2-001/002 | 未覆盖 |
 | ERR-BACKUP-001 | 备份目录/zip 冲突、校验或恢复失败 | backup/data | 备份或恢复未完成，请选择其他位置或恢复点 | 保留原数据；停止覆盖；人工诊断 | 待分解 | 未覆盖 |
 | ERR-SECURITY-001 | DOM/日志出现 UUID、路径、密钥、错误栈或越权路径 | governance/security | 操作未完成，请联系维护者；不显示内部细节 | 立即停止并保留脱敏证据 | 全局安全不变量 | 已登记 |
@@ -41,4 +44,4 @@
 
 ## 5. 下游消费
 
-T-M5-005 扩充 S6/S7/TTS/备份/设置错误与恢复；T-M5-006 扩充运行依赖和离线错误；T-M5-007/008 将 `ERR-EVIDENCE-001` 作为 UAT/发布证据门禁。
+T-M5-011 消费 `ERR-CONFIG-*` 与 `ERR-CREDENTIAL-001`，补配置迁移、损坏恢复、写失败和 DPAPI 不可用证据；T-M5-007/008 将 `ERR-EVIDENCE-001` 作为 UAT/发布证据门禁。

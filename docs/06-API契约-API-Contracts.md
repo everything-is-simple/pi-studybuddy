@@ -1,5 +1,5 @@
 # 06 API 契约
-**版本**：v0.1.10
+**版本**：v0.1.11
 **日期**：2026-08-15
 **状态**：✅ 已审查批准（T-M5-010 实现与定向验证已完成；完整质量门、Git 收口和用户签收仍待）
 **上游**：[02-PRD v0.1.4 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)
@@ -443,15 +443,16 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | `settings.update` | `{ ...fields }` | `AppSettings` | |
 | `settings.getSimpleMode` | `{}` | `boolean` | Simple Mode 总开关（03-Architecture §2.5） |
 | `settings.setSimpleMode` | `{ enabled }` | `void` | 切换 L2 知识库开关 |
+| `settings.getConfigStatus` | `{}` | `ConfigAssetStatus[]` | 读取普通配置与 DPAPI vault 的脱敏状态；只返回 asset/state/message/recoverable，不返回路径、密钥、原始异常或运行 health |
 
 ### 3.15 密钥管理（credentials.*）
 
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
-| `credentials.set` | `{ key: string, value: string }` | `void` | DPAPI 加密；键名匹配 modelProvider:xxx/parentContact:xxx |
+| `credentials.set` | `{ key: string, value: string }` | `void` | DPAPI 加密；键名匹配 modelProvider:xxx/parentContact:xxx。SMTP 的服务器/端口/发件人/收件人与授权码作为单个结构化值整体进入 `parentContact:email`，只在 host 内存解密给 adapter，不入普通 JSON、SQLite DTO、日志或 Renderer 回读 |
 | `credentials.get` | `{ key: string }` | `{ value: string }` | DPAPI 解密 |
 | `credentials.delete` | `{ key: string }` | `void` | |
-| `credentials.listKeys` | `{ prefix?: string }` | `string[]` | 仅返回键名，不返回值 |
+| `credentials.listKeys` | `{ prefix?: string }` | `string[]` | 仅返回键名，不返回值；DPAPI 不可用、损坏或写失败时返回固定可恢复中文错误，不返回原始异常 |
 
 ### 3.16 工具发现（toolchains.*，借鉴 pi-desktop）
 
@@ -462,6 +463,29 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | `toolchains.rescan` | `{}` | `ToolchainStatus[]` | 窗口 focus 时 60s TTL 重扫 |
 
 ---
+
+### 3.17 配置资产状态 DTO（T-M5-011）
+
+```typescript
+{
+  asset: 'settings' | 'models' | 'pi-models' | 'skills' | 'console' | 'credentials',
+  state: 'ready' | 'created' | 'migrated' | 'recovered' | 'unavailable',
+  message: string,        // 固定脱敏中文，不含路径、key、UUID、stack
+  recoverable: boolean
+}
+```
+
+- `settings.getConfigStatus` 只报告配置资产生命周期；不报告 `runtime-resources`、OCR/WPS/whisper 等瞬时运行 health，后者继续经既有 `toolchains.*` 派生。
+- 普通 JSON 缺失时可创建默认包络；旧版无 `schemaVersion` 时迁移；损坏内容隔离后恢复默认值。状态必须在当前隔离数据根的下一次启动仍可读取。
+- `credentials` 只报告 DPAPI vault 是否可安全访问；Renderer 不能通过本 DTO、`credentials.*` 或任何日志读取已保存凭据值。SMTP/飞书地址、端点与授权码在提交后同样不可回读，只显示“已保存/未保存”。
+
+### 3.18 家长渠道验证（reportTargets.sendTestMessage，T-M5-011）
+
+| 方法 | 参数 | 返回 | 约束 |
+|---|---|---|---|
+| `reportTargets.sendTestMessage` | `{ targetId }` | `ChannelTestResult` | 仅对已启用的 SMTP/飞书目标发送用户显式触发的固定脱敏配置验证消息；不读取/生成真实学习报告，不写 `parent_reports`、`report_deliveries` 或运行 health；目标表只留别名/凭据键，SMTP/飞书敏感连接值仅由 host 从 DPAPI 临时解密 |
+
+`ChannelTestResult = { channel: 'smtp' | 'feishu_webhook', status: 'sent' | 'failed', message: string }`。`message` 必须是固定脱敏中文，不含收件地址、端点、密钥、路径、UUID 或底层错误。
 
 ## 4. Streams（服务端推送主题）
 
@@ -573,6 +597,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 ## 7. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.11 | 2026-08-17 | T-M5-011 配置控制台契约：新增 `settings.getConfigStatus` 和 `ConfigAssetStatus`，用于向 Renderer 提供版本化普通配置与 DPAPI vault 的脱敏、可恢复状态；不返回路径、密钥、原始异常或瞬时运行 health。原因：用户要求配置损坏、迁移、只读失败和 DPAPI 不可用必须有固定可恢复语义。影响：新增一个只读 typed RPC 与 DTO，不改 SQLite schema。依据：用户任务指令 + AGENTS.md §2/§9/§11 + 13-测试与运维 §4/§5。 |
 | v0.1.9 | 2026-08-13 | **用户明确同意的最小闭环扩展**：新增 `modules.create`（`courseId`、当前 NotesTab 显式选择的 `materialId`、模块名称及可选摘要/重要度/难度），用于让 S2 资料经可见 UI 形成可练习知识模块并进入 S3/S4 真机 UAT。原因：用户裁决 S2/S3/S4 创建前置条件必须属于 T-M5-004，现有生产契约仅有 list/get/updateLearnStatus，无法在禁止 DB 预置、直调与真实外部 AI 的边界内建立练习前置。影响：typed RPC 方法数 127→128；新增最小 S2 handler 与 NotesTab 局部入口；不改 SQLite schema/Stream/跨 Tab 全局状态，不连真实外部 AI。依据：用户 2026-08-13 “同意” + AGENTS.md §2、§5、§7、§11。 |
 | v0.1.8 | 2026-08-10 | 修正 T-M4-011 文件导入契约：main 的 open-file dialog 返回一次性 `importToken/fileName/fileSize`，生产 S2 renderer 以 capability 调用 `materials.upload`，host 消费 token 并从 staging 源文件取得真实大小；`FileMeta.path` 不用于 S2 生产上传；无新增 RPC 方法。 |
 | v0.1.7 | 2026-08-10 | T-M4-011 资料上传契约落地：生产 S2 `materials.upload` 使用 Electron 选择器返回的 `FileMeta.path`，host 校验普通文件并复制到业务 storage，真实大小来自 `stat`；S2 写操作在 host 侧拒绝 archived 学期；无新增 RPC 方法。 |

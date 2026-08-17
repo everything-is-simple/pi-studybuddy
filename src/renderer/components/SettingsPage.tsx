@@ -6,7 +6,7 @@
  * listKeys / set / delete，不读取或渲染密钥明文。
  */
 import React from "react";
-import type { AppSettings, ModelConfig, ModelProvider, ToolchainStatus } from "../../contract/types";
+import type { AppSettings, ConfigAssetStatus, ConfigSectionData, ModelConfig, ModelProvider, ToolchainStatus } from "../../contract/types";
 import type { TypedRpcClient } from "../rpc-client";
 
 export type CredentialKind = "model" | "email" | "feishu";
@@ -33,6 +33,13 @@ export interface SettingsView {
   debugLogging: boolean;
 }
 
+export interface SmtpCredentialDraft {
+  host: string;
+  port: string;
+  from: string;
+  to: string;
+}
+
 export interface SettingsPageData {
   settings: SettingsView;
   simpleMode: boolean;
@@ -40,6 +47,9 @@ export interface SettingsPageData {
   modelConfig: ModelConfig;
   configuredCredentialKeys: Set<string>;
   toolchains: ToolchainStatus[];
+  configStatuses: ConfigAssetStatus[];
+  skillsSection: ConfigSectionData;
+  consoleSection: ConfigSectionData;
 }
 
 interface Props {
@@ -184,7 +194,7 @@ export function sanitizeToolchainStatuses(value: unknown): ToolchainStatus[] {
   });
 }
 export async function loadSettingsPageData(rpc: TypedRpcClient): Promise<SettingsPageData> {
-  const [settings, simpleMode, providers, modelConfig, modelKeys, parentContactKeys, toolchains] = await Promise.all([
+  const [settings, simpleMode, providers, modelConfig, modelKeys, parentContactKeys, toolchains, configStatuses, skillsSection, consoleSection] = await Promise.all([
     rpc.call("settings.get", {}),
     rpc.call("settings.getSimpleMode", {}),
     rpc.call("models.list", {}),
@@ -192,6 +202,9 @@ export async function loadSettingsPageData(rpc: TypedRpcClient): Promise<Setting
     rpc.call("credentials.listKeys", { prefix: "modelProvider:" }),
     rpc.call("credentials.listKeys", { prefix: "parentContact:" }),
     rpc.call("toolchains.list", {}),
+    rpc.call("settings.getConfigStatus", {}),
+    rpc.call("settings.getSection", { asset: "skills" }),
+    rpc.call("settings.getSection", { asset: "console" }),
   ]);
 
   return {
@@ -201,6 +214,14 @@ export async function loadSettingsPageData(rpc: TypedRpcClient): Promise<Setting
     modelConfig: sanitizeModelConfig(modelConfig),
     configuredCredentialKeys: configuredCredentialKeysFrom([...modelKeys, ...parentContactKeys]),
     toolchains: sanitizeToolchainStatuses(toolchains),
+    configStatuses: Array.isArray(configStatuses) ? configStatuses.filter((item) => item && typeof item === "object").map((item) => ({
+      asset: ["settings", "models", "pi-models", "skills", "console", "credentials"].includes((item as ConfigAssetStatus).asset) ? (item as ConfigAssetStatus).asset : "settings",
+      state: ["ready", "created", "migrated", "recovered", "unavailable"].includes((item as ConfigAssetStatus).state) ? (item as ConfigAssetStatus).state : "unavailable",
+      message: safeDisplay((item as ConfigAssetStatus).message, "配置状态暂不可用"),
+      recoverable: (item as ConfigAssetStatus).recoverable === true,
+    })) : [],
+    skillsSection: skillsSection && typeof skillsSection === "object" ? skillsSection : {},
+    consoleSection: consoleSection && typeof consoleSection === "object" ? consoleSection : {},
   };
 }
 
@@ -240,6 +261,17 @@ export function credentialKeyFor(kind: CredentialKind, providerId?: string): str
   }
 }
 
+export function serializeSmtpCredential(draft: SmtpCredentialDraft, password: string): string {
+  const host = draft.host.trim();
+  const from = draft.from.trim();
+  const to = draft.to.trim();
+  const port = Number(draft.port);
+  if (!/^[a-z0-9.-]{1,253}$/i.test(host) || !Number.isInteger(port) || port < 1 || port > 65535 || !from || !to || !password) {
+    throw new Error("请完整填写邮件服务器、端口、发件人、收件人和授权码。");
+  }
+  return JSON.stringify({ host, port, from, to, password });
+}
+
 export async function saveCredential(rpc: TypedRpcClient, key: string, value: string): Promise<void> {
   if (!/^(?:modelProvider:[a-z0-9._-]{1,160}|parentContact:(?:email|feishu))$/i.test(key) || !value) {
     throw new Error("无效的密钥配置");
@@ -265,6 +297,14 @@ export async function saveSettingsDraft(rpc: TypedRpcClient, draft: SettingsView
 /** 通过既有 settings API 更新简洁模式。 */
 export async function setSimpleModePreference(rpc: TypedRpcClient, enabled: boolean): Promise<void> {
   await rpc.call("settings.setSimpleMode", { enabled });
+}
+
+export async function saveConfigSection(
+  rpc: TypedRpcClient,
+  asset: "skills" | "console",
+  data: ConfigSectionData,
+): Promise<ConfigSectionData> {
+  return rpc.call("settings.updateSection", { asset, data });
 }
 
 /** 通过既有 modelsConfig API 更新默认模型。 */
@@ -375,6 +415,44 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function SmtpCredentialControl({
+  configured,
+  draft,
+  passwordRef,
+  onDraftChange,
+  onSave,
+  onDelete,
+  disabled,
+}: {
+  configured: boolean;
+  draft: SmtpCredentialDraft;
+  passwordRef: React.RefObject<HTMLInputElement | null>;
+  onDraftChange: (next: SmtpCredentialDraft) => void;
+  onSave: () => void;
+  onDelete: () => void;
+  disabled: boolean;
+}): React.JSX.Element {
+  return (
+    <div style={{ padding: "10px 0", borderTop: "1px solid var(--border, #e0e0e0)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 7 }}>
+        <strong style={{ color: "var(--text, #222)", fontSize: 13 }}>家长邮箱</strong>
+        <span aria-label="家长邮箱凭据状态" style={{ color: configured ? "#137333" : "var(--text-muted, #666)", fontSize: 12 }}>{credentialStatusLabel(configured)}</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+        <input aria-label="邮件服务器" value={draft.host} placeholder="邮件服务器" disabled={disabled} onChange={(event) => onDraftChange({ ...draft, host: event.currentTarget.value })} style={inputStyle} />
+        <input aria-label="邮件端口" type="number" min={1} max={65535} value={draft.port} placeholder="端口" disabled={disabled} onChange={(event) => onDraftChange({ ...draft, port: event.currentTarget.value })} style={inputStyle} />
+        <input aria-label="邮件发件人" value={draft.from} placeholder="发件人地址" disabled={disabled} onChange={(event) => onDraftChange({ ...draft, from: event.currentTarget.value })} style={inputStyle} />
+        <input aria-label="邮件收件人" value={draft.to} placeholder="收件人地址" disabled={disabled} onChange={(event) => onDraftChange({ ...draft, to: event.currentTarget.value })} style={inputStyle} />
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+        <input ref={passwordRef} type="password" autoComplete="new-password" aria-label="家长邮箱授权码" placeholder="输入后整体加密保存" disabled={disabled} style={{ ...inputStyle, flex: 1 }} />
+        <button type="button" onClick={onSave} disabled={disabled} style={buttonStyle}>保存</button>
+        {configured ? <button type="button" onClick={onDelete} disabled={disabled} style={buttonStyle}>移除</button> : null}
+      </div>
+    </div>
+  );
+}
+
 function CredentialControl({
   label,
   configured,
@@ -420,23 +498,31 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
   const [draft, setDraft] = React.useState<SettingsView>(DEFAULT_SETTINGS_VIEW);
   const [modelConfig, setModelConfig] = React.useState<ModelConfig>({ provider: "", model: "" });
   const [simpleMode, setSimpleMode] = React.useState(false);
+  const [skillsSection, setSkillsSection] = React.useState<ConfigSectionData>({ showUnavailableSkills: true });
+  const [consoleSection, setConsoleSection] = React.useState<ConfigSectionData>({ checkUpdatesOnStart: true });
   const [notice, setNotice] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const refreshVersionRef = React.useRef(0);
   const modelSecretRef = React.useRef<HTMLInputElement>(null);
   const emailSecretRef = React.useRef<HTMLInputElement>(null);
   const feishuSecretRef = React.useRef<HTMLInputElement>(null);
+  const [smtpDraft, setSmtpDraft] = React.useState<SmtpCredentialDraft>({ host: "", port: "587", from: "", to: "" });
 
   const refresh = React.useCallback(async () => {
     if (!rpc) return;
+    const version = ++refreshVersionRef.current;
     try {
       const data = await loadSettingsPageData(rpc);
+      if (version !== refreshVersionRef.current) return;
       setPageData(data);
       setDraft(data.settings);
       setModelConfig(data.modelConfig);
       setSimpleMode(data.simpleMode);
+      setSkillsSection(data.skillsSection);
+      setConsoleSection(data.consoleSection);
       setNotice("");
     } catch {
-      setNotice("设置暂时无法读取，请稍后重试。");
+      if (version === refreshVersionRef.current) setNotice("设置暂时无法读取，请稍后重试。");
     }
   }, [rpc]);
 
@@ -457,6 +543,8 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
 
   async function withBusy(action: () => Promise<void>, successMessage: string): Promise<void> {
     if (!rpc || busy) return;
+    // A user mutation owns the visible state after it starts; late initial reads cannot erase its feedback.
+    refreshVersionRef.current += 1;
     setBusy(true);
     try {
       await action();
@@ -486,6 +574,15 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
       await setSimpleModePreference(rpc, enabled);
       setSimpleMode(enabled);
     }, "简洁模式已更新。");
+  }
+
+  function handleSectionSave(asset: "skills" | "console", data: ConfigSectionData): void {
+    if (!rpc) return;
+    void withBusy(async () => {
+      const updated = await saveConfigSection(rpc, asset, data);
+      if (asset === "skills") setSkillsSection(updated);
+      else setConsoleSection(updated);
+    }, "设置分区已保存。");
   }
 
   function handleModelSave(): void {
@@ -539,6 +636,24 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
       const configuredCredentialKeys = await loadConfiguredCredentialKeys(rpc);
       setPageData((previous) => previous ? { ...previous, configuredCredentialKeys } : previous);
     }, "密钥已安全保存。");
+  }
+
+  function handleSmtpCredential(): void {
+    if (!rpc) return;
+    const password = consumeCredentialInput(emailSecretRef.current);
+    let payload: string;
+    try {
+      payload = serializeSmtpCredential(smtpDraft, password);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "邮件设置无效，请检查后重试。");
+      return;
+    }
+    void withBusy(async () => {
+      await saveCredential(rpc, credentialKeyFor("email"), payload);
+      const configuredCredentialKeys = await loadConfiguredCredentialKeys(rpc);
+      setPageData((previous) => previous ? { ...previous, configuredCredentialKeys } : previous);
+      setSmtpDraft({ host: "", port: "587", from: "", to: "" });
+    }, "邮件渠道已安全保存。");
   }
 
   function handleCredentialDelete(kind: CredentialKind): void {
@@ -621,10 +736,15 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
             </Field>
           </div>
           <p style={{ margin: "0 0 10px", color: "var(--text-muted, #666)", fontSize: 12 }}>备份目标目录在执行备份时通过系统目录选择器指定，不会写入或显示本机绝对路径。</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8, marginBottom: 12 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}><input type="checkbox" checked={draft.experimentalFeatures} disabled={!rpc || busy} onChange={(event) => setDraft({ ...draft, experimentalFeatures: event.target.checked })} />实验性功能</label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}><input type="checkbox" checked={draft.debugLogging} disabled={!rpc || busy} onChange={(event) => setDraft({ ...draft, debugLogging: event.target.checked })} />调试日志（仅脱敏元数据）</label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}><input type="checkbox" checked={simpleMode} disabled={!rpc || busy} onChange={(event) => handleSimpleMode(event.target.checked)} />简洁模式</label>
+          </div>
           <button type="button" onClick={handleDraftSave} disabled={!rpc || busy} style={buttonStyle}>保存通用设置</button>
         </Section>
 
-        <Section title="安全">
+        <Section title="模型">
           <h3 style={{ margin: "0 0 10px", fontSize: 14 }}>模型供应商</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
             <Field label="默认供应商">
@@ -648,48 +768,56 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
             <button type="button" onClick={handleModelTest} disabled={!rpc || busy || !selectedProviderId || !selectedModelId || !configured(credentialKeyFor("model", selectedProviderId))} style={buttonStyle}>测试当前选中模型</button>
           </div>
 
-          <h3 style={{ margin: "18px 0 6px", fontSize: 14 }}>密钥管理</h3>
+        </Section>
+
+        <Section title="学习技能">
+          <p style={{ margin: "0 0 8px", color: "var(--text-muted, #666)", fontSize: 12 }}>学习技能由受管资源提供；此处只保存显示偏好，不安装或扫描外部技能。</p>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+            <input type="checkbox" checked={skillsSection.showUnavailableSkills !== false} disabled={!rpc || busy} onChange={(event) => handleSectionSave("skills", { showUnavailableSkills: event.target.checked })} />
+            显示暂不可用的学习技能
+          </label>
+        </Section>
+
+        <Section title="运行能力">
+          <p style={{ margin: "0 0 8px", color: "var(--text-muted, #666)", fontSize: 12 }}>运行能力每次启动或重扫时派生，不作为设置保存，也不会显示路径或原始诊断。</p>
+          {pageData?.toolchains.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            {toolchainOrder(pageData.toolchains).map((status) => <div key={status.capabilityId} style={{ padding: 8, border: "1px solid var(--border, #e0e0e0)", borderRadius: 6, fontSize: 12 }}><strong>{status.name}</strong><br />{healthLabel(status.health)}{status.version ? <div style={{ marginTop: 3, color: "var(--text-muted, #666)" }}>版本：{status.version}</div> : null}{status.reason ? <div style={{ marginTop: 5, color: "var(--text-muted, #666)" }}>说明：{status.reason}</div> : null}{status.recovery ? <div style={{ marginTop: 3, color: "var(--text-muted, #666)" }}>恢复：{status.recovery}</div> : null}</div>)}
+          </div> : <p style={{ margin: 0, color: "var(--text-muted, #666)", fontSize: 12 }}>暂未获得本机工具检查结果。</p>}
+        </Section>
+
+        <Section title="家长渠道">
+          <h3 style={{ margin: "0 0 6px", fontSize: 14 }}>密钥管理</h3>
           <p style={{ margin: "0 0 8px", color: "var(--text-muted, #666)", fontSize: 12 }}>密钥仅写入本机 credential-vault；页面只显示配置状态，不会读取或回显内容。</p>
           <CredentialControl label={providerCredentialLabel(selectedProvider)} configured={selectedProviderId ? configured(credentialKeyFor("model", selectedProviderId)) : false} inputRef={modelSecretRef} onSave={() => handleCredential("model", modelSecretRef)} onDelete={() => handleCredentialDelete("model")} disabled={!rpc || busy || !selectedProviderId} />
-          <CredentialControl label="家长邮箱" configured={configured(credentialKeyFor("email"))} inputRef={emailSecretRef} onSave={() => handleCredential("email", emailSecretRef)} onDelete={() => handleCredentialDelete("email")} disabled={!rpc || busy} />
+          <SmtpCredentialControl configured={configured(credentialKeyFor("email"))} draft={smtpDraft} passwordRef={emailSecretRef} onDraftChange={setSmtpDraft} onSave={handleSmtpCredential} onDelete={() => handleCredentialDelete("email")} disabled={!rpc || busy} />
           <CredentialControl label="飞书渠道" configured={configured(credentialKeyFor("feishu"))} inputRef={feishuSecretRef} onSave={() => handleCredential("feishu", feishuSecretRef)} onDelete={() => handleCredentialDelete("feishu")} disabled={!rpc || busy} />
 
-          <div style={{ marginTop: 14, padding: 12, borderRadius: 6, background: "var(--bg-panel, #f5f5f5)", fontSize: 13 }}>
-            <strong>日志脱敏</strong>
-            <p style={{ margin: "5px 0 0", color: "var(--text-muted, #666)" }}>日志不会记录密钥、模型完整输出、真实渠道地址、完整 UUID 或绝对路径。</p>
-          </div>
-          <div style={{ marginTop: 10, padding: 12, borderRadius: 6, background: "var(--bg-panel, #f5f5f5)", fontSize: 13 }}>
+          <p style={{ margin: "8px 0 0", color: "var(--text-muted, #666)", fontSize: 12 }}>渠道测试必须由用户显式触发固定脱敏测试消息；不进行每日自动外发。</p>
+        </Section>
+
+        <Section title="数据与备份">
+          <div style={{ padding: 12, borderRadius: 6, background: "var(--bg-panel, #f5f5f5)", fontSize: 13 }}>
             <strong>数据根</strong>
             <p style={{ margin: "5px 0 8px", color: "var(--text-muted, #666)" }}>本机业务数据根已物理隔离。迁移会先复制并校验数据；完成后需重启应用生效。为保护隐私，页面不展示路径。</p>
             <button type="button" onClick={handleDataRootMigration} disabled={busy} style={buttonStyle}>选择新数据根并安排重启</button>
           </div>
         </Section>
 
-        <Section title="开发者">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <input type="checkbox" checked={draft.experimentalFeatures} disabled={!rpc || busy} onChange={(event) => setDraft({ ...draft, experimentalFeatures: event.target.checked })} />
-              实验性功能
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <input type="checkbox" checked={draft.debugLogging} disabled={!rpc || busy} onChange={(event) => setDraft({ ...draft, debugLogging: event.target.checked })} />
-              调试日志（仅脱敏元数据）
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <input type="checkbox" checked={simpleMode} disabled={!rpc || busy} onChange={(event) => handleSimpleMode(event.target.checked)} />
-              简洁模式
-            </label>
+        <Section title="关于与更新">
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+            <input type="checkbox" checked={consoleSection.checkUpdatesOnStart !== false} disabled={!rpc || busy} onChange={(event) => handleSectionSave("console", { checkUpdatesOnStart: event.target.checked })} />
+            启动时检查更新
+          </label>
+          <div style={{ marginTop: 12, padding: 10, borderRadius: 6, background: "var(--bg-panel, #f5f5f5)", fontSize: 12 }}>
+            <strong>配置资产状态</strong>
+            {(pageData?.configStatuses ?? []).map((item) => <div key={item.asset} style={{ marginTop: 5 }}>{item.asset}：{item.message}</div>)}
           </div>
-          <h3 style={{ margin: "16px 0 8px", fontSize: 14 }}>本机工具检查</h3>
-          <p style={{ margin: "0 0 8px", color: "var(--text-muted, #666)", fontSize: 12 }}>仅供诊断资料转换、课堂采集等功能依赖；模型、邮箱、飞书和备份不依赖这些工具。当前应用不携带下载源，缺失项不能在此自动安装。</p>
-          {pageData?.toolchains.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-            {toolchainOrder(pageData.toolchains).map((status) => <div key={status.capabilityId} style={{ padding: 8, border: "1px solid var(--border, #e0e0e0)", borderRadius: 6, fontSize: 12 }}>
-              <strong>{status.name}</strong><br />{healthLabel(status.health)}{status.version ? ` · ${status.version}` : ""}
-              {status.reason ? <div style={{ marginTop: 5, color: "var(--text-muted, #666)" }}>说明：{status.reason}</div> : null}
-              {status.recovery ? <div style={{ marginTop: 3, color: "var(--text-muted, #666)" }}>恢复：{status.recovery}</div> : null}
-            </div>)}
-          </div> : <p style={{ margin: 0, color: "var(--text-muted, #666)", fontSize: 12 }}>暂未获得本机工具检查结果。</p>}
+          <div style={{ marginTop: 10, padding: 12, borderRadius: 6, background: "var(--bg-panel, #f5f5f5)", fontSize: 13 }}>
+            <strong>日志脱敏</strong>
+            <p style={{ margin: "5px 0 0", color: "var(--text-muted, #666)" }}>日志不会记录密钥、模型完整输出、真实渠道地址、完整 UUID 或绝对路径。</p>
+          </div>
         </Section>
+
       </div>
     </div>
   );

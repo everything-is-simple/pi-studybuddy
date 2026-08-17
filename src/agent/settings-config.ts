@@ -7,42 +7,50 @@
  * 仅存 simpleMode/backupSchedule 等非敏感设置（02-PRD §5.2 密钥边界）：
  * API key 在 credential-vault，本文件不含任何密钥明文。
  */
-import path from "node:path";
-import fs from "node:fs";
 import type { AppSettings } from "../contract/types";
+import { createVersionedConfigStore, type ConfigReadResult } from "./config-store";
 
-/** 配置文件相对业务数据根的路径 */
-function settingsPath(dataRoot: string): string {
-  return path.join(dataRoot, "config", "settings.json");
+/** 默认设置（首次启动）；不含路径、密钥或瞬时运行 health。 */
+const DEFAULT_SETTINGS: AppSettings = { simpleMode: false };
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
 }
 
-/** 默认设置（首次启动） */
-const DEFAULT_SETTINGS: AppSettings = {
-  simpleMode: false,
-};
+function parseSettings(value: unknown): AppSettings | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const source = value as Record<string, unknown>;
+  if (source.simpleMode !== undefined && typeof source.simpleMode !== "boolean") return null;
+  if (source.dailyGoalMinutes !== undefined && !isFiniteNumber(source.dailyGoalMinutes)) return null;
+  if (source.availableTime !== undefined && typeof source.availableTime !== "string") return null;
+  if (source.ttsEngine !== undefined && source.ttsEngine !== "sapi" && source.ttsEngine !== "edge-tts") return null;
+  if (source.ttsRate !== undefined && !isFiniteNumber(source.ttsRate)) return null;
+  if (source.ttsVoice !== undefined && !["默认音色", "女声", "男声"].includes(String(source.ttsVoice))) return null;
+  if (source.backupFrequency !== undefined && !["manual", "daily", "weekly"].includes(String(source.backupFrequency))) return null;
+  if (source.experimentalFeatures !== undefined && typeof source.experimentalFeatures !== "boolean") return null;
+  if (source.debugLogging !== undefined && typeof source.debugLogging !== "boolean") return null;
+  return { ...DEFAULT_SETTINGS, ...source };
+}
 
-/**
- * 读取应用设置。文件不存在或解析失败 → 默认设置。
- */
+const settingsStore = createVersionedConfigStore<AppSettings>({
+  asset: "settings",
+  fileName: "settings.json",
+  schemaVersion: 1,
+  defaultData: () => ({ ...DEFAULT_SETTINGS }),
+  parse: parseSettings,
+});
+
+/** 返回数据与本次读到的脱敏生命周期状态，供设置控制台显示。 */
+export function readSettingsWithStatus(dataRoot: string): ConfigReadResult<AppSettings> {
+  return settingsStore.read(dataRoot);
+}
+
+/** 保持既有调用面。 */
 export function readSettings(dataRoot: string): AppSettings {
-  const file = settingsPath(dataRoot);
-  if (!fs.existsSync(file)) return { ...DEFAULT_SETTINGS };
-  try {
-    const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Partial<AppSettings>;
-    return { ...DEFAULT_SETTINGS, ...raw };
-  } catch {
-    return { ...DEFAULT_SETTINGS };
-  }
+  return readSettingsWithStatus(dataRoot).data;
 }
 
-/**
- * 原子写应用设置：tmp 文件 + rename 覆盖。
- */
+/** 原子写版本化普通设置。 */
 export function writeSettings(dataRoot: string, settings: AppSettings): void {
-  const dir = path.join(dataRoot, "config");
-  fs.mkdirSync(dir, { recursive: true });
-  const file = settingsPath(dataRoot);
-  const tmp = `${file}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(settings, null, 2), "utf8");
-  fs.renameSync(tmp, file);
+  settingsStore.write(dataRoot, settings);
 }

@@ -37,7 +37,10 @@
 | ACT-S7-001 | 合规确认并选择 WAV | CTRL-CAPTURE-01..04 | 勾选授权后选择受支持文件 | CaptureTab + native file dialog | DATA-FILE-* 待细化 | ERR-FILE-001/ERR-DEPENDENCY-001 | 原生 UAT 37/38/39；成功转写与结果重启回读属于 T-M5-006 依赖范围 | 部分证据/依赖阻塞 |
 | ACT-TTS-001 | 从速背卡/报告/转写结果朗读 | CTRL-TTS-01..03 + Tab text zones | 可见文本且目标内容非空 | AppShell `onSpeakText` + useTtsPlayback | review event only after explicit mark | ERR-DEPENDENCY-001 | renderer contract + E2E regression；native content entry not reached | 部分证据 |
 | ACT-BACKUP-001 | 选择覆盖恢复并确认风险 | CTRL-BACKUP-01..04 | `overwrite` first shows confirm/cancel; confirm invokes restore | BackupPanel + backup.restore | DATA-FILE-003 | ERR-BACKUP-001 | renderer contract + RPC regression；native restore not covered | 部分证据 |
-| ACT-SETTINGS-001 | 打开设置并保存通用偏好/查看运行能力 | CTRL-SETTINGS-01..06 | 打开设置；状态、说明和恢复文字均经脱敏 | SettingsPage + settings/toolchains RPC | DATA-CFG-003 | ERR-SQLITE-001/ERR-DEPENDENCY-001 | native UAT 21/22/60；T-M5-006 production settings E2E；隔离 settings.json 回读 61 | 部分证据：运行能力可见状态已证实，七类配置生命周期留 T-M5-011 |
+| ACT-SETTINGS-001 | 打开设置并保存通用偏好/查看运行能力 | CTRL-SETTINGS-01..06 | 打开设置；状态、说明和恢复文字均经脱敏 | SettingsPage + settings/toolchains RPC | DATA-CFG-003/DATA-RUNTIME-001 | ERR-SQLITE-001/ERR-DEPENDENCY-001 | T-M5-011 专属 Electron E2E；原生 UAT 21/22 | 已证实：通用设置保存→重启回读；运行能力原生逐项回读待补 |
+| ACT-SETTINGS-002 | 保存并重启回读七类本机设置 | CTRL-SETTINGS-01..06 | 每分区完成一次可见保存；重启后读取结果 | Settings console + config status RPC | DATA-CFG-001..005 | ERR-CONFIG-001/002、ERR-CREDENTIAL-001 | T-M5-011 unit/integration + 专属 Electron E2E；原生 UAT 14/21/22/27 | 部分证据：自动化覆盖通用/技能/更新回读，原生完成通用与渠道；其余分区待补 |
+| ACT-SETTINGS-003 | 恢复缺失、旧版或损坏的普通配置 | CTRL-SETTINGS-01..06 | 打开设置触发状态读取并确认恢复 | Config storage + config status RPC | DATA-CFG-001..004 | ERR-CONFIG-001/002 | T-M5-011 unit/integration | 自动化已证实；原生可见恢复待补 |
+| ACT-SETTINGS-004 | 查看凭据安全状态并处理 DPAPI 不可用 | CTRL-SETTINGS-01..06 | 只显示已保存/不可用；不显示或读取值 | CredentialVault + config status RPC | DATA-CFG-005 | ERR-CREDENTIAL-001 | T-M5-011 unit/handler/renderer + 原生 UAT 14/27 | 已证实 DPAPI 保存不回显与渠道测试；不可用环境原生恢复待补 |
 
 ## 3. 控件输入基线（未等同于动作）
 
@@ -73,7 +76,7 @@
 
 ## 5. 下游消费
 
-- T-M5-005：补齐报告、采集、TTS、备份、设置和整体 UX 的动作拆分。
+- T-M5-011：消费 ACT-SETTINGS-001..004，补齐七类配置、迁移、损坏恢复、DPAPI 状态和重启回读。
 - T-M5-006：为依赖健康、离线/不可用降级和安装边界补充动作与错误映射。
 - T-M5-007：按完整 `ACT-*` 清单进行干净 Windows 真机 UAT。
 - T-M5-008：将发布候选的动作覆盖、恢复和 Git 证据写入 `release-evidence.md`。

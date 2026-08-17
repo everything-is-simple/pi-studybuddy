@@ -665,6 +665,12 @@ export interface ReportDelivery {
  *
  * 真实渠道地址（邮箱/Webhook URL）在 credential-vault，channelConfigJson 仅存别名。
  */
+export interface ChannelTestResult {
+  channel: Extract<ReportChannel, "smtp" | "feishu_webhook">;
+  status: "sent" | "failed";
+  message: string;
+}
+
 export interface ParentReportTarget {
   id: string;
   semesterId: string;
@@ -795,6 +801,21 @@ export interface AppSettings {
   simpleMode: boolean;
   backupSchedule?: BackupSchedule;
   [key: string]: unknown;
+}
+
+/** T-M5-011：设置控制台的脱敏配置生命周期状态。 */
+export interface ConfigAssetStatus {
+  asset: "settings" | "models" | "pi-models" | "skills" | "console" | "credentials";
+  state: "ready" | "created" | "migrated" | "recovered" | "unavailable";
+  message: string;
+  recoverable: boolean;
+}
+
+export type ConfigSectionAsset = "skills" | "console";
+
+export interface ConfigSectionData {
+  showUnavailableSkills?: boolean;
+  checkUpdatesOnStart?: boolean;
 }
 
 /* ---- §3.16 工具发现 ---- */
