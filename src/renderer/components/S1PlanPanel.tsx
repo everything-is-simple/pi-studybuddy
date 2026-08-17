@@ -94,8 +94,8 @@ function ActionButton({ children, disabled, onClick, kind = "default" }: {
       onClick={onClick}
       style={{
         ...buttonStyle,
-        background: kind === "primary" ? "var(--accent, #e8f0fe)" : kind === "danger" ? "#fff1f0" : buttonStyle.background,
-        color: kind === "danger" ? "#b42318" : buttonStyle.color,
+        background: kind === "primary" ? "var(--accent, #e8f0fe)" : kind === "danger" ? "#fff1f0" : "var(--bg-panel, #f5f5f5)",
+        color: kind === "danger" ? "#b42318" : "var(--text, #222)",
         opacity: disabled ? 0.55 : 1,
         cursor: disabled ? "not-allowed" : "pointer",
       }}

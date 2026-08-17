@@ -70,11 +70,11 @@ describe("modelsConfig.* + models.list fixture（06-API §3.13 + §9.5 + 裁决 
       },
     });
 
-    const result = await handlers["modelsConfig.set"]({ provider: "volcengine", model: "deepseek-v4-flash-ga-260731" });
+    const result = await handlers["modelsConfig.set"]({ provider: "sharkgpt", model: "gpt-5.6-terra" });
 
-    expect(applied).toEqual([{ provider: "volcengine", model: "deepseek-v4-flash-ga-260731" }]);
-    expect(result).toMatchObject({ provider: "volcengine", model: "deepseek-v4-flash-ga-260731", managed: true });
-    expect(handlers["modelsConfig.get"]({})).toMatchObject({ provider: "volcengine", model: "deepseek-v4-flash-ga-260731" });
+    expect(applied).toEqual([{ provider: "sharkgpt", model: "gpt-5.6-terra" }]);
+    expect(result).toMatchObject({ provider: "sharkgpt", model: "gpt-5.6-terra", managed: true });
+    expect(handlers["modelsConfig.get"]({})).toMatchObject({ provider: "sharkgpt", model: "gpt-5.6-terra" });
   });
 
   it("生产模型切换失败时不覆盖当前默认配置", async () => {
@@ -85,50 +85,45 @@ describe("modelsConfig.* + models.list fixture（06-API §3.13 + §9.5 + 裁决 
     });
     const before = handlers["modelsConfig.get"]({});
 
-    await expect(handlers["modelsConfig.set"]({ provider: "yunwu", model: "gpt-5.6-sol" })).rejects.toThrow("credential unavailable");
+    await expect(handlers["modelsConfig.set"]({ provider: "pixelgpt", model: "gpt-5.6-terra" })).rejects.toThrow("credential unavailable");
 
     expect(handlers["modelsConfig.get"]({})).toEqual(before);
   });
 
-  it("models.list fixture 含 deepseek + agnes 两组真 model provider（裁决 5）", () => {
+  it("models.list fixture 含已登记的真实 provider 模型", () => {
     const handlers = createModelHandlers(ISOLATION_DIR);
     const providers = handlers["models.list"]({}) as ModelProvider[];
     const ids = providers.map((p) => p.id);
-    expect(ids).toContain("deepseek");
-    expect(ids).toContain("agnes");
-    const deepseek = providers.find((p) => p.id === "deepseek");
-    const agnes = providers.find((p) => p.id === "agnes");
-    expect(deepseek?.models.map((m) => m.id)).toContain("deepseek-chat");
-    expect(deepseek?.models.map((m) => m.id)).toContain("deepseek-reasoner");
-    expect(providers.map((p) => p.id)).toContain("volcengine");
-    expect(providers.map((p) => p.id)).toContain("yunwu");
-    expect(agnes?.models.map((m) => m.id)).toContain("agnes-2.5-flash");
-    expect(agnes?.models.find((m) => m.id === "agnes-2.5-flash")?.input).toEqual(["text", "image"]);
-    expect(agnes?.models.map((m) => m.id)).toContain("agnes-2.5-pro");
-    expect(agnes?.models.map((m) => m.id)).toContain("agnes-image-2.1-flash");
-    expect(agnes?.models.map((m) => m.id)).toContain("agnes-video-v2.0");
+    expect(ids).toEqual(expect.arrayContaining(["deepseek", "agnes", "sharkgpt", "pixelgpt", "voklygpt", "chickfarmgpt"]));
+    expect(providers.find((p) => p.id === "deepseek")?.models.map((m) => m.id)).toContain("deepseek-chat");
+    expect(providers.find((p) => p.id === "agnes")?.models.map((m) => m.id)).toContain("agnes-2.5-flash");
   });
 
-  it("models.probe 使用已保存的 key 读取空目录供应商并持久化发现的文本模型", async () => {
+  it("models.probe 使用已保存的 key 读取 provider 并持久化发现的文本模型", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
       data: [{ id: "relay-chat" }, { id: "relay-reasoner" }, { id: "relay-chat" }, { id: "" }],
     }), { status: 200, headers: { "content-type": "application/json" } }));
     const handlers = createModelHandlers(ISOLATION_DIR, {
-      credentialService: { get: async (key) => key === "modelProvider:xiaojigpt" ? "temporary-secret" : null },
+      credentialService: { get: async (key) => key === "modelProvider:sharkgpt" ? "temporary-secret" : null },
       fetchImpl,
     });
 
-    await expect(handlers["models.probe"]({ provider: "xiaojigpt" })).resolves.toEqual([
+    await expect(handlers["models.probe"]({ provider: "sharkgpt" })).resolves.toEqual([
       { id: "relay-chat", name: "relay-chat", input: ["text"] },
       { id: "relay-reasoner", name: "relay-reasoner", input: ["text"] },
     ]);
     expect(fetchImpl).toHaveBeenCalledWith(
-      "https://api.ckff.tech/v1/models",
+      "https://shayulajiao.xyz/v1/models",
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer temporary-secret" }) }),
     );
 
     const providers = handlers["models.list"]({}) as ModelProvider[];
-    expect(providers.find((provider) => provider.id === "xiaojigpt")?.models.map((model) => model.id)).toEqual(["relay-chat", "relay-reasoner"]);
+    expect(providers.find((provider) => provider.id === "sharkgpt")?.models.map((model) => model.id)).toEqual([
+      "gpt-5.6-terra",
+      "gpt-5.5",
+      "relay-chat",
+      "relay-reasoner",
+    ]);
     expect(readFileSync(path.join(ISOLATION_DIR, "config", "pi-models.json"), "utf8")).not.toContain("temporary-secret");
   });
 
@@ -141,7 +136,7 @@ describe("modelsConfig.* + models.list fixture（06-API §3.13 + §9.5 + 裁决 
       fetchImpl,
     });
 
-    await expect(handlers["models.probe"]({ provider: "xiaojigpt" })).rejects.toMatchObject({
+    await expect(handlers["models.probe"]({ provider: "sharkgpt" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: "API Key 验证失败，请检查后重试",
     });

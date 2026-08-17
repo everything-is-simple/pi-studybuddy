@@ -98,6 +98,16 @@ const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
   }>;
 }> = {
   providers: {
+    agnes: {
+      name: "Agnes（低成本文本）",
+      baseUrl: "https://apihub.agnes-ai.com/v1",
+      api: "openai-completions",
+      compat: { supportsDeveloperRole: false },
+      models: [
+        { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash", input: ["text"], reasoning: true, contextWindow: 128000, maxTokens: 16384 },
+        { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro", input: ["text", "image"], reasoning: true, contextWindow: 128000, maxTokens: 16384 },
+      ],
+    },
     deepseek: {
       name: "DeepSeek 直连（文本）",
       baseUrl: "https://api.deepseek.com/v1",
@@ -107,47 +117,39 @@ const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
         { id: "deepseek-reasoner", name: "DeepSeek Pro", input: ["text"], reasoning: true, contextWindow: 131072, maxTokens: 8192 },
       ],
     },
-    volcengine: {
-      name: "火山方舟（文本/多模态）",
-      baseUrl: "https://ark.cn-beijing.volces.com/api/coding/v3",
+    sharkgpt: {
+      name: "鲨鱼辣椒 GPT",
+      baseUrl: "https://shayulajiao.xyz/v1",
       api: "openai-completions",
       models: [
-        { id: "deepseek-v4-flash-ga-260731", name: "DeepSeek V4 Flash", input: ["text"] },
-        { id: "deepseek-v4-pro-260425", name: "DeepSeek V4 Pro", input: ["text"], reasoning: true },
-        { id: "glm-5-2-260617", name: "GLM 5.2", input: ["text"], reasoning: true },
-        { id: "doubao-seedance-2-5-260628", name: "Doubao Seedance 2.5（视频生成）", input: ["text"], modality: "video" },
-        { id: "doubao-seed-2-0-lite-260428", name: "Doubao Seed 2.0 Lite", input: ["text", "image"] },
-        { id: "doubao-seed-2-0-mini-260428", name: "Doubao Seed 2.0 Mini", input: ["text", "image"] },
-        { id: "doubao-seed-2-1-turbo-260628", name: "Doubao Seed 2.1 Turbo", input: ["text", "image"] },
+        { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", input: ["text", "image"], reasoning: true, contextWindow: 200000, maxTokens: 16384 },
+        { id: "gpt-5.5", name: "GPT-5.5", input: ["text"], reasoning: true, contextWindow: 200000, maxTokens: 16384 },
       ],
     },
-    yunwu: {
-      name: "云雾 API（文本）",
-      baseUrl: "https://yunwu.ai/v1",
+    pixelgpt: {
+      name: "Pixel GPT",
+      baseUrl: "https://api.ai-pixel.online/v1",
       api: "openai-completions",
       models: [
-        { id: "gpt-5.6-terra", name: "GPT 5.6 Terra", input: ["text"], reasoning: true },
-        { id: "gpt-5.6-sol", name: "GPT 5.6 Sol", input: ["text"], reasoning: true },
-        { id: "gpt-5.6-luna", name: "GPT 5.6 Luna", input: ["text"], reasoning: true },
-        { id: "gpt-5.5", name: "GPT 5.5", input: ["text"], reasoning: true },
-        { id: "gpt-5.4", name: "GPT 5.4", input: ["text"], reasoning: true },
-        { id: "gpt-5.4-mini", name: "GPT 5.4 Mini", input: ["text"], reasoning: true },
+        { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", input: ["text"], reasoning: true, contextWindow: 200000, maxTokens: 16384 },
       ],
     },
-    agnes: {
-      name: "Agnes（多媒体）",
-      baseUrl: "https://apihub.agnes-ai.com/v1",
+    voklygpt: {
+      name: "Vokly GPT",
+      baseUrl: "https://api.vokly.io/v1",
       api: "openai-completions",
       models: [
-        { id: "agnes-2.5-flash", name: "Agnes 2.5 Flash", input: ["text", "image"] },
-        { id: "agnes-2.5-pro", name: "Agnes 2.5 Pro", input: ["text", "image"], reasoning: true },
-        { id: "agnes-image-2.1-flash", name: "Agnes Image 2.1 Flash（图像生成）", input: ["text", "image"], modality: "image" },
-        { id: "agnes-video-v2.0", name: "Agnes Video 2.0（视频生成）", input: ["text", "image"], modality: "video" },
+        { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", input: ["text"], reasoning: true, contextWindow: 200000, maxTokens: 16384 },
       ],
     },
-    xiaojigpt: { name: "小鸡 GPT 中转（待模型探测）", baseUrl: "https://api.ckff.tech/v1", api: "openai-completions", models: [] },
-    shayulajiao: { name: "鲨鱼辣椒中转（待模型探测）", baseUrl: "https://shayulajiao.xyz/v1", api: "openai-completions", models: [] },
-    xiaojikiro: { name: "小鸡 Kiro 中转（待模型探测）", baseUrl: "https://ckff.dev/v1", api: "openai-completions", models: [] },
+    chickfarmgpt: {
+      name: "小鸡农场 GPT",
+      baseUrl: "https://api.68886868.xyz/v1",
+      api: "openai-completions",
+      models: [
+        { id: "[codex] gpt-5.6-terra  [不补]", name: "GPT-5.6 Terra", input: ["text", "image"], reasoning: true, contextWindow: 200000, maxTokens: 16384 },
+      ],
+    },
   },
 };
 

@@ -185,8 +185,8 @@ describe("T-M4-004 studybuddy-extension 接入 pi 内核 + extension-loader（�
       "deepseek-chat",
       "deepseek-reasoner",
     ]));
-    expect(providers.volcengine.models.map((model: { id: string }) => model.id)).toContain("deepseek-v4-flash-ga-260731");
-    expect(providers.yunwu.models.map((model: { id: string }) => model.id)).toContain("gpt-5.6-terra");
+    expect(providers.sharkgpt.models.map((model: { id: string }) => model.id)).toContain("gpt-5.6-terra");
+    expect(providers.voklygpt.models.map((model: { id: string }) => model.id)).toContain("gpt-5.6-terra");
 
     writeFileSync(catalog, JSON.stringify({ providers: {} }), "utf8");
     ensureRuntimeProviderConfig(DATA_ROOT);

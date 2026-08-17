@@ -72,11 +72,8 @@ describe("models.list RPC（06-API §3.13 + §9.5 物理隔离）", () => {
       expect(p.providerType).toBeTruthy();
     }
 
-    for (const id of ["deepseek", "volcengine", "yunwu", "agnes"]) {
+    for (const id of ["deepseek", "agnes", "sharkgpt", "pixelgpt", "voklygpt", "chickfarmgpt"]) {
       expect(providers.find((provider) => provider.id === id)?.models.length).toBeGreaterThan(0);
-    }
-    for (const id of ["xiaojigpt", "shayulajiao", "xiaojikiro"]) {
-      expect(providers.find((provider) => provider.id === id)?.models).toEqual([]);
     }
   });
 
