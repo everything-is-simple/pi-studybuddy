@@ -17,6 +17,9 @@ export default defineConfig({
     environment: "node",
     globals: false,
     fullyParallel: false,
+    // fullyParallel only controls tests within a file; renderer E2E runners also
+    // require file-level serialization to avoid competing Electron screenshots.
+    fileParallelism: false,
     timeout: 60_000,
     hookTimeout: 60_000,
     testTimeout: 60_000,

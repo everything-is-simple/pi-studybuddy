@@ -12,6 +12,7 @@ import { createModuleHandlers } from "./modules";
 import { createJobHandlers } from "./jobs";
 
 export { S2Context } from "./context";
+export { createRuntimeS2Context } from "./runtime-context";
 
 export function createS2Handlers(ctx: S2Context) {
   return {

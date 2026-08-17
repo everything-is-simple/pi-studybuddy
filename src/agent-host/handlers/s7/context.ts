@@ -10,11 +10,13 @@ import { DatabaseSync } from "../../../data/sqlite";
 import { applyPragmas } from "../../../data/db";
 import path from "node:path";
 import type { WhisperCppAdapter } from "./whisper-adapter";
-import { createMockWhisperAdapter } from "./whisper-adapter";
+import { createMockWhisperAdapter, createRealWhisperAdapter } from "./whisper-adapter";
 
 export interface S7ContextOptions {
   /** WhisperCppAdapter（可注入，默认 mock 确定性，08-Test §5.4） */
   whisperAdapter?: WhisperCppAdapter;
+  /** 允许未配置时使用 mock；生产路径应设为 false，避免能力缺失被伪装为成功。 */
+  allowMockWhisper?: boolean;
   /** whisper.cpp CLI 路径（仅 createRealWhisperAdapter 用，03-Arch §3.3） */
   whisperCliPath?: string;
   /** whisper.cpp 模型路径（仅 createRealWhisperAdapter 用，03-Arch §3.3） */
@@ -35,9 +37,11 @@ export class S7Context {
     private readonly dataRoot: string,
     options?: S7ContextOptions,
   ) {
-    this.whisperAdapter = options?.whisperAdapter ?? createMockWhisperAdapter();
     this.whisperCliPath = options?.whisperCliPath ?? "";
     this.whisperModelPath = options?.whisperModelPath ?? "";
+    this.whisperAdapter = options?.whisperAdapter ?? (options?.allowMockWhisper === false
+      ? createRealWhisperAdapter({ cliPath: this.whisperCliPath, modelPath: this.whisperModelPath })
+      : createMockWhisperAdapter());
     this.tmpRoot = options?.tmpRoot ?? path.join(dataRoot, "tmp", "class-capture");
   }
 

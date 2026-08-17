@@ -22,7 +22,7 @@
 
 ## 3. 依赖健康（OPS-DEP-001）
 
-记录每项依赖为 `可用`、`不可用但可恢复` 或 `未覆盖`：模型/凭证、WPS、OCR、whisper、TTS、文件对话框、Electron runtime。不可用时必须显示中文责任和恢复入口；不得静默回退 fixture，不得宣称核心闭环通过。
+记录每项依赖为 `可用`、`不可用但可恢复` 或 `未覆盖`：模型/凭证、WPS、OCR、whisper、TTS、文件对话框、Electron runtime。T-M5-006 当前已证实受管 pi/extension/native skills 与 Windows SAPI 状态可见；OCR/whisper/edge-tts 未配置为可恢复状态，WPS 未配置会使旧 Office 转换固定失败而不阻塞现代本地转换。不可用时必须显示中文责任和恢复入口；不得静默回退 fixture，不得宣称真实外部能力或核心闭环通过。
 
 ## 4. 备份、恢复、迁移、升级、卸载（OPS-BACKUP-001）
 

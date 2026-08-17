@@ -13,6 +13,7 @@ import { Type } from "typebox";
 import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import {
   createMockOcrAdapter,
+  createRealOcrAdapter,
   type OcrAdapter,
 } from "../../../agent-host/handlers/s1/ocr-adapter";
 import { handleOcrSchedule } from "../../../agent-host/handlers/s1/ocr";
@@ -31,8 +32,20 @@ function jsonContent(obj: unknown): { type: "text"; text: string } {
  * 创建 S1 OCR 工具（studybuddy_ocr_schedule）。
  * @param adapter OcrAdapter（可注入，默认 mock 确定性，AGENTS.md §5.4 不连真实 RapidOCR）
  */
-export function createOcrTools(adapter?: OcrAdapter): ToolDefinition[] {
-  const ocrAdapter = adapter ?? createMockOcrAdapter();
+export interface OcrToolOptions {
+  allowMock?: boolean;
+  pythonPath?: string;
+  bridgePath?: string;
+}
+
+export function createOcrTools(adapter?: OcrAdapter, options: OcrToolOptions = {}): ToolDefinition[] {
+  const allowMock = options.allowMock ?? true;
+  const ocrAdapter = adapter ?? (allowMock
+    ? createMockOcrAdapter()
+    : createRealOcrAdapter({
+        pythonPath: options.pythonPath ?? "",
+        bridgePath: options.bridgePath ?? "",
+      }));
   const handler = handleOcrSchedule({ ocrAdapter });
 
   return [

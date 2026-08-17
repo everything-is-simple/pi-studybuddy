@@ -34,6 +34,7 @@
 | DATA-MEM-003 | L3 conversation | `<dataRoot>/memory/l3/conversation.sqlite` | chat/agent | 会话事实；需与 session 关联 | 消息敏感；模型输出不进普通日志 | 备份/恢复待明确 | 专用根 + session E2E | 部分证据 |
 | DATA-TEST-001 | 测试 global/semester SQLite | `H:\pi-studybuddy-tmp\runs\<task-id>\...` | tests/helpers | 非生产；任务结束后按证据保留/清理 | 不含真实学生数据 | 不进入正式备份 | 正式 schema/handler 建库 | 已登记 |
 | DATA-TEST-002 | 测试截图/DOM/JSON/日志 | 同一任务运行根 | E2E/UAT | 证据资产；不作为业务事实 | DOM 不含完整 UUID/路径/栈 | 不进 Git | 结构化结果文件 | 已登记 |
+| DATA-RUNTIME-001 | 受管运行资源 manifest/skills 与 host 运行时 | 应用 `runtime-resources/`；发布态 resources/runtime-resources + app.asar.unpacked/dist/node_modules | StudyBuddy 发布包 | manifest 是受管 native skills 的发现、许可、哈希、大小和更新责任 SoT；utility host 入口/生产依赖只用于发布态启动，不写入业务数据根 | 不含学生/凭证/绝对路径；仅可显示脱敏状态 | 随应用重装，不纳入学生业务备份 | manifest SHA-256/size、package smoke 双启动、真实 Electron 设置页 E2E | 部分证据：两份内置 skills 与解包 host 已验证；外部 OCR/whisper/edge-tts 不随包 |
 | DATA-TMP-001 | 转换/缓存/临时连接 | imports、cache、内存 | 运行时 | 可清理；不得当唯一事实 | 最小化 | 不备份 | 清理/句柄测试 | 部分证据 |
 
 ## 2. SQLite 与文件副作用纪律

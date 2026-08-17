@@ -50,10 +50,13 @@ export function handleOcrSchedule(
       // 仅返回 { text }，不返回 imagePath/stdout/stderr（08-Test §3.3.3 断言）
       return { text: result.text };
     } catch (e) {
-      // adapter 抛的 BAD_REQUEST（图片路径相关）直接透传
+      // adapter 抛的 BAD_REQUEST（图片路径相关）直接透传；未配置错误保留恢复指引。
       if (e && typeof e === "object" && "code" in e) {
-        const err = e as { code?: string };
+        const err = e as { code?: string; message?: string };
         if (err.code === "BAD_REQUEST") {
+          throw e;
+        }
+        if (err.code === "INTERNAL_ERROR" && err.message === "OCR 识别未配置，请在设置中指定 OCR 引擎路径") {
           throw e;
         }
       }

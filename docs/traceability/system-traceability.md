@@ -34,7 +34,8 @@
 | TRACE-S7-001 | ACT-S7-001 合规确认/WAV 选择 | capture + whisper boundary | classCapture handlers | DATA-FILE-* / DATA-BIZ-* | 原生 UAT 37/38/39 只到合规空态；依赖自包含未证实 | OPS-DEP-001 | 阻塞 |
 | TRACE-TTS-001 | ACT-TTS-001 速背卡/报告/转写朗读 | AppShell useTtsPlayback | existing tts handlers | review event only after explicit mark | renderer contract/E2E；原生内容入口未到达 | OPS-DEP-001 | 部分证据 |
 | TRACE-BACKUP-001 | ACT-BACKUP-001 overwrite 确认 | backup RPC/scheduler | BackupPanel + backup handlers | DATA-FILE-003 + all DATA-BIZ | renderer contract/RPC；真实恢复回读待补 | OPS-BACKUP-001 | 部分证据 |
-| TRACE-SETTINGS-001 | ACT-SETTINGS-001 设置保存反馈 | settings + credential-vault | config/vault handlers | DATA-CFG-003 | 原生打开/保存反馈 21/22；重启值未覆盖 | OPS-SEC-001 | 部分证据 |
+| TRACE-SETTINGS-001 | ACT-SETTINGS-001 设置保存反馈/运行能力状态 | settings/toolchains + credential-vault | SettingsPage status sanitizer + config/vault handlers | DATA-CFG-003 | production Electron settings E2E 已证实运行状态/恢复说明与 DOM 脱敏；七类配置生命周期留 T-M5-011 | OPS-SEC-001/OPS-DEP-001 | 部分证据 |
+| TRACE-RUNTIME-001 | 打开设置查看受管运行资源与可选依赖恢复说明 | SettingsPage→toolchains.list→runtime capabilities | manifest verifier、启动/重扫时逐资源 SHA-256/size 校验、`app.asar.unpacked` agent-host/生产依赖装配、SAPI runtime context、OCR/whisper/WPS/edge-tts 可恢复降级 | DATA-RUNTIME-001 | T-M5-006 manifest/adapter 单测、篡改完整性回归、production settings Electron E2E、`win-unpacked` package smoke 双启动；原生 UAT通过：受管 skills/pi/extension/SAPI/edge-tts/WPS/OCR/whisper截图与脱敏边界 | OPS-DEP-001；最终候选仅 T-M5-008 | 外部二进制不随包，未配置能力不伪装成功；受管资源缺失/篡改显示 unsupported；每次 smoke launch 使用独立 profile；未执行真实外部引擎
 
 ## 3. 证据分层约束
 

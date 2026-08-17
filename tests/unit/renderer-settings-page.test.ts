@@ -28,6 +28,7 @@ import {
     providerCredentialLabel,
     credentialStatusLabel,
     scheduleSelectedDataRootMigration,
+    sanitizeToolchainStatuses,
     subscribeToToolchainChanges,
   } from "../../src/renderer/components/SettingsPage";
 describe("SettingsPage（09-UI §10 + §11）", () => {
@@ -95,7 +96,15 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       },
       "toolchains.list": () => {
         calls.push("toolchains.list");
-        return [{ capabilityId: "js.node", name: "Node.js", health: "healthy", version: "v24.14.0", path: "C:\\private\\node.exe" }];
+        return [{
+          capabilityId: "learning.wps",
+          name: "WPS/Office 旧格式转换",
+          health: "unverified",
+          version: "external",
+          path: "C:\\private\\wps.exe",
+          reason: "WPS/Office 为外部可选依赖，不随应用安装",
+          recovery: "安装并授权 WPS/Office 后手动测试旧格式转换",
+        }];
       },
     });
 
@@ -116,7 +125,31 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       { id: "deepseek", name: "DeepSeek", models: [{ id: "v4", name: "V4" }] },
       { id: "xiaojigpt", name: "小鸡 GPT", models: [] },
     ]);
-    expect(data.toolchains).toEqual([{ capabilityId: "js.node", name: "Node.js", health: "healthy", version: "v24.14.0" }]);
+    expect(data.toolchains).toEqual([{
+      capabilityId: "learning.wps",
+      name: "WPS/Office 旧格式转换",
+      health: "unverified",
+      version: "external",
+      reason: "WPS/Office 为外部可选依赖，不随应用安装",
+      recovery: "安装并授权 WPS/Office 后手动测试旧格式转换",
+    }]);
+  });
+
+  it("运行能力原因与恢复动作经过统一脱敏，绝对路径字段永不进入页面状态", () => {
+    expect(sanitizeToolchainStatuses([{
+      capabilityId: "learning.ocr",
+      name: "本地 OCR",
+      health: "unsupported",
+      path: "C:\\private\\ocr.exe",
+      reason: "C:\\private\\ocr.exe missing",
+      recovery: "Error\n    at probe (runtime.ts:1:1)",
+    }])).toEqual([{
+      capabilityId: "learning.ocr",
+      name: "本地 OCR",
+      health: "unsupported",
+      reason: "已隐藏敏感信息",
+      recovery: "已隐藏敏感信息",
+    }]);
   });
 
   it("所有外部展示文本都会隐藏路径、UUID、密钥和堆栈样式内容", () => {

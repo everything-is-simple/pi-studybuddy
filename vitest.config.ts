@@ -19,6 +19,9 @@ export default defineConfig({
     ],
     environment: "node",
     globals: false,
+    // Several integration fixtures share task-isolated runtime roots; serialize files
+    // so parallel workers cannot rename the same provider/runtime assets concurrently.
+    fileParallelism: false,
     exclude: ["tests/e2e/**", "node_modules/**"],
     deps: {
       optimizer: {

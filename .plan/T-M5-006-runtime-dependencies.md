@@ -1,7 +1,7 @@
 # T-M5-006 唯一执行计划：必需运行依赖自包含与离线能力装配
 
 **任务 ID**：T-M5-006  
-**状态**：in_progress（开工登记与盘点阶段）  
+**状态**：in_progress（runtime-resources/pi native skills/package smoke、发布态 agent-host 装配、SAPI/edge-tts 生产装配、OCR/whisper/WPS 缺失降级与运行能力可见状态已 GREEN；真机 UAT 已通过，manifest 完整性诊断已补强；双独立审查与完整收尾仍在实施）
 **日期**：2026-08-17  
 **里程碑**：M5 用户可用性验收 + 一键交付  
 **优先级**：P0  
@@ -21,6 +21,7 @@
 | 单一执行任务 | `docs/04` 已将 T-M5-006 登记为 in_progress；本计划为唯一执行计划 | OK |
 | 分支 | 当前分支 `agent/T-M5-006-runtime-dependencies` | OK |
 | 运行根 | 本任务所有测试/UAT 写入 `H:\pi-studybuddy-tmp\runs\T-M5-006\` | OK |
+| RED/GREEN | `runtime-resources` manifest/resolver、受管 pi native skills、运行能力派生状态、package smoke harness、SAPI/edge-tts 生产装配与 OCR/whisper 缺失降级已完成 RED→GREEN | OK：首批定向 8 文件/46 tests；运行时回归定向 10 文件/46 tests；TTS/外部降级回归 6 文件/43 tests；TTS 专项 3 文件/29 tests；type-check/build/contract/docs/diff、解压目录 package smoke 通过 |
 | 工具基线 | `pi 0.84.2`、Node `v24.14.0`、pnpm `11.20.0`、`fd 10.4.2`、`rg 15.2.0` 已在当前会话核验 | 仅作为盘点基线，后续需可重复验证 |
 | 工作区 | 存在未跟踪 `nul` 及 3 个现有安装器；它们均明确排除：不读取、不暂存、不提交、不删除 | 已隔离，不阻塞本任务受控文件 |
 | Git | 用户已授权本次受控治理改动提交并推送当前任务分支；不得因此执行 master 合并、生成 setup 或提前结束 T-M5-006 | 本次授权范围内 |
@@ -122,11 +123,11 @@ T-M5-011 未获开工授权，不得为其创建详细计划、测试或业务�
 | 组件 / 能力 | 初步分类 | 阶段 1 盘点 | 后续路径 |
 |---|---|---|---|
 | pi runtime + `@earendil-works/pi-coding-agent` | Node 应用依赖 | 锁定版本、生产 import、许可证、打包包含情况 | 单件 load → extension 集成 → 发布目录 Electron 冒烟 |
-| StudyBuddy extension / 自建学习 skills | 项目资产 | 入口、manifest、所需文件、启动发现 | 单件注册 → pi 集成 → Electron 工具链路 |
-| Electron/Node 生产依赖 | 运行壳 | production dependency、asar/unpack、native 模块 | build/package 目录断言 → 启动 smoke |
-| OCR Python/RapidOCR | 可选本地 adapter | 来源、许可证、体积、运行时/模型、可再分发性 | 确认后才下载/装配；否则固定失败与恢复指引 |
-| whisper.cpp CLI/model | 可选本地 adapter | 来源、许可证、模型、平台/体积、安全哈希 | 确认后才下载/装配；否则 S7 明确不可用/不阻塞其他学习 |
-| SAPI / edge-tts | OS 内置 / 可选 skill | SAPI 可用性，edge-tts 网络/许可边界 | SAPI 优先；可选项必须降级 |
+| StudyBuddy extension / 自建学习 skills | 项目资产 | ✅ 首批完成：`study-planning` / `study-review` 进入 `runtime-resources`，manifest 含版本、许可证、SHA-256、体积、owner、更新责任 | ✅ 单件 manifest + ✅ pi `additionalSkillPaths` 集成 + ✅ `release/win-unpacked` package smoke |
+| Electron/Node 生产依赖 | 运行壳 | ✅ `extraResources` 将 `runtime-resources` 复制到发布目录；不生成 setup | ✅ `electron-builder --dir --win --x64` + runtime resource integrity + package smoke 两次隔离启动 |
+| OCR Python/RapidOCR | 可选本地 adapter | 来源、许可证、体积、运行时/模型、可再分发性 | ✅ 许可核验前不随包；生产未配置时固定中文失败与恢复指引，测试显式 mock |
+| whisper.cpp CLI/model | 可选本地 adapter | 来源、许可证、模型、平台/体积、安全哈希 | ✅ 许可核验前不随包；生产未配置时固定中文失败与恢复指引，测试显式 mock |
+| SAPI / edge-tts | OS 内置 / 可选 skill | SAPI 可用性，edge-tts 网络/许可边界 | ✅ 生产默认 SAPI；edge-tts 配置存在才启用，否则可选降级 |
 | WPS COM | 外部不可再分发依赖 | WPS/Office 授权与 ProgID 探测 | 不随包；旧格式转换显示明确可选状态，不阻塞其它格式 |
 | AI provider / SMTP / 飞书 | 用户凭证与外部服务 | 仅配置模板、DPAPI vault、mock 与失败状态 | 不包含真实 credential/endpoint；验证可解释状态与受控 fake |
 
@@ -137,6 +138,20 @@ T-M5-011 未获开工授权，不得为其创建详细计划、测试或业务�
 3. **GREEN（阶段 2-4）**：仅实现使当前 RED 通过的最小 manifest、运行时解析/注入、打包资源声明和错误/恢复 UI；每个新增组件经过单件→pi/adapter 集成→主仓装配。
 4. **REFACTOR**：在定向测试全绿后统一命名、状态、错误净化和清单结构；不扩大为发布功能或设置页重构。
 5. **阶段 5**：执行受影响真实 Electron E2E；真实 Electron + 全新隔离数据根 UAT 验证可用/降级/重启回读；再完整质量门、独立双审查和受控收尾。
+
+### 6.1 已完成的首批 RED/GREEN 事实（2026-08-17）
+
+- RED：`tests/unit/t-m5-006-runtime-manifest.test.ts`、`tests/integration/t-m5-006-managed-skills.test.ts`、`tests/unit/t-m5-006-runtime-capabilities.test.ts` 初始失败证据写入 `H:\pi-studybuddy-tmp\runs\T-M5-006\red\`。
+- GREEN：新增 `runtime-resources/manifest.json`、两个项目自有 native skills、`src/agent-host/runtime-resources.ts`、`src/main/toolchains/runtime-capabilities.ts`；`studybuddy-extension-loader` 仅通过验证后的 `additionalSkillPaths` 注入受管 skills，仍禁用全局/项目技能发现。
+- 资源随包：`package.json` build.extraResources 复制 `runtime-resources`；`release/win-unpacked/resources/runtime-resources` 中 manifest 与两份 `SKILL.md` 的 SHA-256/size 校验通过。
+- Package smoke：修复 `scripts/package-smoke.mjs` 的 Windows headless `--no-sandbox` 与 RPC 有界等待；发现 utilityProcess 不能可靠从 `app.asar` 内加载 host 后，打包将 `dist` 与生产 `node_modules` 解包，发布态显式从 `app.asar.unpacked/dist/agent-host/index.js` 启动 host，并将每次启动隔离到独立 Chromium profile。`package-smoke-separate-profiles` 证明当前 `release/win-unpacked` 两次隔离启动、`global.db`、`system.ping` 与业务 RPC 全部通过。
+- 定向验证：首批 8 个测试文件/46 tests 通过；SAPI/OCR/whisper 回归 6 个文件/43 tests 通过；综合运行时回归 10 个文件/46 tests 通过；`pnpm type-check`、`pnpm build`、contract coverage 128/128、docs-governance、`git diff --check` 通过。
+- 生产外部能力降级：新增 `createRuntimeTtsContext`，生产默认真实 SAPI adapter，edge-tts 仅配置存在时启用、未配置时固定失败并按既有逻辑降级 SAPI，测试强制 mock；OCR/whisper 未配置时不再用 mock 冒充成功，透传固定中文“未配置”恢复指引；WPS 通过 `createRuntimeS2Context` 注入 real adapter，未配置桥时旧 Office `wps_convert` 进入 `failed`、资料进入 `conversion_failed`，现代本地转换不受影响；测试路径和显式注入仍可用 mock/fake，未调用真实外部子进程。
+- 可见运行能力：SettingsPage 保留经 `safeDisplay` 净化后的运行状态 `reason/recovery`，绝对路径仍不会进入 renderer 状态。`tests/e2e/t-m5-006-runtime-settings.test.ts` 在无 `VITEST` 的真实 Electron production host、全新隔离根中通过可见 UI 验证 pi/extension/2 skills、SAPI、OCR/whisper/WPS/edge-tts 的状态与恢复文案、返回工作台和 DOM 脱敏；截图/JSON 位于 `runs/T-M5-006/e2e-runtime-settings/`。首次并行 E2E 曾写出 0-byte screenshot，已改为非空重试 + 临时文件原子改名；`vitest.e2e.config.ts` 明确 `fileParallelism: false` 以兑现文件注释的串行 Electron 约束。完整 Node24 `pnpm test` 为 139 文件/1240 tests，历史完整 `pnpm test:e2e` 为 34 文件/142 tests；补正后显式排除历史 T-M4-021 package acceptance 的无发行 Electron 回归为 33 文件/141 tests 全绿，`verify --stage=full --skip=e2e`（8 执行/2 跳过，E2E 已跳过）、contract 128/128、安全 6/6、docs-governance、type-check、build 和 diff-check 通过。独立审查新增 `RUNTIME-CAPA-03`：运行能力派生时复用 manifest 资源的存在性、大小和 SHA-256 校验，受管资源缺失/篡改后 pi、extension、native skills 均显示 unsupported 与修复提示。
+- 流程偏差：完整 Electron E2E 含历史 `T-M4-021` package acceptance，曾误触发 setup 构建；生成物未被读取、复制、暂存、提交或作为本任务发行证据。后续无发行回归显式排除此测试；治理质量门已修复 `--skip=e2e` 标签匹配并实证跳过，T-M5-008 前不得再次生成候选。另有一次与大规模 Electron/文件系统任务并发的运行出现 file-watch 事件漏收与 package smoke RPC 超时；无残留进程后的单文件、串行全量和独立 package smoke 均通过，保留为环境并发证据。
+- 原生真机 UAT已通过：`H:\pi-studybuddy-tmp\runs\T-M5-006\uat\native-runtime-settings-uat-correction.json` 记录全新隔离根两次真实可见启动、设置打开/返回、重启回读；`15-manual-scroll-runtime-capabilities-ocr-whisper.png` 等截图可见受管 skills、pi runtime、StudyBuddy extension、SAPI、edge-tts、WPS、OCR、whisper 状态与恢复文案，未见路径/key/UUID/栈。OCR/whisper/WPS/edge-tts 未执行真实外部引擎，符合本任务外部依赖边界。
+- 本会话自审：已检查发布态 `app.asar.unpacked` host/依赖装配、package smoke 独立 profile、manifest 完整性降级、Settings 脱敏、外部能力固定失败和 `verify --skip=e2e` 标签匹配；未发现新增 P0/P1。该自审不是 AGENTS.md §11.4 所需的独立审查，不能替代两名独立审查者。
+- 未完成：OCR/whisper/edge-tts 不随包，仍需保持许可核验前的可恢复降级；WPS 仍为外部可选；完整 `verify --stage=full` 中历史 package acceptance 的发行步骤按任务边界排除；两名独立审查、实施记录和受控收尾仍未完成。
 
 ## 7. 测试、UAT 与质量门
 

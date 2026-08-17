@@ -37,7 +37,7 @@ function parseArgs(args) {
     if (arg.startsWith("--stage=")) out.stage = arg.slice(8);
     else if (arg.startsWith("--skip=")) {
       for (const s of arg.slice(7).split(",").map((x) => x.trim()).filter(Boolean)) {
-        out.skip.add(s);
+        out.skip.add(normalizedCheckLabel(s));
       }
     }
   }
@@ -73,8 +73,12 @@ const childEnv = {
 };
 
 // ---- 步骤执行器 ----
+function normalizedCheckLabel(label) {
+  return label.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function run(label, cmd, args, { optional = false } = {}) {
-  if (opts.skip.has(label.toLowerCase().replace(/[^a-z]/g, ""))) {
+  if (opts.skip.has(normalizedCheckLabel(label))) {
     console.log(`\n==> ${label} [SKIPPED by --skip]`);
     return true;
   }

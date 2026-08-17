@@ -32,6 +32,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { createStudyBuddyExtension } from "../agent/studybuddy-extension";
 import { modelNotConfiguredError } from "./model-errors";
+import { getManagedSkillPathsForSession } from "./handlers/skills";
 import type { ModelProvider } from "../contract/types";
 import fs from "node:fs";
 import path from "node:path";
@@ -397,6 +398,9 @@ export async function createStudyBuddySession(
     modelRuntime,
     resourceLoaderOptions: {
       extensionFactories: [studyBuddyExtension],
+      // Global/project skill discovery stays disabled. Only verified application resources
+      // are explicitly allowed into the pi session.
+      additionalSkillPaths: getManagedSkillPathsForSession(),
       noSkills: true,
       noPromptTemplates: true,
       noThemes: true,

@@ -30,14 +30,14 @@
 import path from "node:path";
 import type { ExtensionAPI, ExtensionFactory } from "@earendil-works/pi-coding-agent";
 import { S1Context } from "../agent-host/handlers/s1/context";
-import { S2Context } from "../agent-host/handlers/s2/context";
+import { createRuntimeS2Context } from "../agent-host/handlers/s2/runtime-context";
 import { S3Context } from "../agent-host/handlers/s3/context";
 import { S4Context } from "../agent-host/handlers/s4/context";
 import { S5Context } from "../agent-host/handlers/s5/context";
 import { S6Context } from "../agent-host/handlers/s6/context";
 import { S7Context } from "../agent-host/handlers/s7/context";
 import { createRealWhisperAdapter } from "../agent-host/handlers/s7/whisper-adapter";
-import { TtsContext } from "../agent-host/handlers/tts/context";
+import { createRuntimeTtsContext } from "../agent-host/handlers/tts/runtime-context";
 import { BackupContext } from "../agent-host/handlers/backup/context";
 import { createS1Tools } from "./tools/s1/tools";
 import { createOcrTools } from "./tools/s1/ocr-tools";
@@ -77,10 +77,10 @@ function resolveDataRoot(): string {
  * 创建 pi-studybuddy 扩展工厂的可选配置（T-M2-007 whisper.cpp 真实 Adapter 接入）。
  *
  * whisper 配置优先级（03-Arch §3.3 CLI/模型路径只来自配置，不猜路径不回退云端）：
- *   调用参数 options.whisperCliPath > 环境变量 PI_STUDYBUDDY_WHISPER_CLI > 空（默认 mock）
- *   调用参数 options.whisperModelPath > 环境变量 PI_STUDYBUDDY_WHISPER_MODEL > 空（默认 mock）
+ *   调用参数 options.whisperCliPath > 环境变量 PI_STUDYBUDDY_WHISPER_CLI > 空（固定失败）
+ *   调用参数 options.whisperModelPath > 环境变量 PI_STUDYBUDDY_WHISPER_MODEL > 空（固定失败）
  *
- * 无路径配置 → 默认 mock（08-Test §5.4 测试环境不连真实 whisper.cpp）。
+ * 无路径配置 → 生产固定失败并给恢复指引；测试环境显式 mock（08-Test §5.4）。
  */
 export interface StudyBuddyExtensionOptions {
   whisperCliPath?: string;
@@ -111,7 +111,8 @@ export function createStudyBuddyExtension(
   return async (pi: ExtensionAPI): Promise<void> => {
     const dataRoot = resolveDataRoot();
     const s1Ctx = new S1Context(dataRoot);
-    const s2Ctx = new S2Context(dataRoot);
+    const isTestRuntime = process.env.VITEST !== undefined;
+    const s2Ctx = createRuntimeS2Context(dataRoot, { isTest: isTestRuntime });
     const s3Ctx = new S3Context(dataRoot);
     const s4Ctx = new S4Context(dataRoot);
     const s5Ctx = new S5Context(dataRoot);
@@ -129,9 +130,10 @@ export function createStudyBuddyExtension(
       whisperAdapter:
         whisperCliPath && whisperModelPath
           ? createRealWhisperAdapter({ cliPath: whisperCliPath, modelPath: whisperModelPath })
-          : undefined, // 默认 mock（08-Test §5.4）
+          : undefined,
+      allowMockWhisper: isTestRuntime,
     });
-    const ttsCtx = new TtsContext();
+    const ttsCtx = createRuntimeTtsContext({ isTest: isTestRuntime });
     const backupCtx = new BackupContext(dataRoot);
 
     // 注册 S1 学习节奏 6 个工具（03-Arch §3.1）
@@ -141,7 +143,11 @@ export function createStudyBuddyExtension(
     }
 
     // 注册 S1 OCR 课程表识别 1 个工具（03-Arch §3.1 + §5.3 studybuddy-ocr-schedule）
-    const ocrTools = createOcrTools();
+    const ocrTools = createOcrTools(undefined, {
+      allowMock: isTestRuntime,
+      pythonPath: process.env.PI_STUDYBUDDY_OCR_PYTHON,
+      bridgePath: process.env.PI_STUDYBUDDY_OCR_BRIDGE,
+    });
     for (const tool of ocrTools) {
       pi.registerTool(tool);
     }

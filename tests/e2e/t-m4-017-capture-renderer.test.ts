@@ -1,7 +1,7 @@
 /**
  * T-M4-017：真实 Electron renderer → preload → TCP/RPC → agent-host → S7 handler → renderer E2E。
  * 覆盖：采集 Tab 入口、合规确认门控、文件选择（renderer 测试 seam，原生对话框不可自动化）、
- * 转写（生产 agent-host 默认 mock whisper，validatePcmWav 服务端重验证真实文件头）、
+ * 转写（受控 E2E 显式 mock whisper，validatePcmWav 服务端重验证真实文件头）、
  * 可编辑转写、保存为 S2 笔记输入、归档只读、隐私断言。
  * 运行产物仅落入 H:\pi-studybuddy-tmp\runs\T-M4-017\。
  */
@@ -62,7 +62,7 @@ const UI_JS = `(async () => {
   await click("选择文件");
   await waitFor(() => document.body.textContent?.includes("课堂录音.wav"), "selected file missing");
 
-  // 开始转写（真实 RPC → 生产 agent-host mock whisper → 服务端重验证 WAV 文件头）
+  // 开始转写（真实 RPC → 显式测试 mock whisper → 服务端重验证 WAV 文件头）
   await click("开始转写");
   await waitFor(() => document.body.textContent?.includes("mock 转写文本"), "transcribe result missing");
   const transcribed = document.body.textContent || "";
@@ -165,7 +165,7 @@ async function runProbe(archived = false): Promise<{ exitCode: number | null; re
   try {
     await execFileAsync(ELECTRON, ["--no-sandbox", runner], {
       cwd: PROJECT_ROOT,
-      env: { ...process.env, PI_STUDYBUDDY_DATA_ROOT: dataRoot, E2E_RUN_DIR: RUN_ROOT, T_M4_017_ARCHIVED: archived ? "1" : undefined, VITEST: undefined },
+      env: { ...process.env, PI_STUDYBUDDY_DATA_ROOT: dataRoot, E2E_RUN_DIR: RUN_ROOT, T_M4_017_ARCHIVED: archived ? "1" : undefined, VITEST: "1" },
       windowsHide: true,
       timeout: 60_000,
       maxBuffer: 2 * 1024 * 1024,

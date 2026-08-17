@@ -25,6 +25,7 @@ export function createTtsHandlers(ctx: TtsContext): TtsHandlers {
 }
 
 export { TtsContext } from "./context";
+export { createRuntimeTtsContext } from "./runtime-context";
 export type { TtsContextOptions, TtsStateEvent } from "./context";
 export type { TtsAdapter, TtsAdapterStatus, TtsControlAction } from "./tts-adapter";
 export {

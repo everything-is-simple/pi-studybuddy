@@ -14,6 +14,7 @@ import { normalizeAndDedupeCandidates } from "./candidate-normalizer";
 import { buildPublicToolchainState } from "./public-state";
 import { ToolCapabilityId, TOOL_CAPABILITY_IDS } from "./index";
 import { install as installToolchain } from "./installer";
+import { buildRuntimeCapabilityStatuses } from "./runtime-capabilities";
 
 const RESCAN_TTL_MS = 60_000; // 60s
 
@@ -112,7 +113,7 @@ export function createToolchainManager(): ToolchainManager {
         );
       }
     }
-    return results;
+    return [...results, ...buildRuntimeCapabilityStatuses()];
   }
 
   function scan(): ToolchainStatus[] {

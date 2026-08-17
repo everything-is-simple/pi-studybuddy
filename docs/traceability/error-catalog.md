@@ -21,7 +21,7 @@
 | ERR-STATE-001 | 未确认考试、已提交重复提交、重启后状态不一致 | renderer + handler | 当前状态不允许此操作，请刷新后重试 | 读取真实状态；禁止按钮重复提交 | ACT-S1-003/ACT-S4-002/ACT-S5-001..003 | 部分证据 |
 | ERR-MODEL-001 | 无可用模型/凭证，契约错误码 `MODEL_NOT_CONFIGURED` | dependency + host | 尚未配置可用 AI 模型，请先在设置中完成配置 | 设置页配置/重试；不得回退 fixture | ACT-S2-002 | 已证实 |
 | ERR-FILE-001 | 文件选择取消、MIME/大小/路径白名单失败 | preload/main + handler | 文件不可用，请选择受支持的文件后重试 | 重新选择；清理 capability 暂存 | ACT-S2-001 | 部分证据 |
-| ERR-DEPENDENCY-001 | WPS/OCR/whisper/外部 AI 不可用或未随包 | dependency | 当前能力不可用，原因与可恢复入口待补齐 | 显示不可用边界；不伪称转换/转写成功 | ACT-S2-002/ACT-S5-002 | 阻塞/未覆盖 |
+| ERR-DEPENDENCY-001 | WPS/OCR/whisper/edge-tts/外部 AI 不可用或未随包 | dependency | OCR/whisper 未配置时显示固定中文恢复指引；WPS 未配置时旧 Office 转换失败；edge-tts 未配置时回退 SAPI | 设置页显示经脱敏的原因/恢复；不得伪称转换/转写成功；真实外部二进制和真机 UAT未覆盖 | ACT-S2-002/ACT-S7-001/ACT-TTS-001 | 部分证据：T-M5-006 production 降级单测 + 真实 Electron 设置页 E2E；发布仍阻塞 |
 | ERR-SQLITE-001 | SQLite 初始化、锁、FK/CHECK/事务失败 | data | 数据保存失败，请稍后重试；如持续请重启应用 | 回滚事务、关闭连接、保留诊断摘要 | 相关写入 ACT | 部分证据 |
 | ERR-FILE-DATA-001 | 文件写入成功但数据库写入失败，或反向失败 | data/file | 数据未完整保存，请重试；不要继续使用半成品 | 补偿/清理孤儿文件，记录资产状态 | ACT-S2-001/002 | 未覆盖 |
 | ERR-BACKUP-001 | 备份目录/zip 冲突、校验或恢复失败 | backup/data | 备份或恢复未完成，请选择其他位置或恢复点 | 保留原数据；停止覆盖；人工诊断 | 待分解 | 未覆盖 |

@@ -23,7 +23,7 @@
 | ACT-S1-003 | 创建任务并完成 | CTRL-HOME-01 | 创建、点击完成、确认状态 | S1 RPC/状态迁移 | DATA-BIZ-003 | ERR-STATE-001 | UAT-S1-003 | 已证实 |
 | ACT-S1-004 | 确认考试并查看 | CTRL-HOME-01 | 确认考试后从首页查看 | S1 RPC/状态迁移 | DATA-BIZ-004 | ERR-STATE-001 | UAT-S1-004 | 已证实 |
 | ACT-S2-001 | 通过文件选择导入资料 | CTRL-MATERIAL-01 | 选择文件并确认上传 | dialog capability → materials.upload | DATA-FILE-001/DATA-BIZ-005 | ERR-FILE-001 | UAT-S2-001 | 已证实 |
-| ACT-S2-002 | 启动转换或重试 | CTRL-MATERIAL-02 | 点击转换/失败后点击重试 | materials.convert/retryConversion | DATA-BIZ-005/DATA-TMP-001 | ERR-DEPENDENCY-001 | TEST-S2-002/UAT-S2-002 | 部分证据 |
+| ACT-S2-002 | 启动转换或重试 | CTRL-MATERIAL-02 | 点击转换/失败后点击重试 | materials.convert/retryConversion；WPS 未配置旧 Office 固定 failed/conversion_failed | DATA-BIZ-005/DATA-TMP-001 | ERR-DEPENDENCY-001 | T-M5-006 WPS production 降级单测；UAT-S2-002 待补 | 部分证据 |
 | ACT-S2-003 | 选择资料读取笔记 | CTRL-NOTE-01 | 局部显式选择资料 | notes.get | DATA-BIZ-005/DATA-BIZ-006 | ERR-NOT_FOUND-001 | UAT-S2-003 | 已证实 |
 | ACT-S2-004 | 编辑并保存笔记 | CTRL-NOTE-02 | 保存按钮确认写入 | notes.update | DATA-BIZ-006 | ERR-READONLY-001 | TEST-S2-004/UAT-S2-004 | 已证实 |
 | ACT-S3-001 | 选择模块并开始练习 | CTRL-PRACTICE-01 | 选择模块、题数、开始 | practice.start | DATA-BIZ-007 | ERR-VALIDATION-001 | UAT-S3-001 | 已证实 |
@@ -37,7 +37,7 @@
 | ACT-S7-001 | 合规确认并选择 WAV | CTRL-CAPTURE-01..04 | 勾选授权后选择受支持文件 | CaptureTab + native file dialog | DATA-FILE-* 待细化 | ERR-FILE-001/ERR-DEPENDENCY-001 | 原生 UAT 37/38/39；成功转写与结果重启回读属于 T-M5-006 依赖范围 | 部分证据/依赖阻塞 |
 | ACT-TTS-001 | 从速背卡/报告/转写结果朗读 | CTRL-TTS-01..03 + Tab text zones | 可见文本且目标内容非空 | AppShell `onSpeakText` + useTtsPlayback | review event only after explicit mark | ERR-DEPENDENCY-001 | renderer contract + E2E regression；native content entry not reached | 部分证据 |
 | ACT-BACKUP-001 | 选择覆盖恢复并确认风险 | CTRL-BACKUP-01..04 | `overwrite` first shows confirm/cancel; confirm invokes restore | BackupPanel + backup.restore | DATA-FILE-003 | ERR-BACKUP-001 | renderer contract + RPC regression；native restore not covered | 部分证据 |
-| ACT-SETTINGS-001 | 打开设置并保存通用偏好 | CTRL-SETTINGS-01..06 | Save action and fixed feedback visible | SettingsPage + settings RPC | DATA-CFG-003 | ERR-SQLITE-001 | native UAT 21/22/60；隔离 settings.json 回读 61 | 已证实 |
+| ACT-SETTINGS-001 | 打开设置并保存通用偏好/查看运行能力 | CTRL-SETTINGS-01..06 | 打开设置；状态、说明和恢复文字均经脱敏 | SettingsPage + settings/toolchains RPC | DATA-CFG-003 | ERR-SQLITE-001/ERR-DEPENDENCY-001 | native UAT 21/22/60；T-M5-006 production settings E2E；隔离 settings.json 回读 61 | 部分证据：运行能力可见状态已证实，七类配置生命周期留 T-M5-011 |
 
 ## 3. 控件输入基线（未等同于动作）
 

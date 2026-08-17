@@ -1,7 +1,7 @@
 # 04 任务清单
-**版本**：v0.1.196
+**版本**：v0.1.205
 **日期**：2026-08-17
-**状态**：✅ 已审查批准（M5 进行中：T-M5-001/002/003/004、009/010 已 done；T-M5-005 blocked，其三条遗留原生 UAT并入 T-M5-008 最终干净机安装验收；T-M5-006 in_progress，执行必需运行依赖自包含与离线能力装配；T-M5-011/007/008 pending 且不启动；当前工作区不读取、不暂存安装器。）
+**状态**：✅ 已审查批准（M5 进行中：T-M5-001/002/003/004、009/010 已 done；T-M5-005 blocked，其三条遗留原生 UAT并入 T-M5-008 最终干净机安装验收；T-M5-006 in_progress，执行必需运行依赖自包含与离线能力装配；真机 UAT 与自动化质量门已通过，双独立审查与受控收尾仍待完成；T-M5-011/007/008 pending 且不启动；当前工作区不读取、不暂存安装器。）
 **上游**：[01-TRD v0.2.4](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.4](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.9](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.3](./07-工作流-Workflow.md)、[08-Test v0.1.7 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.5](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录；v0.1.74 登记 T-M4-022 完成（Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证，前置于 T-M4-006；commit 0ec4163 已推送 origin/master）；v0.1.75 登记 T-M4-006 设置页 UI in_progress（计划待用户审查）；v0.1.78 同步 T-M4-006 双独立复审最终 PASS 与 diff 检查通过，Git 收口未授权故保持 in_progress；v0.1.91 登记 T-M4-009 Git 收口完成
 
@@ -175,6 +175,7 @@ pending → in_progress → testing → done
 | OCR venv | ✅ | — | — | — | — | 已下载 |
 | whisper.cpp | ✅ | — | — | — | — | 已下载 |
 | WPS COM 桥 | — | — | — | — | — | 待启动 |
+| 受管 pi native skills | ✅ | ✅ | ✅ | ✅ | ✅ | runtime-resources manifest + pi additionalSkillPaths + package smoke 通过 |
 | ... | | | | | | |
 
 > 阶段标记：✅ 通过 / ⏳ 进行中 / ❌ 失败待修复 / — 未进入 / ⏭️ 跳过（不适用）
@@ -195,6 +196,7 @@ pending → in_progress → testing → done
 - 备份恢复：zip 打包 + 恢复 + 调度
 - 外部桥：WPS COM（pywin32）/ whisper.cpp / OCR venv
 - 安全脚本：check-desktop-security.mjs（六条不变量）
+- 受管 pi native skills：StudyBuddy 自有 `study-planning` / `study-review`，仅从应用 runtime-resources 发现
 
 ---
 
@@ -621,7 +623,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M5-009 | 测试与运维追溯基线建立 | 测试/运维/跨切 | P0 | done | 阶段1-5 | 13-测试与运维 §3-§9 + 08-Test §1/§6/§7 | `.plan/T-M5-009-test-operations-traceability-baseline.md` + `.record/T-M5-009-实施记录.md`；RED→GREEN 建立 `docs/traceability/` 六项资产，定向测试 3/3、文档治理和 diff-check 通过。用户明确裁决本无 Electron UI/API/schema/handler/业务数据变更的本任务可用受控文档消费路径验收 `T-M5-009-DOC-CONSUMER-001` 替代真机 Electron UAT，并认可 PASS；例外不得外推至应用 UI 或后续任务。功能/基线提交 `156756c` 已 ff-only 合并 master；Node24 master `verify --stage=full` 最终重跑通过（unit/integration 131 files/1195 tests、真实 Electron E2E 33 files/141 tests，执行 8/跳过 2）；本治理登记推送并核验 `origin/master` 后 §8.4 三要件齐全。无 API/schema/handler/入口或生产数据变更；不启动 T-M5-005~008。 |
 | T-M5-005 | S6/S7/TTS/备份/设置与整体 UX 修订 | 壳层/S6-S7/跨切 | P0 | blocked | 阶段1-4 已完成；最终安装 UAT 后关闭 | 07-WF §3-§5 + 09-UI §4.9-§13 + 13-测试与运维 §3-§9 | 功能/证据提交与自动化已登记；遗留三条验收为报告投递重启回读、真实备份恢复后业务数据回读、TTS 已复习持久化/重启回读。为避免对旧安装器重复验收，这三条作为 T-M5-008 最终干净 Windows 安装 UAT 的必测断言；T-M5-008 通过后回填证据并关闭 T-M5-005。在此之前保持 blocked，不宣称完成。 |
 | T-M5-010 | 设置、投递、学期备份与数据根迁移闭环 | 设置/S6/备份/数据层 | P0 | done | 阶段1-5 | 03-Arch §1/§6 + 05-ERD + 06-API §3.8/§3.11 + 09-UI §6/§9/§10 + 13-测试与运维 §2-§9 | 供应商模型目录/所选模型测试、报告目标 CRUD 与 SMTP/飞书投递状态/错误/重试、单一当前学期完整资产备份恢复、原生目录选择的数据根迁移/重启切换/回滚均已交付；隔离原生 UAT、两份独立审查、Node24 master `verify --stage=full`（133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）及 Git 收口完成：功能 `ef9eece` + 本治理登记提交随后推送并核验 `master=origin/master`。T-M5-005 继续 blocked；不启动 T-M5-006~008，安装器不读取、不暂存。 |
-| T-M5-006 | 全部必需运行依赖自包含与离线能力装配 | 壳层/业务Adapter/打包 | P0 | in_progress | 阶段1（依赖盘点与组件识别） | 01-TRD §2/§3/§7 + 03-Arch §3.3/§6.5 + 08-Test §1/§3/§5/§6.6 + 11-组件装配 + 13-测试与运维 §2-§9 | 用户已明确批准开工；唯一计划 `.plan/T-M5-006-runtime-dependencies.md`、分支 `agent/T-M5-006-runtime-dependencies`、运行根 `H:\pi-studybuddy-tmp\runs\T-M5-006\`。先做依赖/许可/体积/安全与现有打包边界盘点并写 RED；OCR/Python/whisper/pi 运行资产等仅在可合法再分发、经五阶段验证后随包或以受控替代交付；WPS、云模型、真实凭证等不可再分发/不应随包项必须明确可选、可解释降级，不能阻塞核心离线闭环。不得读取/暂存现有安装器，不生成新 setup，且 T-M5-007~008 不启动。 |
+| T-M5-006 | 全部必需运行依赖自包含与离线能力装配 | 壳层/业务Adapter/打包 | P0 | in_progress | 阶段2-5 局部通过；真机 UAT、自动化质量门已通过；独立审查与完整收尾仍在实施 | 01-TRD §2/§3/§7 + 03-Arch §3.3/§6.5 + 08-Test §1/§3/§5/§6.6 + 11-组件装配 + 13-测试与运维 §2-§9 | 用户已明确批准开工；唯一计划 `.plan/T-M5-006-runtime-dependencies.md`、分支 `agent/T-M5-006-runtime-dependencies`、运行根 `H:\pi-studybuddy-tmp\runs\T-M5-006\`。已完成 runtime-resources manifest/resolver、StudyBuddy 自有受管 native skills、pi session `additionalSkillPaths` 装配、electron-builder `extraResources`、运行能力派生状态和解压目录 package smoke 修复；package smoke 两次隔离启动、`global.db`、`system.ping` 与业务 RPC 通过。生产 TTS 默认注入 SAPI adapter，edge-tts 仅配置存在时启用、未配置时固定失败并按既有逻辑降级 SAPI；OCR/whisper 未完成许可/再分发/五阶段证据前不随包，生产未配置时固定中文失败并给恢复指引；WPS runtime context 未配置桥时旧 Office `wps_convert` 固定 failed/资料 `conversion_failed`，不阻塞现代本地转换。SettingsPage 显示经脱敏的运行状态说明/恢复动作，绝对路径不进入页面状态；真实 Electron production 设置页 E2E 1/1 验证 pi/extension/skills、SAPI、OCR/whisper/WPS/edge-tts 恢复文案、返回工作台和 DOM 脱敏；原生 UAT 已通过，隔离根两次可见启动/设置打开/返回/重启回读及受管 skills/pi/extension/SAPI/edge-tts/WPS/OCR/whisper截图已记录；OCR/whisper/WPS/edge-tts 未执行真实外部引擎，保持可解释降级边界。完整 Node24 `pnpm test` 138 文件/1239 tests、历史 `pnpm test:e2e` 34 文件/142 tests 已通过；修正 E2E 文件级串行后，显式排除唯一会构建 setup 的历史 T-M4-021 package acceptance，真实 Electron 回归 33 文件/141 tests 全绿，`verify --stage=full --skip=ee`、type-check/build/contract/docs/diff 已通过。发布态 utilityProcess 所需 `dist` 与生产依赖解包，host 从 `app.asar.unpacked` 启动；当前 `win-unpacked` package smoke 以每次启动独立 profile 两次通过 `global.db`、`system.ping` 与代表性业务 RPC。完整 E2E 含历史 T-M4-021 package acceptance 并曾误触发 setup 构建；生成物未读取/复制/暂存/提交且不作为本任务发行证据，后续无发行回归已排除该测试，T-M5-008 前不再生成候选。真机 UAT、双审查和受控收尾仍未完成。不得读取/暂存现有安装器，且 T-M5-011/007/008 不启动。 |
 | T-M5-011 | 本机配置资产与设置能力控制台闭环 | 设置/壳层/数据层/测试 | P0 | pending | 阶段1-5 | 05-ERD §1 + 06-API §3.13-§3.16 + 09-UI §9-§11 + 13-测试与运维 §2/§5-§8 | 正式治理 `DATA-CFG-*`：通用偏好 `settings.json`、默认模型 `models.json`、非敏感模型目录 `pi-models.json`、DPAPI `credentials.json`，以及 T-M5-006 产出的受管组件安装元数据；报告目标/备份调度等关系型配置继续留在 `global.db`。每项须有 owner、schema version、校验、原子写、迁移、重启回读、备份/恢复/卸载边界；能力健康由启动/重扫派生，不把瞬时 health 当配置 SoT。设置重组为通用、模型、学习技能、运行能力、家长渠道、数据与备份、关于与更新七类。模型仅用户显式最小测试，不做每日测试、持久化 health 或自动 fallback；渠道仅显式脱敏测试消息，不做每日外发。实现前须更新 05/06/09/traceability，并建立 RED。 |
 | T-M5-007 | 发布前真实 Electron 全功能系统 UAT 与回归 | 测试 | P0 | pending | 阶段5 | 08-Test §5-§7 + 09-UI 全文 + 13-测试与运维 §6-§8 | 不生成 setup；在当前已验证源码/发布目录布局上使用真实 Electron、全新隔离根和纯可见 UI，覆盖首次启动、七类设置保存→生效→重启回读、pi/skills/运行能力状态、S1-S7/对话/TTS/备份和故障恢复；完整自动化质量门与目标用户 UAT均通过，P0/P1=0 后才允许制作最终候选。 |
 | T-M5-008 | 最终 setup/portable 与干净 Windows 安装发行验收 | 打包/测试/文档 | P0 | pending | 阶段1-5 | 01-TRD §7 决策6 + 04-Todo §6.7 + 08-Test §6.6 | 在 T-M5-007 通过后产出 `pi-studybuddy-x64-setup.exe` 与/或 `pi-studybuddy-x64.zip`；记录 SHA-256、版本、体积、许可清单并在无 Node/pnpm/Python/Git/WPS/whisper 的干净 Windows 安装验收。覆盖一键安装/开箱运行、全部核心闭环、升级/卸载/数据保留，并纳入 T-M5-005 的报告投递、真实恢复、TTS 已复习三条重启回读断言；通过后完成最终发布说明与用户签收。 |
@@ -702,6 +704,22 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 - 退回阶段：阶段X-1（如有退回）
 ```
 
+### FR-T-M5-006-01 2026-08-17
+- 失败阶段：阶段 5（解压目录 Electron package smoke）
+- 失败用例：`scripts/package-smoke.mjs` 指向 `release/win-unpacked`
+- 失败原因：应用已启动并在隔离根创建 `global.db`，但现有 CDP smoke harness 未在等待窗口内完成 renderer/RPC 验证；stderr 未出现 runtime-resources、skills 或 agent-host 固定错误。后续定位为 Windows headless/CI 启动缺少与真实 Electron E2E 相同的 `--no-sandbox`，且 `bridge.connectHost()` / RPC 等待缺少短超时导致失败原因不可见。
+- 修复措施：`scripts/package-smoke.mjs` 加入 `--no-sandbox`、缩短 CDP/RPC 等待、为 renderer 验证写入脱敏 reason 日志；保留失败证据，不把首次失败伪装为通过。
+- 重跑结果：✅ `H:\pi-studybuddy-tmp\runs\T-M5-006\package-smoke-retry-3\` 通过：两次隔离启动、`global.db`、`system.ping` 与业务 RPC 全部通过；真实 Electron production runtime 7/7 通过。
+- 退回阶段：阶段 5 修复后重跑通过，受管 pi native skills 阶段 5 可标记通过。
+
+### FR-T-M5-006-02 2026-08-17
+- 失败阶段：阶段 5（当前 `win-unpacked` 发布态 host/RPC smoke）
+- 失败用例：`package-smoke` 首次与二次启动的 `system.ping`
+- 失败原因：renderer 与 `global.db` 已启动，但 utilityProcess 不稳定地从 `app.asar` 内加载 agent-host，导致 host 未回传 `ready`，最终为脱敏 `rpc_timeout:system.ping`；复用同一 Chromium profile 还使第二次启动不稳定。
+- 修复措施：将 `dist` 与生产 `node_modules` 解包，发布态显式从 `app.asar.unpacked/dist/agent-host/index.js` fork host；每次 smoke launch 使用独立 Chromium profile；保留 utilityProcess 的固定启动/退出诊断，不回显子进程原始 stderr。
+- 重跑结果：✅ `H:\pi-studybuddy-tmp\runs\T-M5-006\package-smoke-separate-profiles\`：当前 `win-unpacked` 两次隔离启动均完成 `global.db`、`system.ping` 和代表性业务 RPC。
+- 退回阶段：阶段 5 修复后重跑通过；不等同于最终 setup 或干净机安装验收。
+
 <!-- 修复记录在开发阶段动态追加 -->
 
 ---
@@ -735,6 +753,14 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 ## 10. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.205 | 2026-08-17 | T-M5-006 最终本地验证：修复后的 Node24 `verify --stage=full --skip=e2e` 执行 8 项并真正跳过历史安装器 E2E；串行 `pnpm test` 139 files/1240 tests、无发行 Electron 回归 33 files/141 tests、当前 `win-unpacked` package smoke 两次隔离启动均通过。一次并发执行期的 file-watch/package-smoke 抖动已在无残留进程的单文件、串行全量与独立 smoke 中复验通过，保留环境证据。任务保持 in_progress，双独立审查与受控收尾未完成；不启动 T-M5-011/007/008、不读取/暂存安装器。依据：T-M5-006 计划 §6/§7 + AGENTS.md v0.1.148。 |
+| v0.1.204 | 2026-08-17 | 治理质量门修复：`verify.mjs` 的 skip 标签归一化保留数字，`--skip=e2e` 现真实跳过历史 T-M4-021 安装器验收；仅 docs-governance 的 full-stage 命令已复验，未再次运行 setup 路径。此前误触发 setup/失败事实保留；T-M5-006 仍 in_progress，双审查与受控收尾未完成，不启动 T-M5-011/007/008。依据：AGENTS.md v0.1.147 §2/§4.4/§5/§7/§9/§11。 |
+| v0.1.203 | 2026-08-17 | T-M5-006 发布态 host 装配修复：utilityProcess 入口与生产依赖从 `app.asar.unpacked` 加载，package smoke 对每次启动隔离 Chromium profile，修复发布目录 host RPC/二次启动失败。当前 `win-unpacked` 两次隔离启动均通过 `global.db`、`system.ping` 与代表性业务 RPC；Node24 `pnpm test` 138 files/1239 tests、Settings Electron E2E 1/1、type-check/build、contract 128/128、安全 6/6、docs/diff 通过。任务仍 in_progress，双独立审查与受控收尾未完成；不启动 T-M5-011/007/008，不读取/暂存安装器。依据：T-M5-006 计划 §6/§7 + AGENTS.md §5/§7/§9。 |
+| v0.1.202 | 2026-08-17 | T-M5-006 运行能力完整性独立审查修复：`buildRuntimeCapabilityStatuses()` 现在复用 manifest 逐资源存在性、size 与 SHA-256 校验；新增篡改 fixture 回归，受管资源异常时 pi/extension/native skills 均显示 unsupported 与固定修复提示。Node24 `pnpm test` 138 files/1238 tests，Settings Electron E2E 1/1，contract 128/128、安全 6/6、type-check/build/docs/diff 通过；任务仍 in_progress，双独立审查与受控收尾未完成。依据：T-M5-006 计划 §6/§7 + AGENTS.md §5/§7/§9。 |
+| v0.1.201 | 2026-08-17 | T-M5-006 原生 UAT 部分证据同步：全新隔离根真实源码 Electron 两次启动、通过可见 Ctrl+, 打开/返回设置、重启回读已完成；`04-manual-scroll-runtime-capabilities-cards.png` 等截图确认受管学习技能 2 skills、pi runtime、StudyBuddy extension、SAPI、edge-tts、WPS 的可见状态/恢复说明和脱敏边界。OCR/whisper 卡片逐项人工核查仍待补，任务保持 in_progress；此前 33 files/141 tests 串行无发行 E2E、Node24 verify skip package、WPS/OCR/whisper生产降级证据继续有效。不启动 T-M5-011/007/008，不读取/暂存既有安装器。依据：原生 UAT `native-runtime-settings-uat-correction.json` + AGENTS.md §5/§6.6/§7。 |
+| v0.1.199 | 2026-08-17 | T-M5-006 E2E 稳定化事实同步：`vitest.e2e.config.ts` 增加 `fileParallelism:false`，修复与“单 Electron 实例串行执行”注释不一致导致的跨文件证据竞争；运行能力设置 E2E 的截图改为非空重试+原子写。修正后，显式排除唯一会生成 setup 的历史 T-M4-021 package acceptance，Node24 真实 Electron E2E 33 files/141 tests 全绿；`verify --stage=full --skip=e2e`（8 执行/2 跳过）通过。此前首次完整 E2E 34/142 通过和误触发 setup 构建事实均保留，生成物未读取/复制/暂存/提交且不作为 T-M5-006 发行证据。任务仍 in_progress，真机 UAT、双审查和收尾未完成；不启动 T-M5-011/007/008，不读取/暂存既有安装器。依据：用户持续授权 + AGENTS.md §4.5/§5/§7/§11。 |
+| v0.1.198 | 2026-08-17 | T-M5-006 继续实施证据同步：WPS 未配置的旧 Office 转换现固定进入 failed/conversion_failed 且保留恢复指引，现代本地转换回归通过；SettingsPage 保留经脱敏的运行能力 reason/recovery，真实 Electron production 设置页 E2E 1/1 验证受管 pi/extension/2 skills、SAPI、OCR/whisper/WPS/edge-tts 可解释降级、返回工作台及 DOM 无 UUID/绝对路径/file URI/错误栈。Node24 完整 `pnpm test` 138 files/1237 tests、完整 `pnpm test:e2e` 34 files/142 tests、type-check/build/contract/docs/diff 通过。完整 E2E 内历史 T-M4-021 package acceptance 误触发 setup 构建，生成物未读取/复制/暂存/提交、不得作为 T-M5-006 发行证据，T-M5-008 前不再生成候选。任务仍 in_progress，真机 UAT、双审查和收尾未完成；不启动 T-M5-011/007/008，不读取/暂存既有安装器。依据：用户持续授权 + AGENTS.md §4.5/§5/§7/§11。 |
+| v0.1.197 | 2026-08-17 | T-M5-006 生产运行依赖装配事实同步：首批 runtime-resources/native skills/package smoke 已通过后，继续完成 SAPI/edge-tts 生产装配与 OCR/whisper 缺失降级。新增 `createRuntimeTtsContext`，生产默认真实 SAPI、edge-tts 仅配置存在时启用且未配置时固定失败并降级 SAPI、测试显式 mock；OCR/whisper 在许可/再分发/五阶段证据完成前不随包，生产未配置时不再用 mock 冒充成功，而是固定中文失败并给恢复指引。RED 证据写入 runs/T-M5-006/red；定向 10 文件/46 tests、TTS/外部降级 6 文件/43 tests、TTS 专项 3 文件/29 tests 与 `pnpm type-check` 通过。任务仍 in_progress，WPS 降级、真机 UAT、完整质量门和收尾未完成；T-M5-011/007/008 不启动，不生成 setup，不读取/暂存安装器。依据：T-M5-006 计划 §6/§7 + AGENTS.md §5/§7/§9/§11。 |
 | v0.1.196 | 2026-08-17 | 用户要求重新规划 04-Todo 与剩余测试任务。裁决配置介质按职责拆分：学习事实留 SQLite；非敏感本机配置留 `<dataRoot>/config/` 版本化 JSON；凭证只进 DPAPI vault；关系型报告目标/备份调度留 `global.db`；瞬时能力 health 由运行时派生。修正原测试顺序矛盾：T-M5-007 改为不生成 setup 的发布前真实 Electron 全功能 UAT/回归，T-M5-008 在其通过后生成最终候选并执行干净 Windows 安装发行验收；T-M5-005 三条遗留 UAT并入 T-M5-008，避免旧安装器重复验收。T-M5-006 保持唯一 in_progress，T-M5-011/007/008 不启动。影响仅治理边界与顺序，不改 API/schema/实现、不读取安装器。依据：用户本次明确指令 + AGENTS.md §2/§4.4/§4.5/§7/§11 + docs/13 §5-§8。 |
 | v0.1.195 | 2026-08-17 | 用户要求重新规划 M5 剩余工作，明确学习业务 SQLite 之外必须把本机配置作为正式持久化资产治理。新增 T-M5-011「本机配置资产与设置能力控制台闭环」为 pending，不创建详细计划或启动实施；T-M5-006 保持唯一 in_progress，收束为 pi/native skills/受管运行资产与离线能力装配。T-M5-011 后置消费 T-M5-006，负责 `<dataRoot>/config/` 的配置生命周期、七类设置控制台、显式模型/渠道测试及重启回读；不做模型每日测试、持久化 health 或自动 fallback，不做渠道每日外发。T-M5-007 依赖 T-M5-011 后执行，T-M5-008 后置。原因：避免将设置、配置、运行依赖和发布验收混成一个无限任务；影响：M5 10→11、pending 2→3、合计 72→73；不改业务代码/API/schema，不启动 T-M5-011/007/008，不读取/暂存安装器。依据：用户本次明确指令 + AGENTS.md §2/§4.4/§4.5/§7/§11 + docs/13 §5-§8。 |
 | v0.1.194 | 2026-08-15 | 用户明确“开工吧”并要求每任务遵循完整开发工作流；依既定执行序与其“新 setup 只在设置页重构/UAT 后”的裁决，T-M5-010 已 done 后启动 T-M5-006「全部必需运行依赖自包含与离线能力装配」。创建唯一计划、切换隔离分支 `agent/T-M5-006-runtime-dependencies`、指定隔离运行根；任务 pending→in_progress，M5 统计 3 pending/0 in_progress/6 done/1 blocked→2/1/6/1。范围仅盘点、TDD 和装配可合法再分发的 pi/StudyBuddy 运行资产及离线降级；不读取/暂存现有安装器、不生成新 setup、不写生产数据/凭证，T-M5-005 继续 blocked，T-M5-007~008 不启动。依据：用户明确授权 + AGENTS.md §2/§4.4/§4.5/§5/§7/§9/§11。 |

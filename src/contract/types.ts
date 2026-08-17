@@ -801,12 +801,19 @@ export interface AppSettings {
 
 export type ToolchainHealth = "unsupported" | "unverified" | "healthy";
 
+export type RuntimeCapabilitySource = "path" | "bundled" | "os" | "configured" | "external_optional";
+
 export interface ToolchainStatus {
   capabilityId: string;
   name: string;
   health: ToolchainHealth;
   version?: string;
   path?: string;
+  source?: RuntimeCapabilitySource;
+  managed?: boolean;
+  required?: boolean;
+  reason?: string;
+  recovery?: string;
 }
 
 /* ---- §4 Streams 推送主题 ---- */

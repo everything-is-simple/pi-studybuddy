@@ -12,6 +12,8 @@ type PackageManifest = {
     asar?: boolean;
     directories?: { output?: string };
     files?: string[];
+    extraResources?: Array<{ from?: string; to?: string }>;
+    asarUnpack?: string[];
     win?: {
       target?: Array<{ target?: string; arch?: string[] }>;
     };
@@ -70,6 +72,25 @@ describe("T-M4-009 electron-builder configuration", () => {
     expect(files).toEqual(expect.arrayContaining(["!scripts{,/**/*}"]));
   });
 
+  it("unpacks the utility-process runtime so packaged host RPC can start", () => {
+    const manifest = readManifest();
+
+    expect(manifest.build?.asarUnpack).toEqual(expect.arrayContaining(["dist/**/*", "node_modules/**/*"]));
+    const ipc = readFileSync(path.join(repoRoot, "src", "main", "ipc.ts"), "utf8");
+    expect(ipc).toContain("app.asar.unpacked");
+    expect(ipc).toContain("agent-host");
+  });
+
+  it("copies verified runtime resources beside the packaged application", () => {
+    const manifest = readManifest();
+
+    expect(manifest.build?.extraResources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from: "runtime-resources", to: "runtime-resources" }),
+      ]),
+    );
+  });
+
   it("uses an assisted installer configuration for first-time desktop verification", () => {
     const manifest = readManifest();
 
@@ -80,7 +101,9 @@ describe("T-M4-009 electron-builder configuration", () => {
   it("isolates the packaged Electron Chromium profile during installation smoke", () => {
     const packageSmoke = readFileSync(packageSmokePath, "utf8");
 
+    expect(packageSmoke).toContain("--no-sandbox");
+    expect(packageSmoke).toContain("host_connect_timeout");
     expect(packageSmoke).toContain("--user-data-dir=");
-    expect(packageSmoke).toContain("electron-user-data");
+    expect(packageSmoke).toContain("electronUserDataRootForLaunch");
   });
 });

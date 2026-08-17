@@ -3,7 +3,7 @@
  * 覆盖：笔记 Tab 内嵌"朗读"（09-UI §5.2）→ 控制条播放中（§5.3）→ 暂停 → 停止 →
  * 标记已复习（§5.4 events.markReviewed）→ 引擎切换（§5.1 tts.switchEngine），
  * 并断言 DOM 无完整 playbackId UUID / 路径 / 错误栈（AGENTS.md §9.3 + 09-UI §11.1）。
- * 生产 agent-host 默认 mock TtsAdapter（08-Test §5.4），不连接真实 SAPI/edge-tts。
+ * 受控 E2E 显式注入 mock TtsAdapter（08-Test §5.4），不连接真实 SAPI/edge-tts。
  * 运行产物仅落入 H:\pi-studybuddy-tmp\runs\T-M4-018\。
  */
 import { describe, expect, it } from "vitest";
@@ -44,7 +44,7 @@ const UI_JS = `(
     select.dispatchEvent(new Event("change", { bubbles: true }));
     await waitFor(() => document.body.textContent?.includes("牛顿第一定律"), "note preview missing");
 
-    // 内嵌"朗读"→ 控制条播放中（09-UI §5.2/§5.3；真实 RPC → 生产 mock adapter）
+    // 内嵌"朗读"→ 控制条播放中（09-UI §5.2/§5.3；真实 RPC → 显式测试 mock adapter）
     await clickButton("朗读");
     await waitFor(() => document.body.textContent?.includes("笔记 · 播放中"), "playing state missing");
     const afterPlay = document.body.textContent || "";
@@ -164,7 +164,7 @@ async function runProbe(): Promise<{ exitCode: number | null; stdout: string; st
   try {
     const { stdout, stderr } = await execFileAsync(ELECTRON, ["--no-sandbox", runner], {
       cwd: PROJECT_ROOT,
-      env: { ...process.env, PI_STUDYBUDDY_DATA_ROOT: dataRoot, E2E_RUN_DIR: RUN_ROOT, VITEST: undefined },
+      env: { ...process.env, PI_STUDYBUDDY_DATA_ROOT: dataRoot, E2E_RUN_DIR: RUN_ROOT, VITEST: "1" },
       windowsHide: true,
       timeout: 45_000,
       maxBuffer: 2 * 1024 * 1024,

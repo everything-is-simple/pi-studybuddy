@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "resources": [
+    {
+      "id": "study-planning",
+      "kind": "native-skill",
+      "source": "pi-studybuddy",
+      "version": "0.1.1",
+      "license": "UNLICENSED",
+      "sha256": "1bce2c2802a073604e462f0538a8540208582822891bd62c99f42e4e2ef332f6",
+      "relativePath": "skills/study-planning/SKILL.md",
+      "sizeBytes": 1215,
+      "owner": "StudyBuddy",
+      "updateResponsibility": "随应用版本发布并复核内容、许可证和 SHA-256"
+    },
+    {
+      "id": "study-review",
+      "kind": "native-skill",
+      "source": "pi-studybuddy",
+      "version": "0.1.1",
+      "license": "UNLICENSED",
+      "sha256": "41df868cd08944a14f43810a76b2190fa9ab4fce5090d39bb5e1d0ad85334c1f",
+      "relativePath": "skills/study-review/SKILL.md",
+      "sizeBytes": 1171,
+      "owner": "StudyBuddy",
+      "updateResponsibility": "随应用版本发布并复核内容、许可证和 SHA-256"
+    }
+  ]
+}

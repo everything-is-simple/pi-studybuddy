@@ -29,15 +29,14 @@ import path from "node:path";
 
 // T-M4-002 S1-S7/TTS/Backup 业务 handler 装配（断裂1修复，03-Arch §6.2）
 import { S1Context, createS1Handlers } from "./handlers/s1";
-import { S2Context, createS2Handlers } from "./handlers/s2";
-import { createRealTextExtractor } from "./handlers/s2/text-extractor";
+import { createRuntimeS2Context, createS2Handlers } from "./handlers/s2";
 import { S3Context, createS3Handlers } from "./handlers/s3";
 import { S4Context, createS4Handlers } from "./handlers/s4";
 import { S5Context, createS5Handlers } from "./handlers/s5";
 import { S6Context, createS6Handlers } from "./handlers/s6";
 import { S7Context, createS7Handlers } from "./handlers/s7";
 import { createRealWhisperAdapter } from "./handlers/s7/whisper-adapter";
-import { TtsContext, createTtsHandlers } from "./handlers/tts";
+import { createRuntimeTtsContext, createTtsHandlers } from "./handlers/tts";
 import { BackupContext, createBackupHandlers } from "./handlers/backup";
 // T-M4-003 credentials.*/settings.* handler 装配（断裂5修复，06-API §3.14/§3.15）
 // 2026-08-11：agent-host 运行于 utilityProcess（无 electron safeStorage），
@@ -70,8 +69,8 @@ async function safeReadModelCredential(service: CredentialService, provider: str
  *
  * 复用 studybuddy-extension.ts 的上下文创建模式：
  *   - S1-S6: new S*Context(dataRoot)
- *   - S7: new S7Context(dataRoot, { whisper 配置 }) — 有 CLI+模型路径才走真实，否则 mock
- *   - TTS: new TtsContext({ emit }) — 默认 mock 双引擎（08-Test §5.4）；T-M4-018 接入
+ *   - S7: new S7Context(dataRoot, { whisper 配置 }) — 生产未配置时固定失败，测试显式 mock
+ *   - TTS: createRuntimeTtsContext({ emit }) — 生产默认 SAPI，测试显式 mock；T-M4-018 接入
  *     Streams["tts.state"] 推送（server.pushEvent），renderer 控制条订阅即时状态
  *   - Backup: new BackupContext(dataRoot)
  */
@@ -81,9 +80,9 @@ function createBusinessHandlers(
   credentialGetterAsync?: (key: string) => Promise<string | null>,
 ): Record<string, (...args: unknown[]) => unknown> {
   const s1Ctx = new S1Context(dataRoot);
-  // T-M4-025：生产注入真实 TextExtractor（pdf-parse/jszip/mammoth 本地库，非外部服务，08-Test §5.4）；
-  // wps/ocr 保持未注入——WPS COM 与 OCR venv 属外部组件 mock 清单，doc/ppt/xls 的 wps_convert 与图片 ocr_image 仅登记 Job（T-M1-006/005 既有边界）。
-  const s2Ctx = new S2Context(dataRoot, undefined, createRealTextExtractor());
+  // T-M5-006：生产注入本地 TextExtractor，并为 WPS/OCR 装配固定失败的外部可选 adapter；
+  // Vitest 环境仍保持历史 mock/仅登记 Job 边界，避免自动化调用真实外部组件。
+  const s2Ctx = createRuntimeS2Context(dataRoot);
   const s3Ctx = new S3Context(dataRoot);
   const s4Ctx = new S4Context(dataRoot);
   const s5Ctx = new S5Context(dataRoot);
@@ -101,10 +100,11 @@ function createBusinessHandlers(
     whisperAdapter:
       whisperCliPath && whisperModelPath
         ? createRealWhisperAdapter({ cliPath: whisperCliPath, modelPath: whisperModelPath })
-        : undefined, // 默认 mock（08-Test §5.4）
+        : undefined,
+    allowMockWhisper: process.env.VITEST !== undefined,
   });
 
-  const ttsCtx = new TtsContext({
+  const ttsCtx = createRuntimeTtsContext({
     // T-M4-018：生产接入 Streams["tts.state"] 推送（06-API §4；renderer 订阅控制条状态）
     emit: server ? (event) => server.pushEvent("tts.state", event) : undefined,
   });

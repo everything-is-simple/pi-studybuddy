@@ -18,8 +18,34 @@ import type { AnyMessagePort } from "../contract/rpc";
 import type { DialogOptions, DialogResult, ToolchainStatus } from "../contract/types";
 import { createToolchainManager } from "./toolchains";
 
+function resolveAgentHostEntry(): string {
+  if (app.isPackaged) {
+    const unpackedEntry = path.join(process.resourcesPath, "app.asar.unpacked", "dist", "agent-host", "index.js");
+    if (!fs.existsSync(unpackedEntry)) {
+      throw new Error("应用 agent-host 运行入口缺失，请修复或重新安装应用");
+    }
+    return unpackedEntry;
+  }
+  return path.join(__dirname, "../agent-host/index.js");
+}
+
 function forkAgent(): AgentHostHandle {
-  const child = utilityProcess.fork(path.join(__dirname, "../agent-host/index.js"));
+  const child = utilityProcess.fork(resolveAgentHostEntry(), [], {
+    serviceName: "pi-studybuddy-agent-host",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  child.stdout?.on("data", () => {
+    // Agent-host stdout is intentionally not forwarded; production logs remain sanitized.
+  });
+  child.stderr?.on("data", () => {
+    // Agent-host diagnostics remain bounded to the main-process log boundary.
+  });
+  child.on("error", () => {
+    console.error("[agent-host] 运行进程启动失败，请修复或重新安装应用");
+  });
+  child.on("exit", (code) => {
+    if (code !== 0) console.error("[agent-host] 运行进程意外退出，请修复或重新安装应用");
+  });
   let ready = false;
   const pendingPorts: MessagePortMain[] = [];
   const send = (port: MessagePortMain) => {

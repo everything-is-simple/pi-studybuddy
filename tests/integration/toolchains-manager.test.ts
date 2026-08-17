@@ -29,15 +29,26 @@ describe("toolchain manager integration", () => {
     }
   });
 
-  it("MANAGER-01: manager.list() 返回全部 14 种 capability", () => {
+  it("MANAGER-01: manager.list() 返回全部 14 种基础 capability，并追加 T-M5-006 运行能力状态", () => {
     const manager = createToolchainManager();
     const statuses = manager.list();
-    expect(statuses.length).toBe(TOOL_CAPABILITY_IDS.length);
+    for (const capabilityId of TOOL_CAPABILITY_IDS) {
+      expect(statuses.some((status) => status.capabilityId === capabilityId)).toBe(true);
+    }
+    expect(statuses.length).toBeGreaterThanOrEqual(TOOL_CAPABILITY_IDS.length + 8);
     // 至少 node 为 healthy
     const node = statuses.find((s) => s.capabilityId === "js.node");
     expect(node).toBeDefined();
     expect(node!.health).toBe("healthy");
     expect(node!.version).toBeDefined();
+    expect(statuses).toEqual(expect.arrayContaining([
+      expect.objectContaining({ capabilityId: "runtime.pi", source: "bundled", managed: true }),
+      expect.objectContaining({ capabilityId: "runtime.native-skills", source: "bundled", managed: true }),
+      expect.objectContaining({ capabilityId: "learning.wps", source: "external_optional", required: false }),
+    ]));
+    for (const status of statuses.filter((item) => item.capabilityId.startsWith("runtime.") || item.capabilityId.startsWith("learning.") || item.capabilityId.startsWith("tts."))) {
+      expect(status.path).toBeUndefined();
+    }
     manager.dispose();
   }, 30_000);
 

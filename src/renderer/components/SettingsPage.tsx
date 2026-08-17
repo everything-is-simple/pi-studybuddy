@@ -169,12 +169,16 @@ export function sanitizeToolchainStatuses(value: unknown): ToolchainStatus[] {
     if (!isSafeOpaqueValue(status.capabilityId) || !isSafeOpaqueValue(status.name)) return [];
     if (status.health !== "unsupported" && status.health !== "unverified" && status.health !== "healthy") return [];
     const version = typeof status.version === "string" ? safeDisplay(status.version, "") : "";
+    const reason = typeof status.reason === "string" ? safeDisplay(status.reason, "") : "";
+    const recovery = typeof status.recovery === "string" ? safeDisplay(status.recovery, "") : "";
     return [
       {
         capabilityId: status.capabilityId,
         name: safeDisplay(status.name, "本机工具"),
         health: status.health,
         ...(version ? { version } : {}),
+        ...(reason ? { reason } : {}),
+        ...(recovery ? { recovery } : {}),
       },
     ];
   });
@@ -681,6 +685,8 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
           {pageData?.toolchains.length ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
             {toolchainOrder(pageData.toolchains).map((status) => <div key={status.capabilityId} style={{ padding: 8, border: "1px solid var(--border, #e0e0e0)", borderRadius: 6, fontSize: 12 }}>
               <strong>{status.name}</strong><br />{healthLabel(status.health)}{status.version ? ` · ${status.version}` : ""}
+              {status.reason ? <div style={{ marginTop: 5, color: "var(--text-muted, #666)" }}>说明：{status.reason}</div> : null}
+              {status.recovery ? <div style={{ marginTop: 3, color: "var(--text-muted, #666)" }}>恢复：{status.recovery}</div> : null}
             </div>)}
           </div> : <p style={{ margin: 0, color: "var(--text-muted, #666)", fontSize: 12 }}>暂未获得本机工具检查结果。</p>}
         </Section>

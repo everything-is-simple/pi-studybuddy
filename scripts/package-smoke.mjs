@@ -20,7 +20,9 @@ const APP_PATH = process.env.PI_STUDYBUDDY_PACKAGE_APP;
 const DATA_ROOT = path.join(RUN_DIR, "package-data-root");
 const PROFILE_ROOT = path.join(RUN_DIR, "package-profile");
 // Chromium profile 必须显式落在任务临时目录，避免隔离环境的默认 profile 路径启动失败。
-const ELECTRON_USER_DATA_ROOT = path.join(PROFILE_ROOT, "electron-user-data");
+function electronUserDataRootForLaunch(label) {
+  return path.join(PROFILE_ROOT, label, "electron-user-data");
+}
 const PING_MESSAGE = `${TASK_ID}-package-smoke`;
 
 /** 输出固定中文错误，避免把命令行、密钥或调试载荷写入日志。 */
@@ -217,7 +219,7 @@ async function connectCdp(webSocketDebuggerUrl) {
         const timer = setTimeout(() => {
           pending.delete(id);
           reject(new Error(`CDP 命令超时：${method}`));
-        }, 60_000);
+        }, 25_000);
         pending.set(id, {
           resolve(result) { clearTimeout(timer); resolve(result); },
           reject(error) { clearTimeout(timer); reject(error); },
@@ -233,14 +235,19 @@ async function connectCdp(webSocketDebuggerUrl) {
 }
 
 /** 在已安装 renderer 中经受控桥接执行 system.ping + 代表性业务 RPC（semesters.create），不暴露额外生产接口。 */
-async function pingInstalledRenderer(cdp) {
+async function pingInstalledRenderer(cdp, label) {
   const expression = `
     (async () => {
       const bridge = window.piBridge;
       if (!bridge) return { ok: false, reason: "bridge_missing" };
-      const port = await bridge.connectHost();
+      const connectHost = await Promise.race([
+        bridge.connectHost(),
+        new Promise((resolve) => setTimeout(() => resolve(null), 8_000)),
+      ]);
+      if (!connectHost) return { ok: false, reason: "host_connect_timeout" };
+      const port = connectHost;
       const call = (id, method, args) => new Promise((resolve) => {
-        const timer = setTimeout(() => resolve({ ok: false, reason: "rpc_timeout:" + method }), 30_000);
+        const timer = setTimeout(() => resolve({ ok: false, reason: "rpc_timeout:" + method }), 10_000);
         port.addEventListener("message", (event) => {
           const message = event.data;
           if (message?.kind !== "response" || message.id !== id) return;
@@ -252,17 +259,18 @@ async function pingInstalledRenderer(cdp) {
         port.postMessage({ kind: "request", id, method, args });
       });
       const ping = await call("${TASK_ID}-ping", "system.ping", [{ message: "${PING_MESSAGE}" }]);
-      if (!ping.ok || ping.result?.pong !== "${PING_MESSAGE}") return { ok: false, reason: "ping_failed" };
+      if (!ping.ok || ping.result?.pong !== "${PING_MESSAGE}") return { ok: false, reason: ping.reason || "ping_failed" };
       const created = await call("${TASK_ID}-sem", "semesters.create", [{ label: "${TASK_ID} package smoke", startDate: "2026-09-01", endDate: "2027-01-31", timezone: "Asia/Shanghai" }]);
-      if (!created.ok || !created.result?.id) return { ok: false, reason: "business_rpc_failed" };
+      if (!created.ok || !created.result?.id) return { ok: false, reason: created.reason || "business_rpc_failed" };
       return { ok: true, semesterId: created.result.id };
     })()
   `;
-  // 已安装应用首启 renderer 就绪存在竞态（页面可能仍在初始化/导航）；重试至多 5 次
+  // 已安装应用首启 renderer 就绪存在竞态（页面可能仍在初始化/导航）；重试至多 2 次
   let evaluation;
   let lastError;
   let lastReason = "";
-  for (let attempt = 0; attempt < 5; attempt += 1) {
+  const reasonLogPath = path.join(RUN_DIR, `package-smoke-${label}-reasons.log`);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       evaluation = await cdp.command("Runtime.evaluate", {
         expression,
@@ -270,10 +278,12 @@ async function pingInstalledRenderer(cdp) {
         returnByValue: true,
       });
       if (evaluation?.result?.value?.ok) break;
-      lastReason = String(evaluation?.result?.value?.reason ?? "");
+      lastReason = String(evaluation?.result?.value?.reason ?? evaluation?.exceptionDetails?.text ?? "unknown");
+      fs.appendFileSync(reasonLogPath, `attempt=${attempt + 1} reason=${lastReason}\n`, "utf8");
       lastError = new Error(`已安装 renderer 的 system.ping 或业务 RPC 未通过（reason=${lastReason}）`);
     } catch (e) {
       lastError = e;
+      fs.appendFileSync(reasonLogPath, `attempt=${attempt + 1} reason=cdp_command_failed\n`, "utf8");
     }
     await delay(3_000);
   }
@@ -286,8 +296,10 @@ async function pingInstalledRenderer(cdp) {
 async function verifyOneLaunch(label) {
   const debugPort = await reserveLoopbackPort();
   const child = spawn(APP_PATH, [
+    // Windows headless/CI launch needs the same sandbox bypass as the real Electron test harness.
+    "--no-sandbox",
     `--remote-debugging-port=${debugPort}`,
-    `--user-data-dir=${ELECTRON_USER_DATA_ROOT}`,
+    `--user-data-dir=${electronUserDataRootForLaunch(label)}`,
   ], {
     cwd: path.dirname(APP_PATH),
     windowsHide: true,
@@ -312,7 +324,7 @@ async function verifyOneLaunch(label) {
     const target = await Promise.race([waitForPageTarget(debugPort), earlyExit]);
     const cdp = await connectCdp(target.webSocketDebuggerUrl);
     try {
-      await pingInstalledRenderer(cdp);
+      await pingInstalledRenderer(cdp, label);
       // Browser.close 会先终止调试端点，Chromium 不保证返回该命令的 CDP 响应。
       void cdp.command("Browser.close").catch(() => {});
     } finally {
@@ -341,7 +353,8 @@ if (!APP_PATH || !path.isAbsolute(APP_PATH) || !fs.existsSync(APP_PATH)) {
 } else {
   fs.mkdirSync(DATA_ROOT, { recursive: true });
   fs.mkdirSync(PROFILE_ROOT, { recursive: true });
-  fs.mkdirSync(ELECTRON_USER_DATA_ROOT, { recursive: true });
+  fs.mkdirSync(electronUserDataRootForLaunch("first-launch"), { recursive: true });
+  fs.mkdirSync(electronUserDataRootForLaunch("second-launch"), { recursive: true });
   // 已安装应用偶发首次启动 RPC 路径异常（agent-host 未就绪等）：launch 级重试一次
   async function verifyWithRetry(label) {
     for (let attempt = 0; attempt < 2; attempt += 1) {

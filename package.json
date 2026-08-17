@@ -47,6 +47,16 @@
       "!docs{,/**/*}",
       "!scripts{,/**/*}"
     ],
+    "asarUnpack": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "runtime-resources",
+        "to": "runtime-resources"
+      }
+    ],
     "win": {
       "target": [
         {

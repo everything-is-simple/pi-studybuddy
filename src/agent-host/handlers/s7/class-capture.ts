@@ -94,6 +94,9 @@ export function handleTranscribe(
           throw e;
         }
         if (err.code === "INTERNAL_ERROR") {
+          if (err.message === "语音转写未配置，请在设置中指定 whisper.cpp 路径") {
+            throw e;
+          }
           // 转写失败：用 handler 层固定文案（双重保险，防止 adapter 实现泄漏 stdout/stderr）
           throw { code: "INTERNAL_ERROR", message: MSG_TRANSCRIBE_FAILED };
         }
