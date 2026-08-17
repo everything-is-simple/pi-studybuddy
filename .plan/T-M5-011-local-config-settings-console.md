@@ -78,6 +78,6 @@ RED 首次输出必须写入 `H:\pi-studybuddy-tmp\runs\T-M5-011\red\`，不得�
 
 ## 7. 完成边界
 
-完成本地实现不代表 task done。已完成 RED→GREEN、定向回归、Node24 `pnpm test`（142 files/1254 tests）、`type-check`、build、contract 132/132、安全 6/6、专属真实 Electron E2E和部分原生 UAT；`verify --stage=full --skip=e2e` 通过（8 执行/2 跳过，跳过集合包含明确排除的历史安装器验收）。跨任务 E2E 汇总曾失败于 T-M5-004 renderer fixture 与 T-M5-006 runtime settings，均不在本任务范围，未修改或重审。
+完成本地实现不代表 task done。已完成 RED→GREEN、定向回归、Node24 `pnpm test`（142 files/1254 tests）、`type-check`、build、contract 132/132、安全 6/6、专属真实 Electron E2E和部分原生 UAT；`verify --stage=full --skip=e2e` 通过（8 执行/2 跳过，跳过集合包含明确排除的历史安装器验收）。此前一次跨任务 E2E 汇总曾失败于 T-M5-004 renderer fixture 与 T-M5-006 runtime settings；在用户明确授权复核后，当前 Node24 非安装器完整 Electron E2E 已重跑 `34 files/142 tests` 全绿，两个用例均通过，未发现需要修改的生产或测试代码。
 
 收尾前仍必须补齐七类逐类原生 UAT和两名独立审查。完成后保持 `in_progress`，等待用户明确要求收尾；不得自动 commit、push、merge、启动 T-M5-007/008，或生成/读取/暂存安装器。

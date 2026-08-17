@@ -1,6 +1,6 @@
 # AGENTS.md — pi-studybuddy 仓库操作宪章
 
-**版本**：v0.1.151
+**版本**：v0.1.152
 **日期**：2026-08-17
 **状态**：✅ M5 进行中（v0.1.150：用户明确批准 T-M5-011「本机配置资产与设置能力控制台闭环」开工，现为唯一 in_progress；T-M5-006 实现提交 `5911722` 已推送任务分支但因独立审查与受控收尾未完成转为 blocked，未宣告完成、不合并 master；T-M5-007/008 仍 pending 且不启动；T-M5-005 仍 blocked，其三条遗留 UAT并入 T-M5-008；当前工作区不读取、不暂存安装器。）
 **适用**：对人和 AI agent 同等约束（仿 pi 生态 AGENTS.md 约定，作为 context file 自动注入 system prompt）
@@ -82,11 +82,11 @@
 
 | 文档 | 版本 | 权威范围 |
 |---|---|---|
-| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.208 | 文档导航 + 门禁 + M5 剩余顺序；用户已批准 T-M5-011 为唯一 in_progress，T-M5-006 等待独立审查与收尾而 blocked，T-M5-007/008 pending，T-M5-005 遗留 UAT并入 T-M5-008 |
+| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.209 | 文档导航 + 门禁 + M5 剩余顺序；用户已批准 T-M5-011 为唯一 in_progress，T-M5-006 等待独立审查与收尾而 blocked，T-M5-007/008 pending，T-M5-005 遗留 UAT并入 T-M5-008 |
 | [01-TRD](./docs/01-TRD-技术需求-Technical-Requirements.md) | v0.2.4 | 技术底座决策 + 六点定案（决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化）|
 | [02-PRD](./docs/02-PRD-产品需求-Product-Requirements.md) | v0.1.4 | 产品需求 + 业务闭环 + §3.11 对话默认主入口 |
 | [03-Architecture](./docs/03-架构设计-Architecture-Design.md) | v0.1.3 | 四层架构 + pi 扩展 + §6.7 会话管理 + §2.3 model_select 落点业务数据根 config/models.json |
-| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.208 | 任务登记 + M5 剩余顺序：T-M5-011 配置/七类设置为唯一 in_progress，T-M5-006 等待独立审查与收尾而 blocked，随后才是发布前真实 Electron UAT与最终候选/干净机安装验收；T-M5-005 遗留 UAT并入最终验收。 |
+| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.209 | 任务登记 + M5 剩余顺序：T-M5-011 配置/七类设置为唯一 in_progress，T-M5-006 等待独立审查与收尾而 blocked，随后才是发布前真实 Electron UAT与最终候选/干净机安装验收；T-M5-005 遗留 UAT并入最终验收。 |
 | [05-ERD](./docs/05-数据模型-ERD-Data-Model.md) | v0.1.2 | 全局库 + 学期库 + 三层记忆 |
 | [06-API](./docs/06-API契约-API-Contracts.md) | v0.1.9 | RPC 契约 + 100+ 方法 + 9 Streams + §4 AgentEvent payload 结构化 + modelsConfig.get/set |
 | [07-Workflow](./docs/07-工作流-Workflow.md) | v0.1.3 | 学生主路径 + 对话路径 + 11 状态机 + §2.8 工具→Tab 映射表 |
@@ -476,6 +476,7 @@ node scripts/check-desktop-security.mjs     # 08-Test §5.7 安全不变量（3 
 ## §12 修订记录
 
 | 版本 | 日期 | 变更 |
+| v0.1.152 | 2026-08-17 | 用户在 T-M5-011 阶段性提交推送后，明确要求复核两项已知跨任务 Electron E2E问题。Node24 下显式排除历史安装器 T-M4-021 的完整非安装器回归为 34 files/142 tests 全绿；T-M5-004 renderer fixture 与 T-M5-006 runtime settings 均不再复现，未发现应修复的生产或测试代码，故不伪造变更。原因：用户明确指令；影响仅测试事实和版本同步，T-M5-011 仍为唯一 in_progress，原生 UAT/异常恢复/双审查/受控收尾门禁不变，不读取/处理安装器、不执行新的 Git 收口。依据：§2/§4.5/§5/§7/§9/§11。 |
 | v0.1.151 | 2026-08-17 | T-M5-011 阶段性实施与验收事实同步：配置资产/七类设置实现、专属真实 Electron E2E、部分原生 UAT与 Node24 非安装器质量门通过（unit/integration 142 files/1254 tests，contract 132/132，security 6/6，verify full skip e2e 8执行/2跳过）；原生 UAT仍缺五类逐类回读、配置异常恢复和双独立审查，任务保持唯一 in_progress。跨任务 T-M5-004/T-M5-006 E2E失败不修复、不纳入本任务结论；不读取/处理安装器、不执行 Git 收口。原因：回填已发生测试与证据事实；影响仅治理状态/版本与收尾门禁，不改 API/schema/任务顺序。依据：用户任务指令 + §4.5/§5/§7/§9/§11。 |
 | v0.1.150 | 2026-08-17 | 用户明确批准 T-M5-011「本机配置资产与设置能力控制台闭环」开工，建立唯一计划 `.plan/T-M5-011-local-config-settings-console.md`、隔离分支 `agent/T-M5-011-local-config-settings-console` 与运行根 `H:\pi-studybuddy-tmp\runs\T-M5-011\`。T-M5-006 的实现提交 `5911722` 已推送任务分支但双独立审查与受控收尾未完成，改为 blocked 等待而非 done；不合并 master、不读取/暂存安装器。原因：用户本次明确任务选择覆盖原依赖顺序；影响仅当前任务门禁、计划与状态，不改既有 API/schema、安装器或完成判据。依据：用户明确指令 + §2/§4.4/§4.5/§5/§7/§8/§11。 |
 | v0.1.149 | 2026-08-17 | 用户明确授权 T-M5-006 当前改动提交并推送远端任务分支。实现提交 `5911722`（`feat(m5): 装配受管运行依赖与离线降级`）已推送 `origin/agent/T-M5-006-runtime-dependencies` 并核验同位；不合并 master、不生成/读取/暂存安装器。任务仍 in_progress，双独立审查、实施记录和用户明确收尾仍为后续门禁。原因：回填已发生 Git 事实；影响仅状态/证据登记，不改 API/schema、任务顺序或完成判据。依据：用户明确授权 + §4.5/§7/§8.3/§11。 |
