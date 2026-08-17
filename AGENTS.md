@@ -1,8 +1,8 @@
 # AGENTS.md — pi-studybuddy 仓库操作宪章
 
-**版本**：v0.1.143
-**日期**：2026-08-15
-**状态**：✅ M5 进行中（v0.1.143：T-M5-010「设置、投递、学期备份与数据根迁移闭环」已完成 Git 收口；T-M5-005 仍 blocked，仅等待其既定三条干净 Windows 原生 UAT；T-M5-006~008 不启动，当前工作区不读取、不暂存安装器。）
+**版本**：v0.1.146
+**日期**：2026-08-17
+**状态**：✅ M5 进行中（v0.1.146：T-M5-006「必需运行依赖自包含与离线能力装配」为唯一 in_progress；T-M5-011「本机配置资产与设置能力控制台闭环」、T-M5-007「发布前真实 Electron 全功能 UAT」、T-M5-008「最终候选与干净机安装发行验收」依次 pending 且不启动；T-M5-005 仍 blocked，其三条遗留 UAT并入 T-M5-008；当前工作区不读取、不暂存安装器。）
 **适用**：对人和 AI agent 同等约束（仿 pi 生态 AGENTS.md 约定，作为 context file 自动注入 system prompt）
 
 > 本文件是 pi-studybuddy 仓库的最高治理文件。任何 AI、开发者或自动化工具在对话中断后，只读本文件与 [docs/00-文档索引](./docs/00-文档索引-Index.md) 即可恢复系统身份、权威来源、当前任务和禁止事项；**不得依赖聊天记忆代替仓库文档**。
@@ -82,11 +82,11 @@
 
 | 文档 | 版本 | 权威范围 |
 |---|---|---|
-| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.188 | 文档导航 + 门禁 + 参考仓库清单 + M5 用户验收阶段状态 + T-M5-005 Git 收口事实与部分 UAT、T-M5-004/T-M5-009 收口证据 |
+| [00-文档索引](./docs/00-文档索引-Index.md) | v0.1.196 | 文档导航 + 门禁 + M5 剩余顺序；T-M5-006 in_progress，T-M5-011/007/008 pending，T-M5-005 遗留 UAT并入 T-M5-008 |
 | [01-TRD](./docs/01-TRD-技术需求-Technical-Requirements.md) | v0.2.4 | 技术底座决策 + 六点定案（决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化）|
 | [02-PRD](./docs/02-PRD-产品需求-Product-Requirements.md) | v0.1.4 | 产品需求 + 业务闭环 + §3.11 对话默认主入口 |
 | [03-Architecture](./docs/03-架构设计-Architecture-Design.md) | v0.1.3 | 四层架构 + pi 扩展 + §6.7 会话管理 + §2.3 model_select 落点业务数据根 config/models.json |
-| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.188 | 任务登记 + 组件治理看板 + 里程碑 M0-M5；T-M5-001~004、009 done，T-M5-005 in_progress（功能/治理提交已推送 master、完整门禁与部分原生 UAT 已登记），T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
+| [04-Todo](./docs/04-任务清单-Todo-List.md) | v0.1.196 | 任务登记 + M5 剩余顺序：运行资产→配置/七类设置→发布前真实 Electron UAT→最终候选/干净机安装验收；T-M5-005 遗留 UAT并入最终验收。 |
 | [05-ERD](./docs/05-数据模型-ERD-Data-Model.md) | v0.1.2 | 全局库 + 学期库 + 三层记忆 |
 | [06-API](./docs/06-API契约-API-Contracts.md) | v0.1.9 | RPC 契约 + 100+ 方法 + 9 Streams + §4 AgentEvent payload 结构化 + modelsConfig.get/set |
 | [07-Workflow](./docs/07-工作流-Workflow.md) | v0.1.3 | 学生主路径 + 对话路径 + 11 状态机 + §2.8 工具→Tab 映射表 |
@@ -119,7 +119,7 @@
 | `scripts/verify.mjs` | ✅ 已创建 | 统一质量门 |
 | `scripts/check-docs-governance.mjs` | ✅ 已创建 | 文档治理检查 |
 | `scripts/check-contract-coverage.mjs` | ✅ 已创建 | 契约 AST 校验 |
-| `.plan/` | ✅ 已就绪 | 任务计划目录；当前唯一执行计划为 `.plan/T-M5-005-s6-s7-tts-backup-settings-ux.md`，历史计划保留为证据 |
+| `.plan/` | ✅ 已就绪 | 任务计划目录；当前唯一执行计划为 `.plan/T-M5-006-runtime-dependencies.md`，历史计划保留为证据 |
 | `.record/` | ✅ 已就绪 | 实施记录目录（历史记录已就绪；T-M5-002 记录 `.record/T-M5-002-实施记录.md` 已完成） |
 | `docs/traceability/` | ✅ T-M5-009 done | 六项测试与运维追溯基线资产；后续 M5 任务按范围消费，不新增业务 API/schema/handler/入口 |
 
@@ -476,6 +476,9 @@ node scripts/check-desktop-security.mjs     # 08-Test §5.7 安全不变量（3 
 ## §12 修订记录
 
 | 版本 | 日期 | 变更 |
+| v0.1.146 | 2026-08-17 | 用户要求重新规划 04-Todo 与剩余测试任务，并明确本机配置必须持久化。同步 00/04 v0.1.196：学习事实留 SQLite，非敏感设置留 `<dataRoot>/config/` 版本化 JSON，凭证只进 DPAPI，关系型配置留 `global.db`，瞬时 health 由运行时派生；剩余顺序修为 T-M5-006→T-M5-011→T-M5-007 发布前真实 Electron UAT→T-M5-008 最终候选与干净机安装验收，T-M5-005 三条遗留 UAT并入 T-M5-008。并修正 §3.3 当前唯一计划的陈旧指向。影响仅治理边界/顺序，不启动后续任务、不改 API/schema/实现或安装器。依据：用户明确指令 + §2/§4.4/§4.5/§7/§11。 |
+| v0.1.145 | 2026-08-17 | 用户要求重新规划 M5 剩余工作，并明确学习业务 SQLite 之外的本机配置必须作为正式 `DATA-CFG-*` 持久化资产治理。同步 00-索引/04-Todo v0.1.195：新增 pending 的 T-M5-011「本机配置资产与设置能力控制台闭环」，负责 `<dataRoot>/config/` 生命周期与七类设置控制台；T-M5-006 保持唯一 in_progress，仅负责 pi/native skills/受管运行资产和离线能力装配。T-M5-011 不创建详细计划、不启动实施；T-M5-005 继续 blocked，T-M5-007~008 不启动。原因：防止设置、配置、运行依赖与发布验收的范围互相吞并；影响：任务登记、顺序和版本同步，不改业务 API/schema/handler、真实数据或安装器。依据：用户本次明确指令 + §2/§4.4/§4.5/§7/§11。 |
+| v0.1.144 | 2026-08-15 | 用户明确要求按每任务完整开发工作流开工；启动已登记的 T-M5-006「全部必需运行依赖自包含与离线能力装配」，唯一计划为 `.plan/T-M5-006-runtime-dependencies.md`，实施分支为 `agent/T-M5-006-runtime-dependencies`，运行根为 `H:\pi-studybuddy-tmp\runs\T-M5-006\`。范围仅依赖盘点、TDD、五阶段装配及可解释离线降级；不读取/暂存现有安装器、不生成新 setup、不写生产数据/凭证。T-M5-005 继续 blocked，T-M5-007~008 不启动。原因：用户“开工吧”及前序新 setup 前置裁决；影响：任务状态和执行入口同步。依据：用户明确授权 + AGENTS.md §2/§4.4/§4.5/§5/§7/§9/§11。 |
 | v0.1.139 | 2026-08-15 | 实时核验发现当前 `master` 与 `origin/master` 同位于 `2442646cfcfa07c0b1f84de882816a9990c2bd24`；此前 v0.1.138 的 `87d40f8` 为历史治理事实提交，仍是当前提交的祖先。同步当前状态中的 Git 同位事实与剩余原生 UAT缺口；不改变 T-M5-005 `in_progress`、不启动 T-M5-006~008、不读取/暂存安装器。原因：恢复会话后的实时 Git 核验；依据：AGENTS.md §4.5/§7/§8.4/§11.1。 |
 | v0.1.140 | 2026-08-15 | 用户决定暂置 T-M5-005 当前工作台缺口并重装干净 Windows，在新系统运行 setup 完成三条真实已安装应用闭环：S6 报告投递重启回读、真实备份恢复后业务数据完整性/重启回读、TTS 原生已复习持久化/重启回读。当前工作区不读取、不暂存安装器；该安装验收不等同于 T-M5-007 全功能 UAT 或 T-M5-008 最终发行。任务保持 in_progress，不启动 T-M5-006~008。依据：用户明确授权 + AGENTS.md §4.5/§7/§8.4/§11。 |
 | v0.1.143 | 2026-08-15 | T-M5-010 Git 收口完成：功能提交 `ef9eece` 已推送任务分支并 ff-only 合并至 master；Node24 master `pnpm verify --stage=full` 通过（unit/integration 133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。本治理登记提交随后推送并核验 `master=origin/master`，任务由 in_progress→done。T-M5-005 继续 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11。 |
