@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.209
+**版本**：v0.1.212
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
 
 ---
@@ -28,12 +28,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ v0.1.207 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；用户已批准 T-M5-011 为唯一 in_progress，T-M5-006 等待独立审查与收尾而 blocked，T-M5-007/008 pending；T-M5-005 的三条遗留原生 UAT并入 T-M5-008 最终干净机安装验收。 |
+| 00 | 本文档 | ✅ v0.1.211 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；T-M5-011 仍为唯一 in_progress，用户已明确授权其当前分支生成方案 B 测试夹具型 setup；该 setup 不等同 T-M5-007 发布前 UAT 或 T-M5-008 最终候选。 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.207 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006 等待独立审查与收尾而 blocked，T-M5-011 为唯一 in_progress，T-M5-007/008 pending；T-M5-006 已登记 SAPI 生产装配、OCR/whisper/WPS 缺失降级和可见运行能力状态 GREEN，当前进入配置与七类设置，随后才是发布前真实 Electron UAT与最终候选/干净机安装验收。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.211 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006 等待独立审查与收尾而 blocked，T-M5-011 为唯一 in_progress，T-M5-007/008 pending；T-M5-006 已登记 SAPI 生产装配、OCR/whisper/WPS 缺失降级和可见运行能力状态 GREEN，当前进入配置与七类设置，随后才是发布前真实 Electron UAT与最终候选/干净机安装验收。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.9 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -236,6 +236,9 @@
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.212 | 2026-08-17 | 按用户命名重新生成方案 B 测试安装包：安装器文件名改为 `pi-studybuddy-test--方案b-setup包.exe`，Windows 产品名、test-bundle manifest 与启动器标题同步为 `方案b-setup包`；新包 SHA-256 `09c5ed2a27b8e4521596e5bc8fe7e3765bfe9fdadfc04e0c40aa71b5f87d6a98`，130418209 bytes；带 test profile 的 win-unpacked 两次隔离启动、system.ping、业务 RPC 与 SQLite 通过，隔离根种子无凭据。旧哈希 `4a52a7bf...` 作为历史证据保留。 |
+| v0.1.211 | 2026-08-17 | 方案 B 测试 setup 已实际生成并验证：正式 handler 合成 fixture、显式 test profile、受控 mock 标识和三文件 `test-bundle` 完成；setup SHA-256 `4a52a7bf2729b3ade6e5eaf15e6f1c7ef03f03814a188c3d5a3b5a840f8f68ae`，130417990 bytes。win-unpacked 与隔离静默安装后的真实 Electron 双启动、renderer、system.ping、业务 RPC、SQLite 均通过；首次安全扫描/host 启动超时保留。Node24 143 files/1256 tests 及静态门禁通过。T-M5-011 仍 in_progress，不替代后续发布验收。 |
+| v0.1.210 | 2026-08-17 | 用户明确确认方案 B 测试夹具型 setup 生成：当前 T-M5-011 计划新增隔离 `test-bundle`、合成 fixture、显式 test profile、包内容扫描和 x64 setup/package smoke；不读取、运行、暂存或删除现有安装器，不改变 T-M5-007/008 的最终发布顺序和验收含义。 |
 | v0.1.209 | 2026-08-17 | 用户授权复核此前的跨任务 Electron E2E失败：在 Node24 下显式排除历史安装器 T-M4-021 后，完整非安装器回归 `34 files/142 tests` 全绿，T-M5-004 renderer fixture 和 T-M5-006 runtime settings 均通过，未发现可复现代码缺陷，未产生伪造修复。T-M5-011 的七类原生 UAT、异常恢复、双审查和用户收尾门禁保持不变；不读取/处理安装器，不执行新的 Git 收口。 |
 | v0.1.208 | 2026-08-17 | T-M5-011 阶段性验收事实同步：配置资产与七类设置实现、定向与完整 Node24 非安装器质量门、专属真实 Electron E2E及部分原生 UAT已完成；`pnpm test` 142 files/1254 tests，contract 132/132，安全 6/6，`verify --stage=full --skip=e2e` 通过。原生 UAT当前仅完整覆盖通用设置、SMTP/目标回读与固定脱敏测试消息；其余逐类设置回读、配置异常恢复、双审查和用户收尾仍待完成，任务保持唯一 in_progress。跨任务 T-M5-004/T-M5-006 E2E失败不纳入本任务、不修复；不读取或处理安装器，不执行 Git 收口。 |
 | v0.1.207 | 2026-08-17 | 用户明确批准 T-M5-011「本机配置资产与设置能力控制台闭环」开工：建立唯一计划、隔离分支和运行根，任务由 pending→唯一 in_progress。T-M5-006 的 `5911722` 已推送事实保留，但因独立审查和受控收尾未完成改为 blocked 等待；不宣告完成、不合并 master、不读取/暂存安装器。依据：用户明确指令 + AGENTS.md §2/§4.4/§4.5/§5/§7/§8/§11。 |

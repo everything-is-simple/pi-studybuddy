@@ -21,7 +21,7 @@
 | 分支与运行根 | 已切换 `agent/T-M5-011-local-config-settings-console`；所有运行证据写入 `H:\pi-studybuddy-tmp\runs\T-M5-011\` | OK |
 | T-M5-006 边界 | 仅运行资源 manifest、受管 skills、派生能力状态、外部能力降级；不负责通用设置或配置生命周期 | 011 只消费其脱敏运行状态 |
 | 数据隔离 | 不读取 `%LOCALAPPDATA%\PiStudyBuddy`、`~/.pi`、真实凭据或真实业务数据 | 强制 |
-| 发布边界 | 不生成、读取、暂存、运行安装器；T-M5-007/008 不启动 | 强制 |
+| 发布边界 | 用户已明确授权生成新的方案 B 测试夹具型 setup；仅允许读取本次新生成的 `release-test/` 输出和包清单，不读取、运行、暂存或删除现有安装器；T-M5-007/008 的最终发布顺序不变 | 强制 |
 | Git | 用户未授权 commit/push/merge | 不执行 |
 
 ## 2. 数据与所有权裁决
@@ -66,7 +66,7 @@ RED 首次输出必须写入 `H:\pi-studybuddy-tmp\runs\T-M5-011\red\`，不得�
 4. 实现最小共享配置存储和 per-asset migration；保持 credentials 的 DPAPI 密文边界，绝不把凭据接入普通 JSON 序列化、日志或 renderer。
 5. 扩展 typed contract/handlers 仅到七类控制台确实需要的最小表面；增加主进程/agent-host 错误净化，禁止路径、完整 UUID、栈、命令输出和密钥穿透。
 6. 重组 SettingsPage 为七个实际可操作区，接入设置读取、保存、重启回读、运行状态只读展示、模型显式最小测试和渠道显式脱敏测试消息；不做每日测试、持久化 health 或自动 fallback。
-7. 执行受影响 unit/integration、真实 Electron E2E、Node24 完整质量门（不得执行安装器路径）与原生真机 UAT。
+7. 执行受影响 unit/integration、真实 Electron E2E、Node24 完整质量门；新增方案 B setup 只走独立包内容审计、x64 构建和隔离 package smoke，不把它计为 T-M5-007/008 发布验收。
 
 ## 6. 真机 UAT
 
@@ -80,4 +80,12 @@ RED 首次输出必须写入 `H:\pi-studybuddy-tmp\runs\T-M5-011\red\`，不得�
 
 完成本地实现不代表 task done。已完成 RED→GREEN、定向回归、Node24 `pnpm test`（142 files/1254 tests）、`type-check`、build、contract 132/132、安全 6/6、专属真实 Electron E2E和部分原生 UAT；`verify --stage=full --skip=e2e` 通过（8 执行/2 跳过，跳过集合包含明确排除的历史安装器验收）。此前一次跨任务 E2E 汇总曾失败于 T-M5-004 renderer fixture 与 T-M5-006 runtime settings；在用户明确授权复核后，当前 Node24 非安装器完整 Electron E2E 已重跑 `34 files/142 tests` 全绿，两个用例均通过，未发现需要修改的生产或测试代码。
 
-收尾前仍必须补齐七类逐类原生 UAT和两名独立审查。完成后保持 `in_progress`，等待用户明确要求收尾；不得自动 commit、push、merge、启动 T-M5-007/008，或生成/读取/暂存安装器。
+收尾前仍必须补齐七类逐类原生 UAT和两名独立审查。方案 B setup 是本任务授权的测试资产，不改变任务完成判据；不得自动 commit、push、merge、启动 T-M5-007/008，或读取/运行/暂存现有安装器。
+
+## 8. 方案 B 测试 setup 证据
+
+- 产物：`release-test/pi-studybuddy-test--方案b-setup包.exe`，130418209 bytes，SHA-256 `09c5ed2a27b8e4521596e5bc8fe7e3765bfe9fdadfc04e0c40aa71b5f87d6a98`（2026-08-17 按用户命名重命名；旧包 `pi-studybuddy-test-x64-setup.exe` 哈希 `4a52a7bf...` 作为历史证据保留）。
+- 内容：Electron x64、production dependencies、runtime-resources、三文件 `test-bundle`；fixture 在显式 test profile 首启时由正式 S1/S2 handler 生成，不携带预生成 DB、凭据、真实配置或证据。
+- 自动化：test profile unit `2/2`；Node24 全量 `143 files/1256 tests`；type-check、contract 132/132、安全 6/6、文档治理、diff-check 与 bundle 扫描通过。
+- 运行：win-unpacked 两次真实 Electron 启动通过；NSIS 隔离静默安装最终完成；安装后无残留进程复验的两次启动、renderer、`system.ping`、业务 RPC 与 SQLite 均通过。
+- 保留事实：首次 seed 暴露缺目录缺陷并修复；首次安装安全扫描耗时超过初始 timeout；首次安装后 smoke 出现 host 启动超时，后续无残留复验通过。上述失败证据保留，不升级为 T-M5-007/008 发布验收。
