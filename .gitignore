@@ -20,6 +20,7 @@ reports/
 dist/
 build/
 release/
+release-test/
 coverage/
 *.tsbuildinfo
 

@@ -10,6 +10,7 @@ import { createWindow } from "./window";
 import { registerConnectHostIpc } from "./ipc";
 import { resolveDataRoot } from "../agent-host/allowed-roots";
 import { initializeDataRoot, resolveStartupDataRoot } from "./data-root-init";
+import { seedTestProfile } from "./test-profile";
 import path from "node:path";
 
 /** Electron 单实例锁：防止多实例并发写同一数据根（AGENTS.md §1.1 单写进程） */
@@ -25,6 +26,7 @@ app.whenReady().then(() => {
   });
   process.env.PI_STUDYBUDDY_DATA_ROOT = rootResolution.dataRoot;
   initializeDataRoot(rootResolution.dataRoot);
+  seedTestProfile(rootResolution.dataRoot);
 
   registerAppProtocol();
   registerConnectHostIpc();

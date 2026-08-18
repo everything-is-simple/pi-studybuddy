@@ -1,0 +1,30 @@
+appId: com.pi.studybuddy.test
+productName: Pi StudyBuddy 方案b-setup包
+executableName: pi-studybuddy-test
+asar: true
+directories:
+  output: release-test
+files:
+  - dist/**/*
+  - package.json
+  - '!src{,/**/*}'
+  - '!tests{,/**/*}'
+  - '!docs{,/**/*}'
+  - '!scripts{,/**/*}'
+asarUnpack:
+  - dist/**/*
+  - node_modules/**/*
+extraResources:
+  - from: runtime-resources
+    to: runtime-resources
+  - from: test-bundle
+    to: test-bundle
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: pi-studybuddy-test--方案b-setup包.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "profileId": "synthetic-study-workbench",
+  "displayName": "方案b-setup包 Synthetic StudyBuddy Profile",
+  "dataRootName": "PiStudyBuddy-TestProfile",
+  "fixtureMode": "formal-handlers",
+  "containsUserData": false,
+  "containsCredentials": false,
+  "externalServices": "mock-only",
+  "seedOnFirstLaunch": true,
+  "seedEntities": [
+    "semester",
+    "course",
+    "markdown-material",
+    "knowledge-module",
+    "confirmed-exam"
+  ],
+  "runtimeResources": "managed-only"
+}

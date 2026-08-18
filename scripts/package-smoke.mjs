@@ -14,6 +14,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 
 const TASK_ID = process.env.PI_STUDYBUDDY_PACKAGE_TASK_ID ?? "T-M4-009";
+const TEST_PROFILE = process.env.PI_STUDYBUDDY_PACKAGE_TEST_PROFILE === "1";
 const RUN_DIR = process.env.PI_STUDYBUDDY_PACKAGE_RUN_DIR
   ?? `H:\\pi-studybuddy-tmp\\runs\\${TASK_ID}`;
 const APP_PATH = process.env.PI_STUDYBUDDY_PACKAGE_APP;
@@ -310,6 +311,7 @@ async function verifyOneLaunch(label) {
       LOCALAPPDATA: path.join(PROFILE_ROOT, "local"),
       USERPROFILE: path.join(PROFILE_ROOT, "home"),
       HOME: path.join(PROFILE_ROOT, "home"),
+      ...(TEST_PROFILE ? { PI_STUDYBUDDY_TEST_PROFILE: "1", VITEST: "1" } : {}),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });

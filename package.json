@@ -16,6 +16,7 @@
     "smoke": "node scripts/smoke.mjs",
     "verify": "node scripts/verify.mjs",
     "package:win": "pnpm build && electron-builder --win nsis --x64 --publish never",
+    "package:test:win": "node scripts/package-test-setup.mjs",
     "package:smoke": "node scripts/package-smoke.mjs"
   },
   "devDependencies": {
