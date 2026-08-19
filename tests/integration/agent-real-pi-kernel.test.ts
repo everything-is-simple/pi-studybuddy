@@ -28,7 +28,7 @@ interface MockPiEvent {
   [key: string]: unknown;
 }
 
-function createMockPiSession(events: MockPiEvent[]) {
+function createMockPiSession(events: MockPiEvent[], promptError?: unknown) {
   let listener: ((event: MockPiEvent) => void) | null = null;
   let promptText = "";
   return {
@@ -45,6 +45,7 @@ function createMockPiSession(events: MockPiEvent[]) {
       for (const event of events) {
         listener(event);
       }
+      if (promptError) throw promptError;
     },
     getPromptText() {
       return promptText;
@@ -237,6 +238,79 @@ describe("T-M4-005 agent.send 真实 pi 内核路径（事件映射 + 脱敏）"
     const tokens = events.filter((e) => e.kind === "token");
     expect(tokens.length).toBe(1);
     expect((tokens[0].payload as { text: string }).text).toBe("回复");
+  });
+
+  it("早期瞬时失败切换到备用 session 并重放一次", async () => {
+    const { server, events } = createMockServer();
+    const primary = createMockPiSession([], { status: 503 });
+    const backup = createMockPiSession([
+      { type: "agent_start" },
+      { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "备用成功" } },
+    ]);
+    const ref: StudyBuddySessionRef = {
+      current: { session: primary as never, extensionsResult: {} as never, dispose: async () => {} },
+      activateNextFallback: async () => {
+        ref.current = { session: backup as never, extensionsResult: {} as never, dispose: async () => {} };
+        return true;
+      },
+    };
+    const handlers = createAgentHandlers(server, undefined, ref);
+
+    await expect(handlers["agent.send"]({ sessionId: "fallback-001", text: "hello" })).resolves.toEqual({ eventCount: 2, fallbackUsed: true, attempts: 2 });
+    expect(events.filter((event) => event.kind === "token")).toHaveLength(1);
+  });
+
+  it("pi agent_end 中的 503 错误会切换到备用 provider", async () => {
+    const { server } = createMockServer();
+    let switches = 0;
+    const primary = createMockPiSession([
+      { type: "agent_start" },
+      { type: "agent_end", willRetry: false, messages: [{ role: "assistant", stopReason: "error", errorMessage: "upstream HTTP 503" }] },
+    ]);
+    const backup = createMockPiSession([{ type: "agent_start" }]);
+    const ref: StudyBuddySessionRef = {
+      current: { session: primary as never, extensionsResult: {} as never, dispose: async () => {} },
+      activateNextFallback: async () => {
+        switches += 1;
+        ref.current = { session: backup as never, extensionsResult: {} as never, dispose: async () => {} };
+        return true;
+      },
+    };
+    const handlers = createAgentHandlers(server, undefined, ref);
+    await handlers["agent.send"]({ sessionId: "fallback-agent-end", text: "hello" });
+    expect(switches).toBe(1);
+  });
+
+  it("pi agent_end 中的认证错误不会扩散到备用 provider", async () => {
+    const { server } = createMockServer();
+    let switches = 0;
+    const primary = createMockPiSession([
+      { type: "agent_end", willRetry: false, messages: [{ role: "assistant", stopReason: "error", errorMessage: "HTTP 401 unauthorized api key" }] },
+    ]);
+    const ref: StudyBuddySessionRef = {
+      current: { session: primary as never, extensionsResult: {} as never, dispose: async () => {} },
+      activateNextFallback: async () => { switches += 1; return false; },
+    };
+    const handlers = createAgentHandlers(server, undefined, ref);
+    await expect(handlers["agent.send"]({ sessionId: "fallback-auth", text: "hello" })).rejects.toMatchObject({ code: "AUTH_FAILED" });
+    expect(switches).toBe(0);
+  });
+
+  it("已有可见 token 后失败时不重放到备用 provider", async () => {
+    const { server } = createMockServer();
+    let switches = 0;
+    const primary = createMockPiSession([
+      { type: "agent_start" },
+      { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "部分回复" } },
+    ], { status: 503 });
+    const ref: StudyBuddySessionRef = {
+      current: { session: primary as never, extensionsResult: {} as never, dispose: async () => {} },
+      activateNextFallback: async () => { switches += 1; return true; },
+    };
+    const handlers = createAgentHandlers(server, undefined, ref);
+
+    await expect(handlers["agent.send"]({ sessionId: "fallback-002", text: "hello" })).rejects.toMatchObject({ status: 503 });
+    expect(switches).toBe(0);
   });
 
   it("生产路径无 session 或无 model 时返回固定安全配置错误，绝不静默走夹具", async () => {

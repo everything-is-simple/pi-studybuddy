@@ -13,9 +13,17 @@ import path from "node:path";
 import fs from "node:fs";
 
 /** 模型配置（对齐 06-API §3.13 ModelConfig 契约 + 裁决 1 managed 标记） */
+export interface ModelRouteConfig {
+  provider: string;
+  model: string;
+  label?: string;
+}
+
 export interface ModelConfig {
   provider: string;
   model: string;
+  /** Ordered same-model fallback routes; secrets remain in credential-vault. */
+  fallbacks?: ModelRouteConfig[];
   /** 契约字段（可空，读取时由 __studybuddy_managed 映射） */
   managed?: boolean;
 }
@@ -24,6 +32,7 @@ export interface ModelConfig {
 interface ModelConfigFile {
   provider: string;
   model: string;
+  fallbacks?: ModelRouteConfig[];
   __studybuddy_managed: boolean;
   updatedAt: string;
 }
@@ -42,9 +51,13 @@ export function readModelConfig(dataRoot: string): ModelConfig | null {
   try {
     const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Partial<ModelConfigFile>;
     if (typeof raw.provider !== "string" || typeof raw.model !== "string") return null;
+    const fallbacks = Array.isArray(raw.fallbacks)
+      ? raw.fallbacks.filter((route): route is ModelRouteConfig => Boolean(route && typeof route === "object" && typeof route.provider === "string" && typeof route.model === "string"))
+      : undefined;
     return {
       provider: raw.provider,
       model: raw.model,
+      ...(fallbacks?.length ? { fallbacks } : {}),
       managed: raw.__studybuddy_managed === true,
     };
   } catch {
@@ -65,6 +78,7 @@ export function writeModelConfig(dataRoot: string, config: ModelConfig): void {
   const payload: ModelConfigFile = {
     provider: config.provider,
     model: config.model,
+    ...(config.fallbacks?.length ? { fallbacks: config.fallbacks } : {}),
     __studybuddy_managed: true,
     updatedAt: new Date().toISOString(),
   };

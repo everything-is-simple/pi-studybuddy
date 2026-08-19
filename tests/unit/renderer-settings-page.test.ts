@@ -267,7 +267,7 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
       debugLogging: true,
     });
     await setSimpleModePreference(rpc, true);
-    await saveModelConfiguration(rpc, "deepseek", "v4");
+    await saveModelConfiguration(rpc, "deepseek", "v4", [{ provider: "agnes", model: "agnes-2.5-flash" }]);
     await deleteCredential(rpc, "parentContact:feishu");
 
     expect(calls).toEqual([
@@ -282,7 +282,7 @@ describe("SettingsPage（09-UI §10 + §11）", () => {
         debugLogging: true,
       } },
       { method: "settings.setSimpleMode", params: { enabled: true } },
-      { method: "modelsConfig.set", params: { provider: "deepseek", model: "v4" } },
+      { method: "modelsConfig.set", params: { provider: "deepseek", model: "v4", fallbacks: [{ provider: "agnes", model: "agnes-2.5-flash" }] } },
       { method: "credentials.delete", params: { key: "parentContact:feishu" } },
     ]);
     expect(calls.map((call) => call.method)).not.toContain("toolchains.install");

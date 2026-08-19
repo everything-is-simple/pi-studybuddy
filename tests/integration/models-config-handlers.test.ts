@@ -52,6 +52,22 @@ describe("modelsConfig.* + models.list fixture（06-API §3.13 + §9.5 + 裁决 
     expect(read.model).toBe("DeepSeek V4 Flash");
   });
 
+  it("modelsConfig.set 持久化有序 fallback 并在重启读取后保持一致", () => {
+    const handlers = createModelHandlers(ISOLATION_DIR);
+    const routes = [
+      { provider: "pixelgpt", model: "gpt-5.6-terra", label: "second" },
+      { provider: "agnes", model: "agnes-2.5-flash" },
+    ];
+    handlers["modelsConfig.set"]({ provider: "voklygpt", model: "gpt-5.6-terra", fallbacks: routes });
+
+    expect(createModelHandlers(ISOLATION_DIR)["modelsConfig.get"]({})).toMatchObject({
+      provider: "voklygpt",
+      model: "gpt-5.6-terra",
+      fallbacks: routes,
+      managed: true,
+    });
+  });
+
   it("modelsConfig.set 保持既有 models.list fixture 不泄漏密钥", () => {
     const handlers = createModelHandlers(ISOLATION_DIR);
     handlers["modelsConfig.set"]({ provider: "agnes", model: "agnes-2.5-pro" });

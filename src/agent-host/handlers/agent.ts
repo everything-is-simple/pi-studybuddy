@@ -27,12 +27,15 @@ import type { AgentEvent } from "../../contract/types";
 import type { SessionStore } from "../session-store";
 import type { StudyBuddySession } from "../studybuddy-extension-loader";
 import { modelNotConfiguredError } from "../model-errors";
+import { shouldFallback } from "../../agent/model-fallback";
 
 /** 可变引用：支持 StudyBuddySession 异步初始化后注入（index.ts fire-and-forget） */
 export interface StudyBuddySessionRef {
   current: StudyBuddySession | null;
   /** 生产 host 启动时的异步模型会话初始化；agent.send 会先等待它，避免启动竞态误报。 */
   ready?: Promise<void>;
+  /** Switch to the next configured route after a transient upstream failure. */
+  activateNextFallback?: (error: unknown) => Promise<boolean>;
 }
 
 /** 仅测试环境显式注入的确定性 fixture；生产调用不得提供。 */
@@ -167,6 +170,18 @@ function sanitizeSummary(raw: string, maxLen: number): string {
   return cleaned.slice(0, maxLen - 3) + "...";
 }
 
+/** Convert provider error text into a bounded code; never expose the original message. */
+function providerFailureFromMessage(message: string | undefined): { code: string; status?: number } {
+  const text = (message ?? "").toLowerCase();
+  const statusMatch = text.match(/(?:http\s*)?\b(408|425|429|500|502|503|504)\b/);
+  if (statusMatch) return { code: `HTTP_${statusMatch[1]}`, status: Number(statusMatch[1]) };
+  if (/timeout|timed out|abort/.test(text)) return { code: "TIMEOUT" };
+  if (/401|403|unauthori[sz]ed|forbidden|api.?key|auth/.test(text)) return { code: "AUTH_FAILED", status: 401 };
+  if (/balance|quota|credit|insufficient/.test(text)) return { code: "INSUFFICIENT_BALANCE", status: 402 };
+  if (/model.*(?:not found|invalid|unsupported)/.test(text)) return { code: "MODEL_NOT_FOUND", status: 400 };
+  return { code: "MODEL_REQUEST_FAILED" };
+}
+
 /** 构造学习场景上下文前置文本（T-M3-003 sessionMeta → 上下文段） */
 function buildContextPrefix(sessionMeta: {
   subject?: string;
@@ -198,7 +213,7 @@ export function createAgentHandlers(
   options: CreateAgentHandlersOptions = {},
 ) {
   return {
-    "agent.send": async (params: unknown): Promise<{ eventCount: number }> => {
+    "agent.send": async (params: unknown): Promise<{ eventCount: number; fallbackUsed?: boolean; attempts?: number }> => {
       const { sessionId, text, sessionMeta } = params as {
         sessionId: string;
         text: string;
@@ -225,9 +240,24 @@ export function createAgentHandlers(
       await studyBuddySessionRef?.ready;
 
       // ── 路径选择 ──
-      const piSession = studyBuddySessionRef?.current?.session;
+      let piSession = studyBuddySessionRef?.current?.session;
       if (piSession && piSession.model) {
-        return await runRealPiKernel(server, piSession, sessionId, text, sessionMeta);
+        let attempts = 1;
+        while (piSession?.model) {
+          try {
+            const result = await runRealPiKernel(server, piSession, sessionId, text, sessionMeta);
+            return attempts > 1 ? { ...result, fallbackUsed: true, attempts } : result;
+          } catch (error) {
+            const visibleProgress = typeof error === "object" && error !== null && "studyBuddyVisibleProgress" in error
+              ? Boolean((error as { studyBuddyVisibleProgress?: unknown }).studyBuddyVisibleProgress)
+              : false;
+            if (visibleProgress || !shouldFallback(error) || !studyBuddySessionRef?.activateNextFallback) throw error;
+            const switched = await studyBuddySessionRef.activateNextFallback(error);
+            if (!switched) throw error;
+            attempts += 1;
+            piSession = studyBuddySessionRef.current?.session;
+          }
+        }
       }
       if (options.fixture) {
         return options.fixture(server, sessionId, text, sessionMeta);
@@ -254,6 +284,8 @@ async function runRealPiKernel(
   sessionMeta?: { subject?: string; goal?: string; mistakeIds?: string[] },
 ): Promise<{ eventCount: number }> {
   let count = 0;
+  let visibleProgress = false;
+  let terminalFailure: { code: string; status?: number } | undefined;
   let callCounter = 0;
   /** provider toolCallId → 本地短 id（call-<n>）映射，AGENTS.md §9.3 不暴露 provider id */
   const toolCallIdMap = new Map<string, string>();
@@ -273,12 +305,14 @@ async function runRealPiKernel(
         // 只映射 text_delta（流式文本）；thinking_delta 不发射（内部推理不展示）
         const ame = event.assistantMessageEvent as { type: string; delta?: string };
         if (ame.type === "text_delta" && typeof ame.delta === "string") {
+          visibleProgress = true;
           emit({ kind: "token", sessionId, payload: { text: ame.delta } });
         }
         break;
       }
 
       case "tool_execution_start": {
+        visibleProgress = true;
         callCounter += 1;
         const localId = `call-${callCounter}`;
         toolCallIdMap.set(event.toolCallId, localId);
@@ -324,7 +358,15 @@ async function runRealPiKernel(
         emit({ kind: "context_compressed", sessionId, payload: { compressed: true } });
         break;
 
-      // agent_end / agent_settled / turn_start / turn_end / message_start / message_end
+      case "agent_end": {
+        if (event.willRetry) break;
+        const messages = event.messages as Array<{ role?: string; stopReason?: string; errorMessage?: string }>;
+        const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant");
+        if (lastAssistant?.stopReason === "error") terminalFailure = providerFailureFromMessage(lastAssistant.errorMessage);
+        break;
+      }
+
+      // agent_settled / turn_start / turn_end / message_start / message_end
       // → 不映射（应用层只需流式 token + 工具透明 + 压缩信号）
       default:
         break;
@@ -336,6 +378,15 @@ async function runRealPiKernel(
     const contextPrefix = sessionMeta ? buildContextPrefix(sessionMeta) : null;
     const fullPrompt = contextPrefix ? `${contextPrefix}\n\n${text}` : text;
     await piSession.prompt(fullPrompt);
+    if (terminalFailure) {
+      throw Object.assign(new Error("模型请求失败"), terminalFailure);
+    }
+  } catch (error) {
+    if (typeof error === "object" && error !== null) {
+      Object.defineProperty(error, "studyBuddyVisibleProgress", { value: visibleProgress, enumerable: false });
+      throw error;
+    }
+    throw Object.assign(new Error("模型请求失败"), { studyBuddyVisibleProgress: visibleProgress });
   } finally {
     unsubscribe();
   }

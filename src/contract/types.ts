@@ -783,9 +783,17 @@ export interface ModelInfo {
   contextWindow?: number;
 }
 
+export interface ModelRouteConfig {
+  provider: string;
+  model: string;
+  label?: string;
+}
+
 export interface ModelConfig {
   provider: string;
   model: string;
+  /** Ordered same-model fallback routes; credentials remain in the vault. */
+  fallbacks?: ModelRouteConfig[];
   managed?: boolean;
 }
 

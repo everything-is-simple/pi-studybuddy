@@ -1,5 +1,5 @@
 # 06 API 契约
-**版本**：v0.1.10
+**版本**：v0.1.11
 **日期**：2026-08-15
 **状态**：✅ 已审查批准；T-M5-011 执行中。T-M5-010 已完成 Git 收口。
 
@@ -134,6 +134,8 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 > **agent.send（T-M3-003 扩展）**：参数新增可选 `sessionMeta { subject?, goal?, mistakeIds? }`（09-UI §4.2 学习场景业务化）——受控序列在 message_start 后同步注入 `[学习上下文]` token（学科/目标/错题段，保持序列确定性），并写回会话元数据到内存仓库（sessions.get 可见）。
 >
 > **agent.send（T-M4-023 修订）**：生产环境只能使用 `<dataRoot>/config/models.json` 与 credential-vault 解密凭证构造的 pi `ModelRuntime` session；未配置、凭证不可读或模型无法解析时返回 `MODEL_NOT_CONFIGURED`。`runMockFixture` 仅可由 VITEST 显式注入，不能作为生产 fallback。
+>
+> **agent.send（T-M5-011 扩展）**：结果增加可选 `{ fallbackUsed?, attempts? }` 脱敏审计字段。生产只在超时、连接错误、HTTP 408/425/429/5xx 且尚未产生 token/工具调用时按同模型有序路由切换；认证、余额、模型/参数错误或已有可见进度时不重放。pi `agent_end(stopReason=error)` 必须按最终错误分类，原始 provider 错误文本不返回 renderer。
 
 ### 3.2 文件体验（files.*，借鉴 pi-desktop）
 
@@ -429,8 +431,8 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 | 方法 | 参数 | 返回 | 约束 |
 |---|---|---|---|
 | `models.list` | `{}` | `ModelProvider[]` | 读取 `<dataRoot>/config/pi-models.json` 的非敏感 provider/model 目录；旧安装自动合并默认目录 |
-| `modelsConfig.get` | `{}` | `ModelConfig` | 读 `<dataRoot>/config/models.json`（存在则返回默认 provider/model） |
-| `modelsConfig.set` | `{ provider, model }` | `ModelConfig` | 持久化到 `<dataRoot>/config/models.json`（`__studybuddy_managed` 标记） |
+| `modelsConfig.get` | `{}` | `ModelConfig` | 读 `<dataRoot>/config/models.json`（默认 provider/model + 可选有序 `fallbacks[]`） |
+| `modelsConfig.set` | `{ provider, model, fallbacks? }` | `ModelConfig` | 持久化到 `<dataRoot>/config/models.json`；fallback 最多 5 项、凭据仍在 vault（`__studybuddy_managed` 标记） |
 | `modelsConfig.test` | `{ provider, model, apiKey? }` | `{ ok, latencyMs, error? }` | 先在 `<dataRoot>/config/pi-models.json` 校验 provider/model，再对选中聊天模型发送最小 OpenAI-compatible 请求；优先临时 key，否则只在 host 从 vault 读取 `modelProvider:<provider>`；不传学生数据，不回显 key/base URL/远端正文 |
 | `models.probe` | `{ provider }` | `ModelInfo[]` | 用户主动触发 `/models` 目录发现；host 从 vault 读取该 provider 的 key，成功后仅将模型别名原子写入 `<dataRoot>/config/pi-models.json`；失败不覆盖原目录 |
 | `models.addProvider` | `{ providerConfig }` | `ModelProvider` | 当前只做参数回显，不持久化 |
@@ -575,6 +577,7 @@ renderer (React)  ←PiBridge→  main (Electron)  ←RPC→  agent-host (utilit
 ## 7. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.11 | 2026-08-19 | T-M5-011 用户扩展授权：`ModelConfig` 增加可选有序 `fallbacks[]`，`modelsConfig.set` 增加可选参数；`agent.send` 结果增加 `fallbackUsed?/attempts?`，并明确只对无可见进度的瞬时错误执行同模型切换。supersedes v0.1.10 头部未登记版本和既有单模型描述；RPC 方法总数仍 128。 |
 | v0.1.9 | 2026-08-13 | **用户明确同意的最小闭环扩展**：新增 `modules.create`（`courseId`、当前 NotesTab 显式选择的 `materialId`、模块名称及可选摘要/重要度/难度），用于让 S2 资料经可见 UI 形成可练习知识模块并进入 S3/S4 真机 UAT。原因：用户裁决 S2/S3/S4 创建前置条件必须属于 T-M5-004，现有生产契约仅有 list/get/updateLearnStatus，无法在禁止 DB 预置、直调与真实外部 AI 的边界内建立练习前置。影响：typed RPC 方法数 127→128；新增最小 S2 handler 与 NotesTab 局部入口；不改 SQLite schema/Stream/跨 Tab 全局状态，不连真实外部 AI。依据：用户 2026-08-13 “同意” + AGENTS.md §2、§5、§7、§11。 |
 | v0.1.8 | 2026-08-10 | 修正 T-M4-011 文件导入契约：main 的 open-file dialog 返回一次性 `importToken/fileName/fileSize`，生产 S2 renderer 以 capability 调用 `materials.upload`，host 消费 token 并从 staging 源文件取得真实大小；`FileMeta.path` 不用于 S2 生产上传；无新增 RPC 方法。 |
 | v0.1.7 | 2026-08-10 | T-M4-011 资料上传契约落地：生产 S2 `materials.upload` 使用 Electron 选择器返回的 `FileMeta.path`，host 校验普通文件并复制到业务 storage，真实大小来自 `stat`；S2 写操作在 host 侧拒绝 archived 学期；无新增 RPC 方法。 |

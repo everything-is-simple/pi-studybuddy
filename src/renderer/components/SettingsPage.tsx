@@ -153,9 +153,16 @@ function sanitizeProviders(value: ModelProvider[]): SafeModelProvider[] {
 }
 
 function sanitizeModelConfig(value: ModelConfig): ModelConfig {
+  const fallbacks = Array.isArray(value.fallbacks)
+    ? value.fallbacks.flatMap((route) => {
+        if (!isSafeProviderId(route?.provider) || !isSafeOpaqueValue(route?.model)) return [];
+        return [{ provider: route.provider, model: route.model, ...(route.label && isSafeOpaqueValue(route.label) ? { label: safeDisplay(route.label) } : {}) }];
+      }).slice(0, 5)
+    : [];
   return {
     provider: isSafeProviderId(value.provider) ? value.provider : "",
     model: isSafeOpaqueValue(value.model) ? value.model : "",
+    ...(fallbacks.length ? { fallbacks } : {}),
     ...(value.managed === true ? { managed: true } : {}),
   };
 }
@@ -264,8 +271,8 @@ export async function setSimpleModePreference(rpc: TypedRpcClient, enabled: bool
 }
 
 /** 通过既有 modelsConfig API 更新默认模型。 */
-export async function saveModelConfiguration(rpc: TypedRpcClient, provider: string, model: string): Promise<ModelConfig> {
-  return rpc.call("modelsConfig.set", { provider, model });
+export async function saveModelConfiguration(rpc: TypedRpcClient, provider: string, model: string, fallbacks?: ModelConfig["fallbacks"]): Promise<ModelConfig> {
+  return rpc.call("modelsConfig.set", { provider, model, ...(fallbacks?.length ? { fallbacks } : {}) });
 }
 
 /** 请求当前供应商目录；凭据仅由 agent-host 从 credential-vault 读取。 */
@@ -487,7 +494,7 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
   function handleModelSave(): void {
     if (!rpc || !selectedProviderId || !selectedModelId) return;
     void withBusy(async () => {
-      const updated = await saveModelConfiguration(rpc, selectedProviderId, selectedModelId);
+      const updated = await saveModelConfiguration(rpc, selectedProviderId, selectedModelId, modelConfig.fallbacks);
       setModelConfig(sanitizeModelConfig(updated));
     }, "默认模型已保存。");
   }
@@ -638,6 +645,12 @@ export function SettingsPage({ rpc, onClose }: Props): React.JSX.Element {
             </Field>
           </div>
           {selectedProvider && selectedProvider.models.length === 0 ? <p style={{ margin: "0 0 10px", color: "var(--text-muted, #666)", fontSize: 12 }}>该中转供应商尚未发现可用聊天模型。先保存它的 API Key，再获取模型目录。</p> : <p style={{ margin: "0 0 10px", color: "var(--text-muted, #666)", fontSize: 12 }}>DeepSeek、Agnes 等内置供应商的目录已随应用提供；中转供应商可用“获取模型目录”刷新其账户可见模型。</p>}
+          {modelConfig.fallbacks?.length ? <div style={{ margin: "0 0 10px", padding: 10, border: "1px solid var(--border, #e0e0e0)", borderRadius: 6, fontSize: 12 }}>
+            <strong>备用路由</strong>
+            <ol style={{ margin: "6px 0 0", paddingLeft: 20 }}>
+              {modelConfig.fallbacks.map((route, index) => <li key={`${route.provider}:${route.model}:${index}`}>{safeDisplay(route.provider)} · {safeDisplay(route.model)}</li>)}
+            </ol>
+          </div> : null}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="button" onClick={handleModelProbe} disabled={!rpc || busy || !selectedProviderId || !configured(credentialKeyFor("model", selectedProviderId))} style={buttonStyle}>获取模型目录</button>
             <button type="button" onClick={handleModelSave} disabled={!rpc || busy || !selectedProviderId || !selectedModelId || !configured(credentialKeyFor("model", selectedProviderId))} style={buttonStyle}>保存默认模型</button>

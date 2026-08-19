@@ -4,7 +4,7 @@
  * models.list 必须读取与生产 AgentSession 相同的业务数据根 pi-models.json。
  * 这保证设置页展示的 provider/model ID 就是运行时可解析的 ID；密钥仍只在 vault。
  */
-import type { ModelConfig, ModelInfo, ModelProvider } from "../../contract/types";
+import type { ModelConfig, ModelInfo, ModelProvider, ModelRouteConfig } from "../../contract/types";
 import type { CredentialService } from "../credential-client";
 import { readModelConfig, writeModelConfig } from "../../agent/model-config";
 import {
@@ -105,7 +105,7 @@ export function createModelHandlers(dataRoot?: string, options: ModelHandlersOpt
     },
     "modelsConfig.get": (): ModelConfig => {
       const cfg = dataRoot ? readModelConfig(dataRoot) : null;
-      return cfg ? { provider: cfg.provider, model: cfg.model, managed: cfg.managed } : { provider: "", model: "" };
+      return cfg ? { provider: cfg.provider, model: cfg.model, ...(cfg.fallbacks?.length ? { fallbacks: cfg.fallbacks } : {}), managed: cfg.managed } : { provider: "", model: "" };
     },
     "modelsConfig.test": async (params: unknown): Promise<{ ok: boolean; latencyMs: number; error?: string }> => {
       const startedAt = Date.now();
@@ -140,9 +140,12 @@ export function createModelHandlers(dataRoot?: string, options: ModelHandlersOpt
       }
     },
     "modelsConfig.set": (params: unknown): ModelConfig | Promise<ModelConfig> => {
-      const { provider, model } = params as { provider: string; model: string };
+      const { provider, model, fallbacks } = params as { provider: string; model: string; fallbacks?: ModelRouteConfig[] };
       if (!provider?.trim() || !model?.trim()) throw { code: "BAD_REQUEST", message: "请选择可用 AI 模型" };
-      const next = { provider: provider.trim(), model: model.trim() };
+      const normalizedFallbacks = Array.isArray(fallbacks)
+        ? fallbacks.filter((route) => route && typeof route.provider === "string" && typeof route.model === "string" && route.provider.trim() && route.model.trim()).slice(0, 5).map((route) => ({ provider: route.provider.trim(), model: route.model.trim(), ...(route.label?.trim() ? { label: route.label.trim() } : {}) }))
+        : undefined;
+      const next: ModelConfig = { provider: provider.trim(), model: model.trim(), ...(normalizedFallbacks?.length ? { fallbacks: normalizedFallbacks } : {}) };
       if (!options.onModelConfigChange) {
         if (dataRoot) writeModelConfig(dataRoot, next);
         return { ...next, managed: Boolean(dataRoot) };

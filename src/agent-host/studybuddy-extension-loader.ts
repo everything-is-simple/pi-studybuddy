@@ -144,10 +144,19 @@ const DEFAULT_RUNTIME_PROVIDERS: Readonly<{
     },
     chickfarmgpt: {
       name: "小鸡农场 GPT",
-      baseUrl: "https://api.68886868.xyz/v1",
+      baseUrl: "https://ckff.dev/v1",
       api: "openai-completions",
       models: [
         { id: "[codex] gpt-5.6-terra  [不补]", name: "GPT-5.6 Terra", input: ["text", "image"], reasoning: true, contextWindow: 200000, maxTokens: 16384 },
+      ],
+    },
+    sub2api: {
+      name: "Sub2API GPT",
+      baseUrl: "https://sub2api.0x0.fan/v1",
+      api: "openai-completions",
+      compat: { supportsDeveloperRole: false },
+      models: [
+        { id: "gpt-5.5", name: "GPT-5.5", input: ["text"], reasoning: true, contextWindow: 200000, maxTokens: 16384 },
       ],
     },
   },

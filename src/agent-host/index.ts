@@ -24,7 +24,8 @@ import { createSessionStore } from "./session-store";
 import { createSessionHandlers } from "./handlers/sessions";
 import { createAgentHandlers, runMockFixture, type StudyBuddySessionRef } from "./handlers/agent";
 import { createStudyBuddySession, type StudyBuddySession } from "./studybuddy-extension-loader";
-import { readModelConfig } from "../agent/model-config";
+import { readModelConfig, type ModelConfig, type ModelRouteConfig } from "../agent/model-config";
+import { normalizeModelRoutes } from "../agent/model-fallback";
 import path from "node:path";
 
 // T-M4-002 S1-S7/TTS/Backup 业务 handler 装配（断裂1修复，03-Arch §6.2）
@@ -151,14 +152,22 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
   const studyBuddySessionRef: StudyBuddySessionRef = { current: null };
   // T-M5-003：当前会话 id（agent.send 写入 → 扩展 turn_end L3 索引归属真实会话）
   const currentSessionIdRef: { current: string | undefined } = { current: undefined };
-  const replaceModelSession = async (modelConfig: { provider: string; model: string }): Promise<void> => {
-    const apiKey = await safeReadModelCredential(credentialService, modelConfig.provider);
+  let configuredRoutes: ModelRouteConfig[] = [];
+  let activeRouteIndex = 0;
+  const replaceModelSession = async (modelConfig: ModelConfig): Promise<void> => {
+    const nextRoutes = normalizeModelRoutes(
+      { provider: modelConfig.provider, model: modelConfig.model },
+      modelConfig.fallbacks ?? [],
+    );
+    const route = nextRoutes[0];
+    if (!route) throw modelNotConfiguredError();
+    const apiKey = await safeReadModelCredential(credentialService, route.provider);
     if (!apiKey) throw modelNotConfiguredError();
     let next: StudyBuddySession;
     try {
       next = await createStudyBuddySession({
         dataRoot,
-        modelConfig: { provider: modelConfig.provider, model: modelConfig.model, apiKey },
+        modelConfig: { provider: route.provider, model: route.model, apiKey },
         getSessionId: () => currentSessionIdRef.current,
       });
     } catch {
@@ -166,7 +175,31 @@ export function createAgentHost(parentPort: AnyMessagePort): AgentHost {
     }
     const previous = studyBuddySessionRef.current;
     studyBuddySessionRef.current = next;
+    configuredRoutes = nextRoutes;
+    activeRouteIndex = 0;
     await previous?.dispose();
+  };
+  studyBuddySessionRef.activateNextFallback = async (): Promise<boolean> => {
+    for (let index = activeRouteIndex + 1; index < configuredRoutes.length; index += 1) {
+      const route = configuredRoutes[index];
+      const apiKey = await safeReadModelCredential(credentialService, route.provider);
+      if (!apiKey) continue;
+      try {
+        const next = await createStudyBuddySession({
+          dataRoot,
+          modelConfig: { provider: route.provider, model: route.model, apiKey },
+          getSessionId: () => currentSessionIdRef.current,
+        });
+        const previous = studyBuddySessionRef.current;
+        studyBuddySessionRef.current = next;
+        activeRouteIndex = index;
+        await previous?.dispose();
+        return true;
+      } catch {
+        // Invalid route or unavailable credential: continue to the next configured candidate.
+      }
+    }
+    return false;
   };
   if (process.env.VITEST === undefined) {
     const modelConfig = readModelConfig(dataRoot);

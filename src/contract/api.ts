@@ -73,7 +73,7 @@ export interface Api {
   /** 发送用户消息 → agent-host 触发 Streams["agent.events"] 受控序列 */
   "agent.send": {
     params: { sessionId: string; text: string; sessionMeta?: { subject?: string; goal?: string; mistakeIds?: string[] } };
-    result: { eventCount: number };
+    result: { eventCount: number; fallbackUsed?: boolean; attempts?: number };
   };
 
   /* ---- §3.2 文件体验（files.*） ---- */
@@ -368,7 +368,7 @@ export interface Api {
     result: ModelInfo[];
   };
   "modelsConfig.get": { params: {}; result: ModelConfig };
-  "modelsConfig.set": { params: { provider: string; model: string }; result: ModelConfig };
+  "modelsConfig.set": { params: { provider: string; model: string; fallbacks?: Array<{ provider: string; model: string; label?: string }> }; result: ModelConfig };
   "modelsConfig.test": {
     params: { provider: string; model: string; apiKey?: string };
     result: { ok: boolean; latencyMs: number; error?: string };
