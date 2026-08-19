@@ -2,7 +2,9 @@
 
 **版本**：v0.1.3
 **日期**：2026-08-09
-**状态**：✅ 已审查批准（用户 2026-08-07 批准）
+**状态**：✅ 已审查批准；T-M5-011 执行中。
+
+> 当前架构落地顺序：开发机先固定 Electron/Node、Python/OCR、whisper、WPS 和默认配置，按真实用户主路径跑通；完成后复制同一运行拓扑到使用机。问题总账见 [系统集成/02](./系统集成/02-系统问题总账与整改清单.md)。
 **上游**：[docs/00 索引](./00-文档索引-Index.md)、[01-TRD v0.2.4](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.4](./02-PRD-产品需求-Product-Requirements.md)、[docs/prep-参考点核对表.md](./prep-参考点核对表.md)
 **下游**：05-ERD、06-API、07-Workflow、08-Test、09-UI
 

@@ -1,7 +1,9 @@
 # 06 API 契约
 **版本**：v0.1.10
 **日期**：2026-08-15
-**状态**：✅ 已审查批准（T-M5-010 实现与定向验证已完成；完整质量门、Git 收口和用户签收仍待）
+**状态**：✅ 已审查批准；T-M5-011 执行中。T-M5-010 已完成 Git 收口。
+
+> API 方法存在、contract coverage 通过或 Job 被登记，不等于用户动作完成；当前契约按开发机真实主路径逐条复跑，问题总账见 [系统集成/02](./系统集成/02-系统问题总账与整改清单.md)。
 **上游**：[02-PRD v0.1.4 §5](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §3/§6](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)
 **下游**：07-Workflow、08-Test、09-UI
 **架构依据**：pi-desktop contract 类型化 IPC + 自研 MessagePort RPC（非 HTTP REST）

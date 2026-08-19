@@ -1,9 +1,9 @@
 # 04 任务清单
 **版本**：v0.1.193
 **日期**：2026-08-15
-**状态**：✅ 已审查批准（M5 进行中：T-M5-001/002/003/004、009/010 已 done；T-M5-005 blocked，仅等待干净 Windows 已安装应用的三条既定原生 UAT；T-M5-006~008 不启动；当前工作区不读取、不暂存安装器。）
+**状态**：✅ 已审查批准；历史任务登记与证据 SoT；T-M5-011 当前整改中。T-M5-001/002/003/004、009/010 已按各自任务定义 done；T-M5-005 blocked；T-M5-006~008 pending。整体产品是否可用以 `docs/系统集成/` 三份权威文件的真实主路径状态为准。
 **上游**：[01-TRD v0.2.4](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.4](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.9](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.3](./07-工作流-Workflow.md)、[08-Test v0.1.7 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.5](./09-使用者介面-UI-Design.md)
-**用途**：从设计文档到实现代码的执行桥梁——任务登记、组件治理状态跟踪、完成门槛门禁、修复证据记录；v0.1.74 登记 T-M4-022 完成（Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证，前置于 T-M4-006；commit 0ec4163 已推送 origin/master）；v0.1.75 登记 T-M4-006 设置页 UI in_progress（计划待用户审查）；v0.1.78 同步 T-M4-006 双独立复审最终 PASS 与 diff 检查通过，Git 收口未授权故保持 in_progress；v0.1.91 登记 T-M4-009 Git 收口完成
+**用途**：从设计文档到实现代码的历史任务登记、完成证据和修复记录；当前真实系统缺口统一由 `docs/系统集成/02-系统问题总账与整改清单.md` 汇总。v0.1.74 登记 T-M4-022 完成（Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证，前置于 T-M4-006；commit 0ec4163 已推送 origin/master）；v0.1.75 登记 T-M4-006 设置页 UI in_progress（计划待用户审查）；v0.1.78 同步 T-M4-006 双独立复审最终 PASS 与 diff 检查通过，Git 收口未授权故保持 in_progress；v0.1.91 登记 T-M4-009 Git 收口完成
 
 ---
 
@@ -703,7 +703,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 
 ---
 
-## 9. 任务统计（随开发动态更新）
+## 9. 任务统计（历史任务口径；整体产品状态见 docs/系统集成）
 
 | 里程碑 | 总任务数 | pending | in_progress | testing | done | blocked |
 |---|---|---|---|---|---|---|

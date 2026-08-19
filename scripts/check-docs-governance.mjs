@@ -26,6 +26,12 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const docsDir = path.join(root, "docs");
+const systemIntegrationDir = path.join(docsDir, "系统集成");
+const systemIntegrationFiles = [
+  "01-系统集成总览与客观认知.md",
+  "02-系统问题总账与整改清单.md",
+  "03-系统集成验收与交付路径.md",
+];
 
 const failures = [];
 const warnings = [];
@@ -72,7 +78,24 @@ for (const file of fs.readdirSync(docsDir)) {
   }
 }
 
-// ---- 3. 每份设计文档头部字段检查 ----
+// ---- 3. 系统集成三份权威文件检查 ----
+if (!fs.existsSync(systemIntegrationDir) || !fs.statSync(systemIntegrationDir).isDirectory()) {
+  fail("docs/系统集成/ 目录不存在");
+} else {
+  for (const file of systemIntegrationFiles) {
+    const fullPath = path.join(systemIntegrationDir, file);
+    if (!fs.existsSync(fullPath)) {
+      fail(`系统集成权威文件缺失：docs/系统集成/${file}`);
+      continue;
+    }
+    const content = fs.readFileSync(fullPath, "utf8");
+    if (!content.includes("**版本**") || !content.includes("**日期**") || !content.includes("**状态**")) {
+      fail(`系统集成文件头部字段缺失：docs/系统集成/${file}`);
+    }
+  }
+}
+
+// ---- 4. 每份设计文档头部字段检查 ----
 function parseHeader(content) {
   // \r?\n 兼容 Windows CRLF 与 Unix LF 行尾（Windows 开发环境防误报）
   const headerMatch = content.match(/^\*\*版本\*\*：(.+?)\r?\n\*\*日期\*\*：(.+?)\r?\n\*\*状态\*\*：(.+?)\r?\n/m);
