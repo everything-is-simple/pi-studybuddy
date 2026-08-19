@@ -1,6 +1,6 @@
 # 04 任务清单
-**版本**：v0.1.193
-**日期**：2026-08-15
+**版本**：v0.1.194
+**日期**：2026-08-19
 **状态**：✅ 已审查批准；历史任务登记与证据 SoT；T-M5-011 当前整改中。T-M5-001/002/003/004、009/010 已按各自任务定义 done；T-M5-005 blocked；T-M5-006~008 pending。整体产品是否可用以 `docs/系统集成/` 三份权威文件的真实主路径状态为准。
 **上游**：[01-TRD v0.2.4](./01-TRD-技术需求-Technical-Requirements.md)、[02-PRD v0.1.4](./02-PRD-产品需求-Product-Requirements.md)、[03-Architecture v0.1.3 §9](./03-架构设计-Architecture-Design.md)、[05-ERD v0.1.2](./05-数据模型-ERD-Data-Model.md)、[06-API v0.1.9](./06-API契约-API-Contracts.md)、[07-Workflow v0.1.3](./07-工作流-Workflow.md)、[08-Test v0.1.7 §11](./08-测试验收-Test-Plan.md)、[09-UI v0.1.5](./09-使用者介面-UI-Design.md)
 **用途**：从设计文档到实现代码的历史任务登记、完成证据和修复记录；当前真实系统缺口统一由 `docs/系统集成/02-系统问题总账与整改清单.md` 汇总。v0.1.74 登记 T-M4-022 完成（Electron 生产运行时 / SQLite 兼容修复 + 真实桌面启动验证，前置于 T-M4-006；commit 0ec4163 已推送 origin/master）；v0.1.75 登记 T-M4-006 设置页 UI in_progress（计划待用户审查）；v0.1.78 同步 T-M4-006 双独立复审最终 PASS 与 diff 检查通过，Git 收口未授权故保持 in_progress；v0.1.91 登记 T-M4-009 Git 收口完成
@@ -620,6 +620,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | T-M5-009 | 测试与运维追溯基线建立 | 测试/运维/跨切 | P0 | done | 阶段1-5 | 13-测试与运维 §3-§9 + 08-Test §1/§6/§7 | `.plan/T-M5-009-test-operations-traceability-baseline.md` + `.record/T-M5-009-实施记录.md`；RED→GREEN 建立 `docs/traceability/` 六项资产，定向测试 3/3、文档治理和 diff-check 通过。用户明确裁决本无 Electron UI/API/schema/handler/业务数据变更的本任务可用受控文档消费路径验收 `T-M5-009-DOC-CONSUMER-001` 替代真机 Electron UAT，并认可 PASS；例外不得外推至应用 UI 或后续任务。功能/基线提交 `156756c` 已 ff-only 合并 master；Node24 master `verify --stage=full` 最终重跑通过（unit/integration 131 files/1195 tests、真实 Electron E2E 33 files/141 tests，执行 8/跳过 2）；本治理登记推送并核验 `origin/master` 后 §8.4 三要件齐全。无 API/schema/handler/入口或生产数据变更；不启动 T-M5-005~008。 |
 | T-M5-005 | S6/S7/TTS/备份/设置与整体 UX 修订 | 壳层/S6-S7/跨切 | P0 | blocked | 阶段1-4 已完成；等待既定干净机原生 UAT | 07-WF §3-§5 + 09-UI §4.9-§13 + 13-测试与运维 §3-§9 | 功能/证据提交与自动化已登记；仅等待干净 Windows 已安装应用完成报告投递重启回读、真实备份恢复后业务数据回读、TTS 原生已复习持久化/重启回读。用户随后裁决新安装暴露的产品缺口必须由 T-M5-010 完整修复，不将其留给 UAT；T-M5-005 不宣称完成。 |
 | T-M5-010 | 设置、投递、学期备份与数据根迁移闭环 | 设置/S6/备份/数据层 | P0 | done | 阶段1-5 | 03-Arch §1/§6 + 05-ERD + 06-API §3.8/§3.11 + 09-UI §6/§9/§10 + 13-测试与运维 §2-§9 | 供应商模型目录/所选模型测试、报告目标 CRUD 与 SMTP/飞书投递状态/错误/重试、单一当前学期完整资产备份恢复、原生目录选择的数据根迁移/重启切换/回滚均已交付；隔离原生 UAT、两份独立审查、Node24 master `verify --stage=full`（133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）及 Git 收口完成：功能 `ef9eece` + 本治理登记提交随后推送并核验 `master=origin/master`。T-M5-005 继续 blocked；不启动 T-M5-006~008，安装器不读取、不暂存。 |
+| T-M5-011 | 系统问题总账与单一路径整改 | 系统集成/真实 UAT | P0 | in_progress | 阶段1-5 | `docs/系统集成/` 三份权威文件 + 13-测试与运维 §3-§9 | 当前唯一计划 `.plan/T-M5-011-system-problem-ledger.md`；2026-08-19 开发机空隔离根真实 Electron S1 路径达到 E5：可见 UI 创建学习计划、学期、课程、考试确认、课表、任务完成并重启回读；global/semester SQLite integrity_check=ok，DOM 无完整 UUID/绝对路径/错误栈。只完成 S1 阶段，S2~S7、真实模型凭据发送、运行资源固化和使用机复制仍未完成；不读取、不暂存安装器。 |
 | T-M5-006 | 全部必需运行依赖自包含与离线能力装配 | 壳层/业务Adapter/打包 | P0 | pending | 阶段1-5 | 01-TRD §3/§7 + 03-Arch §3.3/§6.5 + 11-组件装配 | 依赖/license/体积/更新/安全清单；OCR/Python/whisper 等随包或替代；WPS/云模型等不可再分发依赖不得阻塞核心闭环；用户 UI 不出现开发环境安装步骤 |
 | T-M5-007 | 干净 Windows 已安装应用全功能 UAT | 测试 | P0 | pending | 阶段5 | 08-Test §5-§7 + 09-UI 全文 | 无预装开发环境；从首次启动走 S1-S7/对话/TTS/备份；全部可见控件矩阵、截图、重启持久化、故障恢复；真实目标用户签收，P0/P1=0 |
 | T-M5-008 | setup + portable zip 最终发行验收 | 打包/测试/文档 | P0 | pending | 阶段1-5 | 01-TRD §7 决策6 + 04-Todo §6.7 | 产出 `pi-studybuddy-x64-setup.exe` 与/或 `pi-studybuddy-x64.zip`；一键安装/开箱运行、升级/卸载/数据保留、SHA-256/版本/体积/许可清单、干净机复验与发布说明 |
@@ -679,9 +680,10 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | 45 | T-M5-009 | M5 | 测试与运维追溯基线建立 | T-M5-001 + T-M5-004 | P0：先建立 ACT/ERR/DATA、追溯矩阵、运维 runbook 与发布证据基线，再供 M5-005~008 消费 |
 | 46 | T-M5-005 | M5 | S6/S7/TTS/备份/设置与整体 UX 修订 | T-M5-001 + T-M5-009 | P0：补齐完整闭环、真实状态和桌面可用性，并消费追溯基线 |
 | 47 | T-M5-010 | M5 | 设置、投递、学期备份与数据根迁移闭环 | T-M5-001 + T-M5-009；T-M5-005 实施已暂停 | P0：用户裁决新安装暴露的设置页缺口必须在 UAT 前完整修复；实现供应商模型、真实投递、学期级备份恢复和可回滚的数据根迁移。 |
-| 48 | T-M5-006 | M5 | 必需运行依赖自包含与离线能力装配 | T-M5-001 + T-M5-009；可与 002-005 的已裁决修订并行 | P0：目标机不依赖开发环境或人工装组件 |
-| 49 | T-M5-007 | M5 | 干净 Windows 已安装应用全功能 UAT | T-M5-002~006 + T-M5-009 + T-M5-010 | P0：真实用户、真实安装产物、全控件与故障恢复签收 |
-| 50 | T-M5-008 | M5 | setup + portable zip 最终发行验收 | T-M5-007 + T-M5-009 | P0：只在 UAT 全通过后生成最终一键交付物 |
+| 48 | T-M5-011 | M5 | 系统问题总账与单一路径整改 | T-M5-010；用户已明确批准 | P0：先在开发机从空数据按真实 UI 路径逐段跑通，记录问题并整改；S1 E5 已通过，整体仍执行中 |
+| 49 | T-M5-006 | M5 | 必需运行依赖自包含与离线能力装配 | T-M5-001 + T-M5-009；可与 002-005 的已裁决修订并行 | P0：目标机不依赖开发环境或人工装组件 |
+| 50 | T-M5-007 | M5 | 干净 Windows 已安装应用全功能 UAT | T-M5-002~006 + T-M5-009 + T-M5-010 + T-M5-011 | P0：真实用户、真实安装产物、全控件与故障恢复签收 |
+| 51 | T-M5-008 | M5 | setup + portable zip 最终发行验收 | T-M5-007 + T-M5-009 | P0：只在 UAT 全通过后生成最终一键交付物 |
 
 ---
 
@@ -712,8 +714,8 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 | M2 | 9 | 0 | 0 | 0 | 9 | 0 |
 | M3 | 8 | 0 | 0 | 0 | 8 | 0 |
 | M4 | 26 | 0 | 0 | 0 | 26 | 0 |
-| M5 | 10 | 3 | 0 | 0 | 6 | 1 |
-| **合计** | **72** | **3** | **0** | **0** | **68** | **1** |
+| M5 | 11 | 3 | 1 | 0 | 6 | 1 |
+| **合计** | **73** | **3** | **1** | **0** | **68** | **1** |
 
 > 注（v0.1.157）：用户以“继续”明确选择 T-M5-001；唯一计划 `.plan/T-M5-001-ui-acceptance-audit.md` 与隔离分支 `agent/T-M5-001-ui-acceptance-audit` 已建立。T-M5-001 in_progress，其余 T-M5-002~008 保持 pending；本任务不修业务代码、不创建后续计划。M4 26 项及历史 62 项 done 事实保持不变。
 >
@@ -732,6 +734,7 @@ M0 骨架搭建          M1 核心闭环 MVP      M2 完整闭环          M3 �
 ## 10. 版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.194 | 2026-08-19 | 用户授权提交并推送 T-M5-011 当前阶段证据；新增任务登记但保持 in_progress。开发机全新隔离根真实 Electron 可见 UI 已完成 S1 创建学习计划、学期、课程、考试确认、课表、任务完成和重启回读（E5）；global/semester SQLite integrity_check=ok，DOM 无完整 UUID、绝对路径或错误栈；定向 S1/FirstRun/AppShell 37 tests、生产 Electron runtime 7 tests、Node24 type-check、文档治理和 diff-check 通过。只提交 `.plan/00-当前任务.md`、系统问题总账与本登记；不标记 T-M5-011 done，不进入 S2，不读取/暂存安装器。依据：用户明确 Git 授权 + AGENTS.md §4.5/§5/§7/§8/§11。 |
 | v0.1.193 | 2026-08-15 | T-M5-010 Git 收口完成：功能提交 `ef9eece` 已推送 `agent/T-M5-010-settings-delivery-backup-data-root` 并 ff-only 合并 master；Node24 master `pnpm verify --stage=full` 通过（unit/integration 133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。本治理登记提交随后推送并核验 `master=origin/master`，任务 in_progress→done；M5 为 3 pending/1 blocked/0 in_progress/6 done。T-M5-005 继续 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.191 | 2026-08-15 | 用户裁决新安装暴露的设置页缺口必须完整修复，不以既定安装 UAT 替代实现。T-M5-005 in_progress→blocked，仅等待三条既定原生 UAT；新增 T-M5-010 并登记为唯一 in_progress，范围为供应商模型、报告目标与投递、学期完整备份恢复、可回滚的数据根迁移，允许新增 API/schema/handler/迁移协议。M5 总数 9→10、blocked 0→1；T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户明确指令 + AGENTS.md §2/§4.4/§4.5/§5/§7/§9/§11。 |
 | v0.1.192 | 2026-08-15 | T-M5-010 已完成设置、投递、学期备份与数据根迁移闭环的实现、隔离原生 UAT、两份独立审查与 Node24 `pnpm verify --stage=full`（unit/integration 133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。用户已授权 Git 收口；任务保持 in_progress，待功能提交任务分支 push、master ff-only 合并、master 复验、origin/master 推送与同位核验后才可登记 done。T-M5-005 继续 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户明确授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11。 |

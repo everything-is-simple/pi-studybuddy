@@ -1,5 +1,5 @@
 # Pi StudyBuddy 文档索引
-**版本**：v0.1.194
+**版本**：v0.1.195
 
 > T-M5-011 当前裁决：先在当前开发机按真实用户路径跑通，再复制同一套运行资源、默认配置和启动拓扑到使用机。所有已知问题见 [系统集成三份文件](./系统集成/01-系统集成总览与客观认知.md)。历史任务 done 只代表各自任务证据，不代表整体产品闭环完成。
 **用途**：pi-studybuddy 项目的导航中心和单一事实来源（SoT）。AI Agent 和开发者在开始任何任务前，必须先读本文件。
@@ -30,12 +30,12 @@
 
 | 编号 | 文档名 | 状态 | 用途 |
 |---|---|---|---|
-| 00 | 本文档 | ✅ v0.1.193 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；T-M5-010 设置、投递、学期备份与数据根迁移闭环已完成 Git 收口，T-M5-005 仅因外部干净机 UAT blocked。 |
+| 00 | 本文档 | ✅ v0.1.195 | 导航、门禁、参考仓库清单 + M5 用户验收阶段状态；T-M5-011 开发机 S1 E5 已通过但整体仍执行中，T-M5-010 已完成 Git 收口，T-M5-005 仅因外部干净机 UAT blocked。 |
 | 01 | TRD-技术需求-Technical-Requirements.md | ✅ v0.2.4 决策已定案 | 运行环境、pi 集成方式、WPS COM、格式矩阵、安全边界、六点决策定案（原五点 + 决策 6 v0.2.3 修订：源码形态可运行 + 打包能力常态化，supersedes v0.2.2 "不打包 .exe"）+ §2.4 会话管理对话默认主入口 |
 | 02 | PRD-产品需求-Product-Requirements.md | ✅ v0.1.4 已审查批准 | 产品定位、考试驱动学习闭环、使用者与边界、kaobuddy 吸收结论、家长报告边界、TTS 跨子系统朗读、备份恢复 + §3.11 通用 AI 对话（默认主入口） |
 | prep | prep-参考点核对表.md | ✅ 已创建 | 03-Architecture 准备材料：四参考仓库逐项核对表 + 跨仓库结论 |
 | 03 | 架构设计-Architecture-Design.md | ✅ v0.1.3 已审查批准 | 四层架构（桌面壳/pi 扩展/业务 Adapter/数据层）+ 工具注册清单 + 三层记忆 + 技能体系 + 桌面壳五件骨架 + 调度层 + 安全不变量 + §6.7 会话管理 pi 原生 AI 对话默认主入口 + §2.3 model_select 落点业务数据根 config/models.json |
-| 04 | 任务清单-Todo-List.md | ✅ v0.1.193 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
+| 04 | 任务清单-Todo-List.md | ✅ v0.1.194 | 任务登记 + 组件治理看板 + 完成门禁 + 里程碑规划；T-M5-011 in_progress（开发机 S1 E5 已通过），T-M5-001~004、009/010 done，T-M5-005 blocked，T-M5-006~008 pending；每任务用户端到端测试铁律已登记。 |
 | 05 | 数据模型-ERD-Data-Model.md | ✅ v0.1.2 已审查批准 | 全局库 + 学期库（S1-S7 全量表 30+）+ 三层记忆 schema + ER 关系图 + 触发器 + 索引 + 备份 zip 结构 + §4.3 L3 对话 Tab 会话承载 |
 | 06 | API契约-API-Contracts.md | ✅ v0.1.9 已审查批准 | RPC 契约（非 REST）+ API 信封 + 6 错误码 + 100+ 方法表（S1-S7/TTS/备份恢复 + agent.send + modelsConfig.get/set）+ 9 Streams + DTO 规范 + §3.1 sessions 对话 Tab 承载注解 + §3.1.1 agent.send 对话发送通道 + §4 AgentEvent payload 结构化（tool_call/tool_result 脱敏载荷） |
 | 07 | 工作流-Workflow.md | ✅ v0.1.3 已审查批准 | 学生主路径（S1-S7 闭环）/ 家长报告 / TTS 朗读 / 备份恢复 / 组件治理 / 调度层 / 11 状态机汇总 + §2.8 通用 AI 对话路径 |
@@ -126,6 +126,7 @@
 
 ## 七、当前状态
 - [x] 系统集成三份文件：✅ 已建立并作为 T-M5-011 唯一依据；01 客观认知、02 问题总账、03 验收与交付路径。
+- [x] 2026-08-19 T-M5-011 开发机 S1 阶段：全新隔离根真实 Electron 可见 UI 创建学习计划、学期、课程、考试确认、课表和任务完成，并完成重启回读（E5）；只完成 S1，整体任务仍执行中。
 - [x] 2026-08-14 T-M5-009 受控 Git 收口完成：功能/基线提交 `156756c` 已 ff-only 合并 master；Node24 master `verify --stage=full` 最终重跑通过（unit/integration 131 files/1195 tests、真实 Electron E2E 33 files/141 tests），治理登记已推送并核验 `master=origin/master`，§8.4 三要件齐全。`T-M5-009-DOC-CONSUMER-001` PASS 仅替代该无 Electron UI 变更任务的真机 UAT，不外推。
 - [x] 2026-08-14 T-M5-004 Git 收口完成：功能 `47639f9` 已快进合并 master；本地收口登记 `715add3` 已成功推送并核验 `master=origin/master=715add3`；不自动启动后续任务。
 - [x] `docs/traceability/` 六项基线资产已完成，供 T-M5-005~008 依任务范围消费。
@@ -239,6 +240,7 @@
 ## 八、版本历史
 
 | 版本 | 日期 | 变更 |
+| v0.1.195 | 2026-08-19 | 同步 04-Todo v0.1.194 与 T-M5-011 开发机 S1 E5 事实：全新隔离根真实 Electron 可见 UI 创建学习计划、学期、课程、考试确认、课表、任务完成并重启回读；整体任务保持 in_progress，S2~S7、真实模型凭据发送、运行资源固化和使用机复制未开始。原因：用户授权提交当前阶段证据；影响：索引与任务登记同步，不声明产品或任务完成，不读取/暂存安装器。依据：用户明确 Git 授权 + AGENTS.md §4.5/§7/§8/§11。 |
 | v0.1.193 | 2026-08-15 | T-M5-010 Git 收口完成：功能提交 `ef9eece` 已推送任务分支并 ff-only 合并 master；Node24 master `verify --stage=full` 通过（unit/integration 133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。本治理登记提交随后推送并核验 `master=origin/master`，任务由 in_progress→done。T-M5-005 保持 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11。 |
 | v0.1.191 | 2026-08-15 | 用户裁决新安装暴露的设置页缺口必须完整修复，不能由既定干净机 UAT 替代。T-M5-005 改为 blocked，仅等待三条原生 UAT；新增并启动 T-M5-010「设置、投递、学期备份与数据根迁移闭环」为唯一执行任务，允许新增所需 API/schema/handler/迁移协议与隔离测试。T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户明确指令 + AGENTS.md §2/§4.4/§4.5/§5/§7/§9/§11。 |
 | v0.1.192 | 2026-08-15 | T-M5-010 已完成设置、投递、学期备份与数据根迁移闭环的实现、隔离原生 UAT、两份独立审查和 Node24 `verify --stage=full`（133 files/1221 tests、真实 Electron E2E 33 files/141 tests、contract 128/128、安全 6/6、build/smoke/docs-governance/x64 setup）。用户已授权 Git 收口；任务保持 in_progress，待任务分支 push、master ff-only 合并、master 复验与 origin/master 同位核验后才可登记 done。T-M5-005 继续 blocked，T-M5-006~008 不启动，安装器不读取、不暂存。依据：用户明确授权 + AGENTS.md §4.5/§7/§8.2/§8.4/§11。 |
